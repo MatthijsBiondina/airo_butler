@@ -1,0 +1,8 @@
+prefix=/home/matt/catkin_ws/devel
+
+Name: airo_butler
+Description: Description of airo_butler
+Version: 0.0.0
+Cflags: -I/home/matt/catkin_ws/devel/include
+Libs: -L${prefix}/lib 
+Requires: 

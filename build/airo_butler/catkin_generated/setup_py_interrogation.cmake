@@ -1,0 +1,7 @@
+set(airo_butler_SETUP_PY_SETUP_MODULE "distutils.core")
+set(airo_butler_SETUP_PY_VERSION "0.0.0")
+set(airo_butler_SETUP_PY_SCRIPTS "")
+set(airo_butler_SETUP_PY_PACKAGES "airo_butler")
+set(airo_butler_SETUP_PY_PACKAGE_DIRS "src/airo_butler")
+set(airo_butler_SETUP_PY_MODULES "")
+set(airo_butler_SETUP_PY_MODULE_DIRS "")

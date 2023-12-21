@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="airo_butler" type="talker" name="talker" output="screen"></node>
+</launch>
