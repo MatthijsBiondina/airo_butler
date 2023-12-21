@@ -48,16 +48,15 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  PODMessage.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  MoveToJointConfiguration.srv
+  PODService.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -106,6 +105,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES airo_butler
 #  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS std_msgs
 #  DEPENDS system_lib
 )
 
@@ -161,6 +161,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   nodes/talker
+  nodes/ur3_server
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="airo_butler" type="ur3_server" name="ur3_server" output="screen"></node>
+</launch>

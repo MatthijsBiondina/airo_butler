@@ -42,7 +42,11 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/airo_butler/srv" TYPE FILE FILES "/home/matt/catkin_ws/src/airo_butler/srv/MoveToJointConfiguration.srv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/airo_butler/msg" TYPE FILE FILES "/home/matt/catkin_ws/src/airo_butler/msg/PODMessage.msg")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/airo_butler/srv" TYPE FILE FILES "/home/matt/catkin_ws/src/airo_butler/srv/PODService.srv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -98,5 +102,9 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/airo_butler" TYPE PROGRAM FILES "/home/matt/catkin_ws/build/airo_butler/catkin_generated/installspace/talker")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/airo_butler" TYPE PROGRAM FILES "/home/matt/catkin_ws/build/airo_butler/catkin_generated/installspace/ur3_server")
 endif()
 

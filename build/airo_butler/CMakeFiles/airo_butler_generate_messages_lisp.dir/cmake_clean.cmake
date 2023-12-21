@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/matt/catkin_ws/devel/share/common-lisp/ros/airo_butler/srv/MoveToJointConfiguration.lisp"
+  "/home/matt/catkin_ws/devel/share/common-lisp/ros/airo_butler/msg/PODMessage.lisp"
+  "/home/matt/catkin_ws/devel/share/common-lisp/ros/airo_butler/srv/PODService.lisp"
   "CMakeFiles/airo_butler_generate_messages_lisp"
 )
 

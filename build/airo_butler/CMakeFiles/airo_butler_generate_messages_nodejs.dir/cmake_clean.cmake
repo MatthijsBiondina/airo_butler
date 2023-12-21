@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/matt/catkin_ws/devel/share/gennodejs/ros/airo_butler/srv/MoveToJointConfiguration.js"
+  "/home/matt/catkin_ws/devel/share/gennodejs/ros/airo_butler/msg/PODMessage.js"
+  "/home/matt/catkin_ws/devel/share/gennodejs/ros/airo_butler/srv/PODService.js"
   "CMakeFiles/airo_butler_generate_messages_nodejs"
 )
 

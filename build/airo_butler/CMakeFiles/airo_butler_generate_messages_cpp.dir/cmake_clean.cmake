@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/matt/catkin_ws/devel/include/airo_butler/MoveToJointConfiguration.h"
+  "/home/matt/catkin_ws/devel/include/airo_butler/PODMessage.h"
+  "/home/matt/catkin_ws/devel/include/airo_butler/PODService.h"
   "CMakeFiles/airo_butler_generate_messages_cpp"
 )
 

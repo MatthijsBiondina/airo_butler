@@ -1,8 +1,8 @@
 
 "use strict";
 
-let MoveToJointConfiguration = require('./MoveToJointConfiguration.js')
+let PODService = require('./PODService.js')
 
 module.exports = {
-  MoveToJointConfiguration: MoveToJointConfiguration,
+  PODService: PODService,
 };
