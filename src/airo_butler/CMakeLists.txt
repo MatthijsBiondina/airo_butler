@@ -163,6 +163,7 @@ catkin_install_python(PROGRAMS
   nodes/talker
   nodes/ur3_server
   nodes/realsense2
+  nodes/camera_plotter
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
