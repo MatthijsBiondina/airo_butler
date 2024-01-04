@@ -3,7 +3,6 @@ from typing import Optional
 import rospy as ros
 from airo_butler.utils.tools import pyout
 from std_msgs.msg import String
-import torch
 
 class Talker:
     QUEUE_SIZE: int = 10

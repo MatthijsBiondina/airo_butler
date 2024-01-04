@@ -162,6 +162,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   nodes/talker
   nodes/ur3_server
+  nodes/realsense2
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -1,10 +1,14 @@
+import PIL
+from PIL import Image
+
 import rospy as ros
 import pickle
 import sys
 from typing import Optional, Type, Union
 import numpy as np
+from airo_butler.msg import PODMessage
 from airo_butler.srv import PODServiceRequest
-from airo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import pyout
 
 
 class POD:
@@ -12,6 +16,7 @@ class POD:
     Marker base class for all POD (Plain Old Data) types.
     Used as a superclass for data classes that are used to store and transmit simple data.
     """
+
     pass
 
 
@@ -25,10 +30,13 @@ class UR3GripperPOD(POD):
         side (str): Indicates which arm ("left" or "right") the gripper is on.
         blocking (bool): If True, the movement will be blocking.
     """
+
     __slots__ = ["pose", "side", "blocking"]
 
-    def __init__(self, pose: Union[str, float], left_or_right_arm: str,
-                 blocking: bool = True):
+    def __init__(
+            self, pose: Union[str, float], left_or_right_arm: str,
+            blocking: bool = True
+    ):
         assert isinstance(pose, float) or pose in ["open", "close"]
         self.pose: Union[str, float] = pose
         assert left_or_right_arm in ["left", "right"]
@@ -46,10 +54,16 @@ class UR3PosePOD(POD):
         side (str): Indicates which arm ("left" or "right") the data is for.
         blocking (bool): If True, the movement will be blocking.
     """
+
     __slots__ = ["pose", "joint_speed", "side", "blocking"]
 
-    def __init__(self, pose: np.ndarray, left_or_right_arm: str,
-                 joint_speed: Optional[float] = None, blocking: bool = True):
+    def __init__(
+            self,
+            pose: np.ndarray,
+            left_or_right_arm: str,
+            joint_speed: Optional[float] = None,
+            blocking: bool = True,
+    ):
         self.pose: np.ndarray = pose
         assert left_or_right_arm in ["left", "right"]
         self.side = left_or_right_arm
@@ -73,14 +87,32 @@ class BooleanPOD(POD):
     Attributes:
         value (bool): The boolean value stored in this POD.
     """
+
     __slots__ = ["value"]
 
     def __init__(self, value: bool):
         self.value: bool = value
 
 
-def make_pod_request(service: ros.ServiceProxy, pod: POD,
-                     response_type: Type[POD]) -> POD:
+class ImagePOD(POD):
+    """
+    Represents a Pillow image.
+
+    Attributes:
+        value (PIL.Image): Pillow image
+        timestamp
+    """
+
+    __slots__ = ["image", "timestamp"]
+
+    def __init__(self, image: Image, timestamp: ros.Time):
+        self.image = image
+        self.timestamp = timestamp
+
+
+def make_pod_request(
+        service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
+) -> POD:
     """
     Sends a request to a ROS service with a given POD object and waits for a response.
 
@@ -111,3 +143,10 @@ def make_pod_request(service: ros.ServiceProxy, pod: POD,
         pyout()
     except ros.ROSInterruptException:
         sys.exit(0)
+
+
+def publish_pod(publisher: ros.Publisher, pod: POD):
+    msg = PODMessage()
+    msg.data = pickle.dumps(pod)
+    msg.header.stamp = ros.Time.now()
+    publisher.publish(msg)

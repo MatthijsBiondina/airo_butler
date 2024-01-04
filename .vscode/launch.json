@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "Python: rs2_camera",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/airo_butler/src/airo_butler/realsense2/rs2_camera.py",
+            "justMyCode": true
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="airo_butler" type="realsense2" name="realsense2" output="screen"></node>
+</launch>
+
