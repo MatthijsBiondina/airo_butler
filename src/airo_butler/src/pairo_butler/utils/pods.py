@@ -34,8 +34,7 @@ class UR3GripperPOD(POD):
     __slots__ = ["pose", "side", "blocking"]
 
     def __init__(
-            self, pose: Union[str, float], left_or_right_arm: str,
-            blocking: bool = True
+        self, pose: Union[str, float], left_or_right_arm: str, blocking: bool = True
     ):
         assert isinstance(pose, float) or pose in ["open", "close"]
         self.pose: Union[str, float] = pose
@@ -58,11 +57,11 @@ class UR3PosePOD(POD):
     __slots__ = ["pose", "joint_speed", "side", "blocking"]
 
     def __init__(
-            self,
-            pose: np.ndarray,
-            left_or_right_arm: str,
-            joint_speed: Optional[float] = None,
-            blocking: bool = True,
+        self,
+        pose: np.ndarray,
+        left_or_right_arm: str,
+        joint_speed: Optional[float] = None,
+        blocking: bool = True,
     ):
         self.pose: np.ndarray = pose
         assert left_or_right_arm in ["left", "right"]
@@ -110,8 +109,24 @@ class ImagePOD(POD):
         self.timestamp = timestamp
 
 
+class ArrayPOD(POD):
+    """
+    Represents a numpy array with timestamp.
+
+    Attributes:
+        value (np.ndarray): numpy array
+        timestamp
+    """
+
+    __slots__ = ["array", "timestamp"]
+
+    def __init__(self, array: np.ndarray, timestamp: ros.Time) -> None:
+        self.array = array
+        self.timestamp = timestamp
+
+
 def make_pod_request(
-        service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
+    service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
 ) -> POD:
     """
     Sends a request to a ROS service with a given POD object and waits for a response.

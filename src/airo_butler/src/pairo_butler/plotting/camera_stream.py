@@ -11,8 +11,8 @@ from pairo_butler.plotting.plotting_utils import add_info_to_image
 
 
 class CameraStream:
-    QUEUE_SIZE: int = 10
-    PUBLISH_RATE: int = 10
+    QUEUE_SIZE: int = 2
+    PUBLISH_RATE: int = 30
 
     def __init__(self, name: str = "camera_stream"):
         """Just streams the camera

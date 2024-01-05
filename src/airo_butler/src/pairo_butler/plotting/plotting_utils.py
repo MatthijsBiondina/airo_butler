@@ -20,7 +20,8 @@ def add_info_to_image(
 
     text = format_info(title, **kwargs)
     font = get_monospace_font()
-    text_width, text_height = draw.textsize(text, font=font)
+    text_width = max([draw.textlength(line, font=font) for line in text.split("\n")])
+    text_height = font.size * len(text.split("\n"))
     box_width = text_width + 2 * info_box_padding
     box_height = text_height + 2 * info_box_padding
 

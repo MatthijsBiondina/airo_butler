@@ -164,6 +164,7 @@ catkin_install_python(PROGRAMS
   nodes/ur3_server
   nodes/realsense2
   nodes/camera_plotter
+  nodes/keypoint_detector
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
