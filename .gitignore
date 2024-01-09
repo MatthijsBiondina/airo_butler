@@ -1,3 +1,4 @@
 build/
 devel/
 airo_butler/src/res/models/
+*.pyc
