@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Airo Butler",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/camera/zed_camera.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

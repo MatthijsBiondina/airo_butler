@@ -6,7 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/airo_butler/src" isTestSource="false" />
     </content>
     <content url="file:///opt/ros/noetic/lib/python3/dist-packages" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="airo-mono" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="workspace" level="project" />
     <orderEntry type="library" name="ROS" level="project" />

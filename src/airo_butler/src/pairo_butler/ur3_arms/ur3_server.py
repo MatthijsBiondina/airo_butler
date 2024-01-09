@@ -8,12 +8,11 @@ from airo_robots.grippers import Robotiq2F85
 from airo_robots.manipulators import URrtde
 
 import rospy as ros
-from airo_butler.utils.tools import pyout
 
 from airo_butler.msg import PODMessage
 from airo_butler.srv import PODService, PODServiceResponse
 from pairo_butler.ur3_arms.ur3_constants import IP_RIGHT_UR3, IP_LEFT_UR3
-from pairo_butler.utils.pods import POD, UR3StatePOD
+from pairo_butler.utils.pods import POD, UR3StatePOD, publish_pod
 from pairo_butler.utils.pods import BooleanPOD, UR3PosePOD, UR3GripperPOD
 
 
@@ -56,18 +55,21 @@ class UR3_server:
             msg_left = PODMessage()
             msg_right = PODMessage()
 
+            timestamp = ros.Time.now()
             pod_left = UR3StatePOD(
-                self.arm_left.get_tcp_pose(), self.arm_left.get_joint_configuration()
+                self.arm_left.get_tcp_pose(),
+                self.arm_left.get_joint_configuration(),
+                timestamp,
             )
             pod_right = UR3StatePOD(
-                self.arm_right.get_tcp_pose(), self.arm_right.get_joint_configuration()
+                self.arm_right.get_tcp_pose(),
+                self.arm_right.get_joint_configuration(),
+                timestamp,
             )
 
-            msg_left.data = pickle.dumps(pod_left)
-            msg_right.data = pickle.dumps(pod_right)
+            publish_pod(self.pub_left, pod_left)
+            publish_pod(self.pub_right, pod_right)
 
-            self.pub_left.publish(msg_left)
-            self.pub_right.publish(msg_right)
             self.rate.sleep()
 
     def __init_services(self) -> Dict[str, ros.Service]:

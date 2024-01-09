@@ -45,7 +45,7 @@ class UR3GripperPOD(POD):
 
 class UR3PosePOD(POD):
     """
-    Represents the pose data for a UR3 robot arm.
+    Represents the pose COMMAND data for a UR3 robot arm.
 
     Attributes:
         pose (np.ndarray): Numpy array representing the pose.
@@ -72,11 +72,21 @@ class UR3PosePOD(POD):
 
 
 class UR3StatePOD(POD):
-    __slots__ = ["tcp_pose", "joint_configuration"]
+    """
+    Represents the pose STATE data for a UR3 robot arm
 
-    def __init__(self, tcp_pose: np.ndarray, joint_configuration: np.ndarray):
+    Args:
+        POD (_type_): _description_
+    """
+
+    __slots__ = ["tcp_pose", "joint_configuration", "timestamp"]
+
+    def __init__(
+        self, tcp_pose: np.ndarray, joint_configuration: np.ndarray, timestamp: ros.Time
+    ):
         self.tcp_pose: np.ndarray = tcp_pose
         self.joint_configuration: np.ndarray = joint_configuration
+        self.timestamp: ros.Time = timestamp
 
 
 class BooleanPOD(POD):
@@ -122,6 +132,30 @@ class ArrayPOD(POD):
 
     def __init__(self, array: np.ndarray, timestamp: ros.Time) -> None:
         self.array = array
+        self.timestamp = timestamp
+
+
+class ZEDPOD(POD):
+    """zed camera data
+
+    Args:
+        POD (_type_): _description_
+    """
+
+    __slots__ = ["timestamp", "rgb_image", "point_cloud", "depth_image", "depth_map"]
+
+    def __init__(
+        self,
+        rgb_image: np.ndarray,
+        point_cloud: np.ndarray,
+        depth_image: np.ndarray,
+        depth_map: np.ndarray,
+        timestamp: ros.Time,
+    ) -> None:
+        self.rgb_image = rgb_image
+        self.point_cloud = point_cloud
+        self.depth_image = depth_image
+        self.depth_map = depth_map
         self.timestamp = timestamp
 
 
