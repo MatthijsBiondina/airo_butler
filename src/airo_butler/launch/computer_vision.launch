@@ -1,0 +1,6 @@
+<launch>
+  <!--<node pkg="airo_butler" type="realsense2" name="realsense2" output="screen"></node>-->
+  <node pkg="airo_butler" type="camera_plotter" name="camera_plot" output="screen"></node>
+  <node pkg="airo_butler" type="keypoint_detector" name="keypoint_detector" output="screen"></node>
+</launch>
+
