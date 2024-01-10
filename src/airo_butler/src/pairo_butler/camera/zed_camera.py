@@ -11,7 +11,7 @@ class ZED:
     PUBLISH_RATE = 30
     QUEUE_SIZE = 2
 
-    def __init__(self, name: str = "zed_camera") -> None:
+    def __init__(self, name: str = "Zed2i") -> None:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
 
@@ -24,8 +24,8 @@ class ZED:
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
-
-        self.publisher = ros.Publisher("/zed", PODMessage, queue_size=self.QUEUE_SIZE)
+        self.publisher = ros.Publisher("/zed2i", PODMessage, queue_size=self.QUEUE_SIZE)
+        ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         while not ros.is_shutdown():

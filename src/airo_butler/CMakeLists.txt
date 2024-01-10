@@ -160,10 +160,11 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  nodes/talker
   nodes/ur3_server
   nodes/realsense2
+  nodes/zed2i
   nodes/camera_plotter
+  nodes/zed_plotter
   nodes/keypoint_detector
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

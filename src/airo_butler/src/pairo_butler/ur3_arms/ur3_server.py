@@ -6,6 +6,7 @@ from typing import Dict, Optional
 import numpy as np
 from airo_robots.grippers import Robotiq2F85
 from airo_robots.manipulators import URrtde
+from pairo_butler.ur3_arms.ur3_planner import Planner
 
 import rospy as ros
 
@@ -39,6 +40,8 @@ class UR3_server:
 
         self.services: Dict[str, ros.Service] = self.__init_services()
 
+        self.planner: Planner = Planner(self.arm_left, self.arm_right)
+
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
@@ -59,11 +62,13 @@ class UR3_server:
             pod_left = UR3StatePOD(
                 self.arm_left.get_tcp_pose(),
                 self.arm_left.get_joint_configuration(),
+                self.arm_left.gripper.get_current_width(),
                 timestamp,
             )
             pod_right = UR3StatePOD(
                 self.arm_right.get_tcp_pose(),
                 self.arm_right.get_joint_configuration(),
+                self.arm_right.gripper.get_current_width(),
                 timestamp,
             )
 
@@ -163,7 +168,11 @@ class UR3_server:
 def main():
     server = UR3_server(IP_RIGHT_UR3, IP_LEFT_UR3)
     server.start_ros()
-    server.run()
+
+    POSE_RIGHT_COUNTER = np.array([+0.60, -1.00, +0.25, -0.25, -0.75, +0.00]) * np.pi
+    server.planner.plan_to_joint_configuration(sophie=POSE_RIGHT_COUNTER)
+
+    # server.run()
 
 
 if __name__ == "__main__":

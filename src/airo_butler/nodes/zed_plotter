@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from airo_butler.talker import main
+from pairo_butler.plotting.zed_stream import main
 
 if __name__ == "__main__":
     main()

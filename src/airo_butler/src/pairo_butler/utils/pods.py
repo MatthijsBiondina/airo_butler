@@ -79,13 +79,18 @@ class UR3StatePOD(POD):
         POD (_type_): _description_
     """
 
-    __slots__ = ["tcp_pose", "joint_configuration", "timestamp"]
+    __slots__ = ["tcp_pose", "joint_configuration", "gripper_width", "timestamp"]
 
     def __init__(
-        self, tcp_pose: np.ndarray, joint_configuration: np.ndarray, timestamp: ros.Time
+        self,
+        tcp_pose: np.ndarray,
+        joint_configuration: np.ndarray,
+        gripper_width: float,
+        timestamp: ros.Time,
     ):
         self.tcp_pose: np.ndarray = tcp_pose
         self.joint_configuration: np.ndarray = joint_configuration
+        self.gripper_width: float = gripper_width
         self.timestamp: ros.Time = timestamp
 
 

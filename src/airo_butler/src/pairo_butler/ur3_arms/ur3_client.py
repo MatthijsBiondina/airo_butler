@@ -38,12 +38,14 @@ class UR3Client:
         )
         self.__joint_configuration: Optional[np.ndarray] = None
         self.__tcp_pose: Optional[np.ndarray] = None
+        self.__gripper_width: Optional[float] = None
 
     def __callback(self, msg):
         msg: UR3StatePOD = pickle.loads(msg.data)
 
         self.__joint_configuration = msg.joint_configuration
         self.__tcp_pose = msg.tcp_pose
+        self.__gripper_width = msg.gripper_width
 
     def move_to_joint_configuration(
         self,
@@ -93,13 +95,10 @@ class UR3Client:
             raise TimeoutError
         return self.__joint_configuration
 
-
-# if __name__ == "__main__":
-#     ros.init_node(f"UR3_arms_client", log_level=ros.INFO)
-
-#     left_arm = UR3Client("left")
-#     left_arm.move_to_joint_configuration(POSE_LEFT_PRESENT)
-
-#     right_arm = UR3Client("right")
-#     right_arm.move_to_joint_configuration(POSE_RIGHT_SCAN1)
-#     time.sleep(10)
+    def get_gripper_width(self, timeout=1):
+        t0 = time.time()
+        while self.__gripper_width is None and time.time() - t0 < timeout:
+            time.sleep(0.01)
+        if self.__gripper_width is None:
+            raise TimeoutError
+        return self.__gripper_width
