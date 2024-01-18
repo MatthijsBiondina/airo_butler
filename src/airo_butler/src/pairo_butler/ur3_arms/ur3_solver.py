@@ -1,11 +1,15 @@
+import time
 import numpy as np
-from pairo_butler.utils.shapes import compute_triangle_angles_sss
+from pairo_butler.utils.shapes import (
+    compute_triangle_angles_sss,
+    find_intersections_between_circles,
+)
 
 from pairo_butler.utils.tools import degree_string, pyout
 
 
 PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3 = 0.13301
-FORBIDDEN_COLUMN_RADIUS = 0.0 + PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
+FORBIDDEN_COLUMN_RADIUS = 0.01 + PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
 
 LENGHT_ORIGIN_TO_BASE = 0.16521
 LENGTH_BASE_TO_ELBOW = 0.42497
@@ -31,46 +35,46 @@ class UR3SophieSolver:
     def __init__(self) -> None:
         pass
 
-    def solve_tcp_horizontal(self, X_target, z_axis):
+    def solve_tcp_horizontal(self, tool_xyz, z_axis):
         assert z_axis[-1] == 0, "Camera z-axis must be horizontal"
         # Normalize z-axis
         z_axis /= np.linalg.norm(z_axis)
-
-        pyout(f"Tool: {X_target}")
 
         # Initialize joint configuration
         joint_config = np.array([np.nan, np.nan, np.nan, np.nan, np.nan, +0.00]) * np.pi
 
         # Calculate wrist3 point
-        wrist3 = X_target - z_axis * LENGTH_WRIST3_TO_TOOL
-
-        pyout(f"Wrist 3: {wrist3}")
+        wrist3 = tool_xyz - z_axis * LENGTH_WRIST3_TO_TOOL
 
         # Calculate wrist2 point (straight below wrist3)
         wrist2 = wrist3 - np.array([0.0, 0.0, 1.0]) * LENGTH_WRIST2_TO_WRIST3
-        pyout(f"Wrist 2: {wrist2}")
 
         # Calculate wrist1 point. The orthogonal projection of wrist2 onto the radius
         # of the circle around which the base spins.
         distance_wrist2_projection_on_xy_plane = np.linalg.norm(wrist2[:2])
-        if distance_wrist2_projection_on_xy_plane < FORBIDDEN_COLUMN_RADIUS:
-            # Wrist 2 cannot reach above the base, because of trigonometry
+        wrist2_offset_angle = np.arcsin(
+            PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
+            / distance_wrist2_projection_on_xy_plane
+        )
+
+        # pyout(distance_wrist2_projection_on_xy_plane)
+        if np.isnan(wrist2_offset_angle):
+            assert (
+                distance_wrist2_projection_on_xy_plane < FORBIDDEN_COLUMN_RADIUS
+            ), "Fail case for changing approach angle triggered for the wrong reason"
+            # Wrist 2 cannot reach above the base, because of morphology.
+            # So we move wrist2 over to the edge of the forbidden column (w2')
             #
-            #
-            #
-            #
-            #
-            #
-            #
+            #                   tool
             #                    /\
             #                   /||\
             #                    ||
-            #                 /  ||
-            #                /   ||
+            #                 /  ||  \
+            #                /   ||   \
             #                    ||
-            #         @    /   ######        @
-            #          @@ /####  ||  ####  @@
-            #    w2' ->  @#      ||      #@
+            #         @    /   ######   \    @
+            #          @@ /####  ||  ####\ @@
+            #    w2' ->  @#      ||      #@  <- w2'
             #          ##  @@@@  ||  @@@@  ##
             #         #        @ w2 @         #
             #        #                        #
@@ -83,12 +87,40 @@ class UR3SophieSolver:
             #              ####      ####
             #                  ######
 
-            pyout()
+            # (1) Everything happening below is a projection in the xy plane (1)
+            # Find intersections between the forbidden circle and the circle around
+            # tool with radius LENGTH_WRIST3_TO_TOOL
+            intersections = find_intersections_between_circles(
+                x0=0.0,
+                y0=0.0,
+                r0=FORBIDDEN_COLUMN_RADIUS,
+                x1=tool_xyz[0],
+                y1=tool_xyz[1],
+                r1=LENGTH_WRIST3_TO_TOOL,
+            )
+            assert len(intersections) == 2
+            int0, int1 = tuple(intersections)
 
-        wrist2_offset_angle = np.arcsin(
-            PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
-            / distance_wrist2_projection_on_xy_plane
-        )
+            tool_to_inter0 = np.array(int0) - tool_xyz[:2]
+            tool_to_inter1 = np.array(int1) - tool_xyz[:2]
+            tool_to_wrist2 = wrist2[:2] - tool_xyz[:2]
+
+            angle0 = np.arctan2(
+                tool_to_wrist2[1] - tool_to_inter0[1],
+                tool_to_wrist2[0] - tool_to_inter0[0],
+            )
+            angle1 = np.arctan2(
+                tool_to_wrist2[1] - tool_to_inter1[1],
+                tool_to_wrist2[0] - tool_to_inter1[0],
+            )
+            pyout(z_axis)
+            z_axis_new = z_axis
+            if abs(angle0) < abs(angle1):
+                z_axis_new[:2] = -tool_to_inter0 / np.linalg.norm(tool_to_inter0)
+            else:
+                z_axis_new[:2] = -tool_to_inter1 / np.linalg.norm(tool_to_inter1)
+
+            return self.solve_tcp_horizontal(tool_xyz=tool_xyz, z_axis=z_axis_new)
 
         # rotate wrist2 around base
         wrist2_rotated_projection_xy = np.array(
@@ -136,7 +168,7 @@ class UR3SophieSolver:
         # Based on projections of wrist1, wrist3, and tcp in xy-plane compute angle
         # wrist1 <- wrist3 -> tool.
         wrist3_angle_unsigned, _, _ = compute_triangle_angles_sss(
-            np.linalg.norm(X_target[:2] - wrist1[:2]),
+            np.linalg.norm(tool_xyz[:2] - wrist1[:2]),
             LENGTH_WRIST3_TO_TOOL,
             PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3,
         )
@@ -144,7 +176,7 @@ class UR3SophieSolver:
         # transposed tcp' if the tool was attached to wrist1 instead of wrist3, and
         # compute angle intermediate_point <- wrist1 -> tcp'. If smaller than 90
         # degrees it points forward, otherwise backwards.
-        tool_ = X_target + (wrist1 - wrist3)
+        tool_ = tool_xyz + (wrist1 - wrist3)
         angle_intermediate_wrist1_tool_unsigned, _, _ = compute_triangle_angles_sss(
             np.linalg.norm(tool_[:2] - intermediate_point[:2]),
             LENGTH_WRIST3_TO_TOOL,
@@ -190,9 +222,9 @@ class UR3SophieSolver:
         # Compute tcp
         tcp = np.array(
             [
-                [np.nan, 0.0, np.nan, X_target[0]],
-                [np.nan, 0.0, np.nan, X_target[1]],
-                [0.0, -1.0, 0.0, X_target[2]],
+                [np.nan, 0.0, np.nan, tool_xyz[0]],
+                [np.nan, 0.0, np.nan, tool_xyz[1]],
+                [0.0, -1.0, 0.0, tool_xyz[2]],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )
@@ -365,6 +397,3 @@ class UR3SophieSolver:
         ), f"Bending elbow {np.rad2deg(elbow_angle):.1f} degrees risks self-collision."
 
         return tcp, joint_config
-
-        pyout(tcp)
-        pyout()

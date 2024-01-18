@@ -152,10 +152,9 @@ class UR3Client:
         pyout(f"Sophie rest: {prt(SOPHIE_REST)}")
         pyout(f"Wilson rest: {prt(WILSON_REST)}")
 
-        self.move_to_joint_configuration(initial_config, joint_speed=0.1)
+        self.move_to_joint_configuration(initial_config, joint_speed=None)
 
         ros.loginfo(initial_config)
-        pyout()
 
 
 def prt(A):

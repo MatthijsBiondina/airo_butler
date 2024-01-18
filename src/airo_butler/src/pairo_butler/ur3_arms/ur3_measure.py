@@ -154,7 +154,7 @@ class UR3Measurer:
 
         self.sophie.grasp_horizontal(X, z)
 
-        X = np.linspace(-0.25, +0.25, num=5, endpoint=True)
+        X = np.linspace(-0.25, +0.25, num=2, endpoint=True)
         Y = np.linspace(-0.5, 0.5, num=3, endpoint=True)
         for x in X:
             for y in Y:
