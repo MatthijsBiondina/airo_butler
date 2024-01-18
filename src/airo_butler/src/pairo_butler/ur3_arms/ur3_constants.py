@@ -13,3 +13,6 @@ POSE_LEFT_SCAN = np.array([+0.00, -0.55, +0.00, -0.50, +0.50, +0.00]) * np.pi
 POSE_RIGHT_CLOCK = np.array([-0.50, -1.0, +0.00, +0.00, -0.35, +0.00]) * np.pi
 POSE_RIGHT_MIDDLE = np.array([+0.00, -1.0, +0.50, -0.50, -0.50, +0.00]) * np.pi
 POSE_RIGHT_COUNTER = np.array([+0.60, -1.00, +0.25, -0.25, -0.75, +0.00]) * np.pi
+
+SOPHIE_SLEEP = np.array([+0.00, -0.75, +0.50, -0.50, -0.50, +0.00]) * np.pi
+WILSON_SLEEP = np.array([+0.00, -0.25, -0.50, -0.50, +0.50, +0.00]) * np.pi

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/matt/anaconda3/envs/airo-mono/bin/python
 
 from pairo_butler.ur3_arms.ur3_server import main
 

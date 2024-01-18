@@ -17,9 +17,9 @@ class RS2_camera:
     def __init__(
         self,
         name: str = "rs2",
-        fps: int = 30,
-        rs2_resolution: Tuple[int, int] = (640, 480),
-        out_resolution: int = 512,
+        fps: int = 15,
+        rs2_resolution: Tuple[int, int] = (960, 540),
+        out_resolution: int = 720,
     ):
         """
         Initializes a new instance of the ROS node for interfacing with a RealSense2
@@ -63,6 +63,8 @@ class RS2_camera:
         # Set the output image resolution.
         self.resolution = out_resolution
 
+        self.intrinsics_matrix = self.__compute_intrinsics_matrix()
+
     def start_ros(self):
         """
         Initializes the ROS node and sets up the publisher for the RealSense2 camera
@@ -99,7 +101,11 @@ class RS2_camera:
             # Convert the captured frame to a PIL image.
             image = self.__frame2pillow(frame)
             # Create an ImagePOD object with the image and current timestamp.
-            pod = ImagePOD(image=image, timestamp=ros.Time.now())
+            pod = ImagePOD(
+                image=image,
+                intrinsics_matrix=self.intrinsics_matrix,
+                timestamp=ros.Time.now(),
+            )
             # Publish the ImagePOD object to the designated ROS topic.
             publish_pod(self.publisher, pod)
             # Sleep for a while as per the set rate to control the publishing frequency.
@@ -139,6 +145,52 @@ class RS2_camera:
         image = image.resize((self.resolution, self.resolution))
 
         return image  # Return the processed PIL image.
+
+    def __compute_intrinsics_matrix(self):
+        # Wait for a coherent pair of frames: depth and color
+        frames = self.pipeline.wait_for_frames()
+        color_frame = frames.get_color_frame()
+
+        # Get the intrinsics of the color stream
+        color_profile = color_frame.get_profile()
+        intrinsics = color_profile.as_video_stream_profile().get_intrinsics()
+
+        original_fx = intrinsics.fx
+        original_fy = intrinsics.fy
+        original_cx = intrinsics.ppx
+        original_cy = intrinsics.ppy
+        original_width = intrinsics.width  # Original width before crop
+        original_height = intrinsics.height  # Original height before crop
+
+        # Assuming self.resolution is the new size after cropping and resizing
+        new_width = self.resolution
+        new_height = self.resolution
+
+        # Calculate crop dimensions
+        crop = min(original_width, original_height)
+        left = round((original_width - crop) / 2)
+        top = round((original_height - crop) / 2)
+
+        # Adjust principal point for the crop
+        cx_prime = original_cx - left
+        cy_prime = original_cy - top
+
+        # Calculate scale factors
+        scale_factor_x = new_width / crop
+        scale_factor_y = new_height / crop
+
+        # Adjust focal lengths and principal points for resize
+        fx_prime = original_fx * scale_factor_x
+        fy_prime = original_fy * scale_factor_y
+        cx_prime *= scale_factor_x
+        cy_prime *= scale_factor_y
+
+        # New camera matrix
+        new_camera_matrix = np.array(
+            [[fx_prime, 0, cx_prime], [0, fy_prime, cy_prime], [0, 0, 1]]
+        )
+
+        return new_camera_matrix
 
 
 def main():

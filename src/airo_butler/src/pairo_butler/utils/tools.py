@@ -8,12 +8,14 @@ from multiprocessing import current_process
 import numpy as np
 from tqdm import tqdm
 
-bcolors = {'PINK': '\033[95m',
-           'BLUE': '\033[94m',
-           'CYAN': '\033[96m',
-           'GREEN': '\033[92m',
-           'YELLOW': '\033[93m',
-           'RED': '\033[91m', }
+bcolors = {
+    "PINK": "\033[95m",
+    "BLUE": "\033[94m",
+    "CYAN": "\033[96m",
+    "GREEN": "\033[92m",
+    "YELLOW": "\033[93m",
+    "RED": "\033[91m",
+}
 
 
 class UGENT:
@@ -62,19 +64,19 @@ def pretty_string(message: str, color=None, bold=False, underline=False):
     """
     ou = message
     if color:
-        ou = bcolors[color] + message + '\033[0m'
+        ou = bcolors[color] + message + "\033[0m"
     if bold:
-        ou = '\033[1m' + ou + '\033[0m'
+        ou = "\033[1m" + ou + "\033[0m"
     if underline:
-        ou = '\033[4m' + ou + '\033[0m'
+        ou = "\033[4m" + ou + "\033[0m"
     return ou
 
 
 def poem(string):
     if len(string) > 20:
-        return string[:20] + '...'
+        return string[:20] + "..."
     else:
-        return string + ' ' * (23 - len(string))
+        return string + " " * (23 - len(string))
 
 
 def pyout(*message, color="PINK"):
@@ -86,7 +88,7 @@ def pyout(*message, color="PINK"):
     :return:
     """
 
-    message = ' '.join(str(m) for m in message)
+    message = " ".join(str(m) for m in message)
 
     trace = traceback.extract_stack()[-2]
 
@@ -108,14 +110,14 @@ pseudo_random_state = 49
 
 
 def pysend(*message):
-    message = ' '.join(str(m) for m in message)
+    message = " ".join(str(m) for m in message)
     trace = traceback.extract_stack()[-2]
 
     fname = trace.filename.replace(os.path.abspath(os.curdir), "...")
 
     trace = f"{fname}: {trace.name}(...) - ln{trace.lineno}"
 
-    subprocess.Popen(['notify-send', trace, message])
+    subprocess.Popen(["notify-send", trace, message])
 
 
 def prng(decimals=4):
@@ -125,8 +127,8 @@ def prng(decimals=4):
     for ii in range(1, decimals + 1):
         pseudo_random_state = (7 * pseudo_random_state) % 101
 
-        ou += (pseudo_random_state % 10) * 10 ** -ii
-    ou = str(ou)[:decimals + 2]
+        ou += (pseudo_random_state % 10) * 10**-ii
+    ou = str(ou)[: decimals + 2]
 
     return float(ou)
 
@@ -158,15 +160,26 @@ def listdir(path: str):
     filepaths = [os.path.abspath(path) for path in filepaths]
     return filepaths
 
+
 def fname(path: str):
     return path.split("/")[-1]
+
 
 def pbar(iterable, desc="", leave=False, total=None, disable=False):
     # return iterable
     host = socket.gethostname()
 
     if host in ("AM", "kat", "gorilla"):
-        return tqdm(iterable, desc=poem(desc), leave=leave, total=total,
-                    disable=(current_process().name != "MainProcess"))
+        return tqdm(
+            iterable,
+            desc=poem(desc),
+            leave=leave,
+            total=total,
+            disable=(current_process().name != "MainProcess"),
+        )
     else:
         return iterable
+
+
+def degree_string(angle: float):
+    return f"{np.rad2deg(angle):.0f}"

@@ -2,19 +2,26 @@
 import os
 import pickle
 from typing import Dict, Optional
+import sys
+
+print(f"Python version: {sys.version}")
 
 import numpy as np
 from airo_robots.grippers import Robotiq2F85
 from airo_robots.manipulators import URrtde
-from pairo_butler.ur3_arms.ur3_planner import Planner
+from pairo_butler.utils.tools import pyout
 
 import rospy as ros
 
 from airo_butler.msg import PODMessage
 from airo_butler.srv import PODService, PODServiceResponse
 from pairo_butler.ur3_arms.ur3_constants import IP_RIGHT_UR3, IP_LEFT_UR3
+from pairo_butler.ur3_arms.ur3_utils import convert_homegeneous_pose_to_rotvec_pose
 from pairo_butler.utils.pods import POD, UR3StatePOD, publish_pod
 from pairo_butler.utils.pods import BooleanPOD, UR3PosePOD, UR3GripperPOD
+
+RARM_REST = np.array([+0.00, -1.00, +0.50, -0.50, -0.50, +0.00]) * np.pi
+LARM_REST = np.array([+0.00, -0.00, -0.50, -0.50, +0.50, +0.00]) * np.pi
 
 
 class UR3_server:
@@ -40,8 +47,6 @@ class UR3_server:
 
         self.services: Dict[str, ros.Service] = self.__init_services()
 
-        self.planner: Planner = Planner(self.arm_left, self.arm_right)
-
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
@@ -55,9 +60,6 @@ class UR3_server:
 
     def run(self):
         while not ros.is_shutdown():
-            msg_left = PODMessage()
-            msg_right = PODMessage()
-
             timestamp = ros.Time.now()
             pod_left = UR3StatePOD(
                 self.arm_left.get_tcp_pose(),
@@ -88,9 +90,34 @@ class UR3_server:
                 "move_to_tcp_pose", PODService, self.move_to_tcp_pose
             ),
             "move_gripper": ros.Service("move_gripper", PODService, self.move_gripper),
+            "inverse_kinematics": ros.Service(
+                "inverse_kinematics", PODService, self.inverse_kinematics
+            ),
         }
 
         return services
+
+    def inverse_kinematics(self, req):
+        if True:
+            pod: UR3StatePOD = pickle.loads(req.pod)
+
+            arm = self.arm_right if pod.side == "right" else self.arm_left
+            tcp_rotvec_pose = convert_homegeneous_pose_to_rotvec_pose(pod.tcp_pose)
+            q_near = pod.joint_configuration
+            joint_config = arm.rtde_control.getInverseKinematics(
+                tcp_rotvec_pose, q_near
+            )
+
+        response = PODServiceResponse()
+        response.pod = pickle.dumps(
+            UR3StatePOD(
+                tcp_pose=pod.tcp_pose,
+                joint_configuration=joint_config,
+                side=pod.side,
+                timestamp=ros.Time.now(),
+            )
+        )
+        return response
 
     def move_to_joint_configuration(self, req):
         try:
@@ -168,11 +195,7 @@ class UR3_server:
 def main():
     server = UR3_server(IP_RIGHT_UR3, IP_LEFT_UR3)
     server.start_ros()
-
-    POSE_RIGHT_COUNTER = np.array([+0.60, -1.00, +0.25, -0.25, -0.75, +0.00]) * np.pi
-    server.planner.plan_to_joint_configuration(sophie=POSE_RIGHT_COUNTER)
-
-    # server.run()
+    server.run()
 
 
 if __name__ == "__main__":

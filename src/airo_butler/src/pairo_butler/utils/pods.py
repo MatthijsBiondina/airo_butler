@@ -45,7 +45,7 @@ class UR3GripperPOD(POD):
 
 class UR3PosePOD(POD):
     """
-    Represents the pose COMMAND data for a UR3 robot arm.
+    Represents the pose COMMAND data for a UR3 ro4ot arm.
 
     Attributes:
         pose (np.ndarray): Numpy array representing the pose.
@@ -79,19 +79,27 @@ class UR3StatePOD(POD):
         POD (_type_): _description_
     """
 
-    __slots__ = ["tcp_pose", "joint_configuration", "gripper_width", "timestamp"]
+    __slots__ = [
+        "tcp_pose",
+        "joint_configuration",
+        "gripper_width",
+        "timestamp",
+        "side",
+    ]
 
     def __init__(
         self,
         tcp_pose: np.ndarray,
         joint_configuration: np.ndarray,
-        gripper_width: float,
         timestamp: ros.Time,
+        gripper_width: Optional[float] = None,
+        side: Optional[str] = None,
     ):
         self.tcp_pose: np.ndarray = tcp_pose
         self.joint_configuration: np.ndarray = joint_configuration
-        self.gripper_width: float = gripper_width
+        self.gripper_width: Optional[float] = gripper_width
         self.timestamp: ros.Time = timestamp
+        self.side = side
 
 
 class BooleanPOD(POD):
@@ -117,10 +125,13 @@ class ImagePOD(POD):
         timestamp
     """
 
-    __slots__ = ["image", "timestamp"]
+    __slots__ = ["image", "intrinsics_matrix", "timestamp"]
 
-    def __init__(self, image: Image, timestamp: ros.Time):
+    def __init__(
+        self, image: Image, intrinsics_matrix: np.ndarray, timestamp: ros.Time
+    ):
         self.image = image
+        self.intrinsics_matrix = intrinsics_matrix
         self.timestamp = timestamp
 
 
@@ -147,20 +158,29 @@ class ZEDPOD(POD):
         POD (_type_): _description_
     """
 
-    __slots__ = ["timestamp", "rgb_image", "point_cloud", "depth_image", "depth_map"]
+    __slots__ = [
+        "timestamp",
+        "rgb_image",
+        "point_cloud",
+        "depth_image",
+        "depth_map",
+        "intrinsics_matrix",
+    ]
 
     def __init__(
         self,
         rgb_image: np.ndarray,
-        point_cloud: np.ndarray,
-        depth_image: np.ndarray,
-        depth_map: np.ndarray,
+        intrinsics_matrix: np.ndarray,
         timestamp: ros.Time,
+        point_cloud: Optional[np.ndarray] = None,
+        depth_image: Optional[np.ndarray] = None,
+        depth_map: Optional[np.ndarray] = None,
     ) -> None:
         self.rgb_image = rgb_image
         self.point_cloud = point_cloud
         self.depth_image = depth_image
         self.depth_map = depth_map
+        self.intrinsics_matrix = intrinsics_matrix
         self.timestamp = timestamp
 
 
