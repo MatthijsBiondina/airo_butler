@@ -1,11 +1,148 @@
-from typing import Optional, Tuple
+import pickle
+import sys
+from typing import List, Optional, Tuple
 from PIL import Image
 import numpy as np
 from pairo_butler.utils.pods import ImagePOD, publish_pod
 from pairo_butler.utils.tools import pyout
+from airo_butler.srv import Reset
 import rospy as ros
 import pyrealsense2
 from airo_butler.msg import PODMessage
+
+
+class RS2Client:
+    """
+    A ROS client class for interfacing with a RealSense2 (RS2) camera.
+
+    Attributes:
+        QUEUE_SIZE (int): The size of the subscriber's queue.
+        RATE (int): The rate at which the client operates.
+        timeout (int): The maximum time to wait for the RS2 service to be available.
+
+    Methods:
+        __init__(timeout=5): Initializes the RS2 client with a specified timeout.
+        pod: Property that returns the latest ImagePOD received from the RS2 camera.
+        __sub_callback(msg): Callback function for the ROS subscriber.
+        __signal_rs2_reset(): Signals a hardware reset to the RS2 camera.
+
+    The RS2Client class is responsible for subscribing to a RealSense2 camera's color frame topic, handling the callback, and providing an interface to access the latest image data. It includes functionality to reset the RS2 camera and handle timeouts if the camera or service is unavailable.
+    """
+
+    QUEUE_SIZE = 2
+    RATE = 30
+
+    def __init__(self, timeout: int = 5):
+        """
+        Initializes the RS2 client.
+
+        This constructor sets up the RS2 client, signals a reset to the RS2 camera, and
+        initializes a ROS subscriber to the '/color_frame' topic.
+
+        Args:
+            timeout (int): The maximum time in seconds to wait for the RS2 service to be
+            available. Default is 5 seconds.
+        """
+        self.timeout = ros.Duration(timeout)
+
+        self.__signal_rs2_reset()
+        self.subscriber: ros.Subscriber = ros.Subscriber(
+            "/rs2_topic", PODMessage, self.__sub_callback, queue_size=self.QUEUE_SIZE
+        )
+
+        # Placeholders
+        self.__rs2_pod: Optional[ImagePOD] = None
+        self.__timestamps: List[ros.Time] = []
+
+    @property
+    def pod(self) -> ImagePOD:
+        """
+        Retrieves the latest ImagePOD received from the RS2 camera.
+
+        This property waits until an ImagePOD is received or until the timeout is reached.
+        If no ImagePOD is received within the timeout period, it logs an error, signals a
+        ROS shutdown, and exits.
+
+        Returns:
+            The latest ImagePOD object received from the RS2 camera.
+        """
+        t0 = ros.Time.now()
+        while self.__rs2_pod is None and ros.Time.now() < t0 + self.timeout:
+            ros.sleep(1 / self.RATE)
+        if self.__rs2_pod is None:
+            ros.logerr("Did not recieve pod from RS2. Is it running?")
+            ros.signal_shutdown("Did not receive pod from RS2.")
+            sys.exit(0)
+        return self.__rs2_pod
+
+    @property
+    def fps(self) -> int:
+        """
+        Computes the frame-rate at which frames are recieved.
+
+        Returns:
+            int: Frames per second of the RealSense2
+        """
+        return len(self.__timestamps)
+
+    @property
+    def latency(self) -> int:
+        """
+        Computes the latency of incoming frames.
+
+        Returns:
+            int: latency in milliseconds
+        """
+        try:
+            latency = ros.Time.now() - self.__timestamps[-1]
+            return int(latency.to_sec() * 1000)
+        except IndexError:
+            return -1  # -1 indicates no frames recieved in the last second.
+
+    def __sub_callback(self, msg: PODMessage):
+        """
+        Callback function for the ROS subscriber.
+
+        This function is automatically called when a new message is received on the
+        '/rs2_topic' topic. It deserializes the message and updates the internal
+        ImagePOD object.
+
+        Args:
+            msg: The message received from the topic.
+        """
+        pod = pickle.loads(msg.data)
+        self.__rs2_pod = pod
+        self.__timestamps.append(pod.timestamp)
+        while pod.timestamp - ros.Duration(secs=1) > self.__timestamps[0]:
+            self.__timestamps.pop(0)
+
+    def __signal_rs2_reset(self):
+        """
+        Signals a hardware reset to the RS2 camera.
+
+        This function waits for the 'reset_realsense_service' to become available within
+        the specified timeout. If the service is not available, it logs an error, signals
+        a ROS shutdown, and exits. If the service is available, it calls the service to
+        reset the camera.
+        """
+        try:
+            # Check whether the service is running
+            ros.wait_for_service("reset_realsense_service", timeout=self.timeout)
+        except ros.exceptions.ROSException:
+            # If not, exit with error message
+            ros.logerr(f"Cannot connect to RS2 server. Is it running?")
+            ros.signal_shutdown("Cannot connect to RS2 server.")
+            sys.exit(0)
+
+        # Connect to and call reset service.
+        service = ros.ServiceProxy("reset_realsense_service", Reset)
+        resp = service()
+
+        # If reset unsuccessful, exit with error message.
+        if not resp.success:
+            ros.logerr(f"Failed to reset rs2 camera.")
+            ros.signal_shutdown("Failed to reset rs2 camera.")
+            sys.exit(0)
 
 
 class RS2_camera:
@@ -17,7 +154,7 @@ class RS2_camera:
     def __init__(
         self,
         name: str = "rs2",
-        fps: int = 15,
+        fps: int = 30,
         rs2_resolution: Tuple[int, int] = (960, 540),
         out_resolution: int = 720,
     ):
@@ -36,12 +173,13 @@ class RS2_camera:
         Raises:
             AssertionError: If the specified `rs2_resolution` is not within the predefined list of allowed resolutions.
         """
-
+        self.rs2_resolution = rs2_resolution
+        self.fps = fps
         # ROS HOUSEKEEPING
         # Set the node name as provided or default.
         self.node_name: str = name
         # Define the publication topic for camera frames.
-        self.pub_name: str = "/color_frame"
+        self.pub_name: str = "/rs2_topic"
         # Initialize a ROS rate object, to be set in 'start_ros' method.
         self.rate: Optional[ros.Rate] = None
         # Initialize a ROS publisher, to be set in 'start_ros' method.
@@ -65,6 +203,10 @@ class RS2_camera:
 
         self.intrinsics_matrix = self.__compute_intrinsics_matrix()
 
+        # Placeholders
+        self.__reset: bool = False
+        self.__reset_result: Optional[bool] = None
+
     def start_ros(self):
         """
         Initializes the ROS node and sets up the publisher for the RealSense2 camera
@@ -82,6 +224,11 @@ class RS2_camera:
         self.publisher = ros.Publisher(
             self.pub_name, PODMessage, queue_size=self.QUEUE_SIZE
         )
+        # Initialize reset procedure
+        self.reset_service = ros.Service(
+            "reset_realsense_service", Reset, self.toggle_reset
+        )
+
         # Log an information message indicating successful initialization.
         ros.loginfo("RS2_camera: OK!")
 
@@ -96,8 +243,12 @@ class RS2_camera:
         """
         # Continuously run until ROS is shutdown.
         while not ros.is_shutdown():
+            if self.__reset:
+                self.reset_camera()
+
             # Wait and capture a color frame from the RealSense2 camera.
             frame = self.pipeline.wait_for_frames().get_color_frame()
+
             # Convert the captured frame to a PIL image.
             image = self.__frame2pillow(frame)
             # Create an ImagePOD object with the image and current timestamp.
@@ -110,6 +261,67 @@ class RS2_camera:
             publish_pod(self.publisher, pod)
             # Sleep for a while as per the set rate to control the publishing frequency.
             self.rate.sleep()
+
+    def toggle_reset(self, msg):
+        """
+        Toggles the reset state for the RealSense2 Camera and waits for the reset process
+        to complete.
+
+        This function sets the reset flag to True, initiating the reset process in another
+        function. It then waits until the reset result is available, checking at the
+        frequency of `publish_rate`.
+
+        Args:
+            msg: The message received (unused in this function but required for ROS
+            service structure).
+
+        Returns:
+            The result of the reset process (True if successful, False otherwise).
+        """
+        # Initialize reset result to None and flag reset as True to start the process
+        self.__reset_result = None
+        self.__reset = True
+
+        # Wait in a loop until the reset result is updated
+        while self.__reset_result is None:
+            ros.sleep(
+                1 / self.publish_rate
+            )  # Sleep to prevent blocking at the frequency of publish_rate
+
+        # Return the result of the reset process
+        return self.__reset_result
+
+    def reset_camera(self):
+        """
+        Performs the actual hardware reset of the RealSense2 Camera.
+
+        This function stops the camera pipeline, restarts it, and waits for a brief
+        moment to ensure the reset is complete. It updates the reset result flag based
+        on the success of these operations. If an exception occurs during the reset, it
+        logs an error and sets the reset result to False.
+
+        Exceptions are caught and logged, and the reset result is set accordingly.
+        """
+        try:
+            # Log the initiation of the reset process
+            ros.loginfo("Resetting RealSense2 Camera...")
+
+            # Stop and restart the camera pipeline to perform the reset
+            self.pipeline.stop()
+            self.pipeline.start()
+
+            # Wait for a brief moment after restarting the pipeline
+            ros.sleep(1.0)
+
+            # Reset process is complete, update flags
+            self.__reset = False
+            self.__reset_result = True
+
+        except Exception as e:
+            # Log any exception during reset and update the reset result to False
+            ros.logerr(f"Failed to reset rs2: {e}")
+            self.__reset = False
+            self.__reset_result = False
 
     def __frame2pillow(self, frame: pyrealsense2.frame):
         """

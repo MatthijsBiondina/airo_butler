@@ -29,32 +29,32 @@ class UR3_server:
     QUEUE_SIZE = 2
 
     def __init__(self, ip_right: str, ip_left: str, name: str = "ur3_server"):
-        self.arm_right = URrtde(ip_right, URrtde.UR3E_CONFIG)
-        self.arm_right.gripper = Robotiq2F85(ip_right)
-        self.arm_left = URrtde(ip_left, URrtde.UR3E_CONFIG)
-        self.arm_left.gripper = Robotiq2F85(ip_left)
+        self.sophie = URrtde(ip_right, URrtde.UR3E_CONFIG)
+        self.sophie.gripper = Robotiq2F85(ip_right)
+        self.wilson = URrtde(ip_left, URrtde.UR3E_CONFIG)
+        self.wilson.gripper = Robotiq2F85(ip_left)
 
         self.node_name: str = f"{name}"
         self.rate: Optional[ros.Rate] = None
 
         # Declare ROS publishers
-        self.left_pub_name: str = "/ur3_state_left"
-        self.right_pub_name: str = "/ur3_state_right"
+        self.wilson_pub_name: str = "/ur3_state_wilson"
+        self.sophie_pub_name: str = "/ur3_state_sophie"
 
         # Placeholder for publisher
-        self.pub_left: Optional[ros.Publisher] = None
-        self.pub_right: Optional[ros.Publisher] = None
+        self.pub_wilson: Optional[ros.Publisher] = None
+        self.pub_sophie: Optional[ros.Publisher] = None
 
         self.services: Dict[str, ros.Service] = self.__init_services()
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
-        self.pub_left = ros.Publisher(
-            self.left_pub_name, PODMessage, queue_size=self.QUEUE_SIZE
+        self.pub_wilson = ros.Publisher(
+            self.wilson_pub_name, PODMessage, queue_size=self.QUEUE_SIZE
         )
-        self.pub_right = ros.Publisher(
-            self.right_pub_name, PODMessage, queue_size=self.QUEUE_SIZE
+        self.pub_sophie = ros.Publisher(
+            self.sophie_pub_name, PODMessage, queue_size=self.QUEUE_SIZE
         )
         ros.loginfo("UR3_server: OK!")
 
@@ -62,20 +62,22 @@ class UR3_server:
         while not ros.is_shutdown():
             timestamp = ros.Time.now()
             pod_left = UR3StatePOD(
-                self.arm_left.get_tcp_pose(),
-                self.arm_left.get_joint_configuration(),
-                self.arm_left.gripper.get_current_width(),
-                timestamp,
+                tcp_pose=self.wilson.get_tcp_pose(),
+                joint_configuration=self.wilson.get_joint_configuration(),
+                gripper_width=self.wilson.gripper.get_current_width(),
+                timestamp=timestamp,
+                arm_name="wilson",
             )
             pod_right = UR3StatePOD(
-                self.arm_right.get_tcp_pose(),
-                self.arm_right.get_joint_configuration(),
-                self.arm_right.gripper.get_current_width(),
-                timestamp,
+                tcp_pose=self.sophie.get_tcp_pose(),
+                joint_configuration=self.sophie.get_joint_configuration(),
+                gripper_width=self.sophie.gripper.get_current_width(),
+                timestamp=timestamp,
+                arm_name="sophie",
             )
 
-            publish_pod(self.pub_left, pod_left)
-            publish_pod(self.pub_right, pod_right)
+            publish_pod(self.pub_wilson, pod_left)
+            publish_pod(self.pub_sophie, pod_right)
 
             self.rate.sleep()
 
@@ -101,7 +103,12 @@ class UR3_server:
         if True:
             pod: UR3StatePOD = pickle.loads(req.pod)
 
-            arm = self.arm_right if pod.side == "right" else self.arm_left
+            assert pod.arm_name in [
+                "sophie",
+                "wilson",
+            ], f"Invalid arm name: {pod.arm_name}"
+
+            arm = self.sophie if pod.arm_name == "sophie" else self.wilson
             tcp_rotvec_pose = convert_homegeneous_pose_to_rotvec_pose(pod.tcp_pose)
             q_near = pod.joint_configuration
             joint_config = arm.rtde_control.getInverseKinematics(
@@ -113,7 +120,7 @@ class UR3_server:
             UR3StatePOD(
                 tcp_pose=pod.tcp_pose,
                 joint_configuration=joint_config,
-                side=pod.side,
+                arm_name=pod.arm_name,
                 timestamp=ros.Time.now(),
             )
         )
@@ -123,19 +130,19 @@ class UR3_server:
         try:
             pod: UR3PosePOD = pickle.loads(req.pod)
 
-            if pod.side == "left":
-                action = self.arm_left.move_to_joint_configuration(
+            if pod.arm_name == "wilson":
+                action = self.wilson.move_to_joint_configuration(
                     pod.pose, pod.joint_speed
                 )
-            elif pod.side == "right":
-                action = self.arm_right.move_to_joint_configuration(
+            elif pod.arm_name == "sophie":
+                action = self.sophie.move_to_joint_configuration(
                     pod.pose, pod.joint_speed
                 )
             else:
-                raise ValueError(f"Invalid side: {pod.side}")
+                raise ValueError(f"Invalid arm: {pod.arm_name}")
 
             if pod.blocking:
-                action.wait()
+                action.wait(timeout=300.0)
 
             return_value = True
         except Exception as e:
@@ -149,15 +156,15 @@ class UR3_server:
         try:
             pod: UR3PosePOD = pickle.loads(req.pod)
 
-            if pod.side == "left":
-                action = self.arm_left.move_to_tcp_pose(pod.pose, pod.joint_speed)
-            elif pod.side == "right":
-                action = self.arm_right.move_to_tcp_pose(pod.pose, pod.joint_speed)
+            if pod.side == "wilson":
+                action = self.wilson.move_to_tcp_pose(pod.pose, pod.joint_speed)
+            elif pod.side == "sophie":
+                action = self.sophie.move_to_tcp_pose(pod.pose, pod.joint_speed)
             else:
                 raise ValueError(f"Invalid side: {pod.side}")
 
             if pod.blocking:
-                action.wait()
+                action.wait(timeout=300.0)
             return_value = True
         except Exception as e:
             return_value = False
@@ -171,8 +178,8 @@ class UR3_server:
             pod: UR3GripperPOD = pickle.loads(req.pod)
 
             # Determine the arm based on the side
-            assert pod.side in ["left", "right"]
-            arm = self.arm_left if pod.side == "left" else self.arm_right
+            assert pod.arm_name in ["wilson", "sophie"]
+            arm = self.wilson if pod.arm_name == "wilson" else self.sophie
 
             # Determine the width to move the gripper to
             if isinstance(pod.pose, float):
@@ -183,7 +190,7 @@ class UR3_server:
                     0.0 if pod.pose == "close" else arm.gripper.gripper_specs.max_width
                 )
 
-            arm.gripper.move(width)
+            arm.gripper.move(width, speed=0.15, force=250).wait(timeout=300.0)
             return_value = True
         except Exception as e:
             return_value = False

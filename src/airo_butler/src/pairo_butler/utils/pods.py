@@ -31,15 +31,13 @@ class UR3GripperPOD(POD):
         blocking (bool): If True, the movement will be blocking.
     """
 
-    __slots__ = ["pose", "side", "blocking"]
+    __slots__ = ["pose", "arm_name", "blocking"]
 
-    def __init__(
-        self, pose: Union[str, float], left_or_right_arm: str, blocking: bool = True
-    ):
+    def __init__(self, pose: Union[str, float], arm_name: str, blocking: bool = True):
         assert isinstance(pose, float) or pose in ["open", "close"]
         self.pose: Union[str, float] = pose
-        assert left_or_right_arm in ["left", "right"]
-        self.side: str = left_or_right_arm
+        assert arm_name in ["wilson", "sophie"]
+        self.arm_name: str = arm_name
         self.blocking = blocking
 
 
@@ -54,18 +52,18 @@ class UR3PosePOD(POD):
         blocking (bool): If True, the movement will be blocking.
     """
 
-    __slots__ = ["pose", "joint_speed", "side", "blocking"]
+    __slots__ = ["pose", "joint_speed", "arm_name", "blocking"]
 
     def __init__(
         self,
         pose: np.ndarray,
-        left_or_right_arm: str,
+        arm_name: str,
         joint_speed: Optional[float] = None,
         blocking: bool = True,
     ):
         self.pose: np.ndarray = pose
-        assert left_or_right_arm in ["left", "right"]
-        self.side = left_or_right_arm
+        assert arm_name in ["wilson", "sophie"]
+        self.arm_name = arm_name
         assert joint_speed is None or joint_speed > 0
         self.joint_speed: Optional[float] = joint_speed
         self.blocking = blocking
@@ -84,7 +82,7 @@ class UR3StatePOD(POD):
         "joint_configuration",
         "gripper_width",
         "timestamp",
-        "side",
+        "arm_name",
     ]
 
     def __init__(
@@ -93,13 +91,13 @@ class UR3StatePOD(POD):
         joint_configuration: np.ndarray,
         timestamp: ros.Time,
         gripper_width: Optional[float] = None,
-        side: Optional[str] = None,
+        arm_name: Optional[str] = None,
     ):
         self.tcp_pose: np.ndarray = tcp_pose
         self.joint_configuration: np.ndarray = joint_configuration
         self.gripper_width: Optional[float] = gripper_width
         self.timestamp: ros.Time = timestamp
-        self.side = side
+        self.arm_name: Optional[str] = arm_name
 
 
 class BooleanPOD(POD):

@@ -35,7 +35,7 @@ class UR3SophieSolver:
     def __init__(self) -> None:
         pass
 
-    def solve_tcp_horizontal(self, tool_xyz, z_axis):
+    def solve_tcp_horizontal(self, tool_xyz, z_axis, flipped=False, allow_flip=True):
         assert z_axis[-1] == 0, "Camera z-axis must be horizontal"
         # Normalize z-axis
         z_axis /= np.linalg.norm(z_axis)
@@ -46,8 +46,11 @@ class UR3SophieSolver:
         # Calculate wrist3 point
         wrist3 = tool_xyz - z_axis * LENGTH_WRIST3_TO_TOOL
 
-        # Calculate wrist2 point (straight below wrist3)
-        wrist2 = wrist3 - np.array([0.0, 0.0, 1.0]) * LENGTH_WRIST2_TO_WRIST3
+        # Calculate wrist2 point
+        if flipped:
+            wrist2 = wrist3 + np.array([0.0, 0.0, 1.0]) * LENGTH_WRIST2_TO_WRIST3
+        else:
+            wrist2 = wrist3 - np.array([0.0, 0.0, 1.0]) * LENGTH_WRIST2_TO_WRIST3
 
         # Calculate wrist1 point. The orthogonal projection of wrist2 onto the radius
         # of the circle around which the base spins.
@@ -57,7 +60,6 @@ class UR3SophieSolver:
             / distance_wrist2_projection_on_xy_plane
         )
 
-        # pyout(distance_wrist2_projection_on_xy_plane)
         if np.isnan(wrist2_offset_angle):
             assert (
                 distance_wrist2_projection_on_xy_plane < FORBIDDEN_COLUMN_RADIUS
@@ -113,7 +115,7 @@ class UR3SophieSolver:
                 tool_to_wrist2[1] - tool_to_inter1[1],
                 tool_to_wrist2[0] - tool_to_inter1[0],
             )
-            pyout(z_axis)
+
             z_axis_new = z_axis
             if abs(angle0) < abs(angle1):
                 z_axis_new[:2] = -tool_to_inter0 / np.linalg.norm(tool_to_inter0)
@@ -142,8 +144,6 @@ class UR3SophieSolver:
             / np.linalg.norm(wrist2_rotated_projection_xy)
             * distance_base_to_wrist1
         )
-
-        pyout(f"Wrist 1: {wrist1}")
 
         # Compute base joint angle
         base_angle = np.arctan2(wrist1[1], wrist1[0]) % (2 * np.pi) - np.pi
@@ -188,16 +188,10 @@ class UR3SophieSolver:
             wrist3_angle = angle_intermediate_wrist1_tool_unsigned
         wrist3_angle = (wrist3_angle + np.pi) % (2 * np.pi) - np.pi
 
-        pyout(f"wrist3: {degree_string(wrist3_angle)}")
-
-        joint_config[4] = wrist3_angle - 0.5 * np.pi
-
-        # pyout(f"{np.rad2deg(wrist2_angle):.0f}")
-
-        # pyout(
-        #     f"{np.rad2deg(wrist2_angle_unsigned):.0f} - "
-        #     f"{np.rad2deg(angle_intermediate_wrist1_tool_unsigned):.0f}"
-        # )
+        if flipped:
+            joint_config[4] = 0.5 * np.pi - wrist3_angle
+        else:
+            joint_config[4] = wrist3_angle - 0.5 * np.pi
 
         # Compute the angle between base -> wrist1 and the xy plane
         # This angle can be larger than 90 degrees if we lean backwards
@@ -217,7 +211,10 @@ class UR3SophieSolver:
         # So that the gripper is horizontal
         # todo: points down now probably +0.5 or something like that
         wrist2_angle = joint_config[1] + joint_config[2]
-        joint_config[3] = -np.pi - wrist2_angle
+        if flipped:
+            joint_config[3] = -wrist2_angle
+        else:
+            joint_config[3] = -np.pi - wrist2_angle
 
         # Compute tcp
         tcp = np.array(
@@ -231,13 +228,19 @@ class UR3SophieSolver:
         tcp[:2, 2] = z_axis[:2]  # third element must be 0 (see assertion earlier)
         tcp[:3, 0] = np.cross(tcp[:3, 1], tcp[:3, 2])
 
+        # Check whether the hand should be flipped (wrist3 below wrist2)
+        if not flipped and np.rad2deg(wrist2_angle) > 15 and allow_flip:
+            return self.solve_tcp_horizontal(
+                tool_xyz=tool_xyz, z_axis=z_axis, flipped=True
+            )
+
         # Do some checks to avoid collision
         assert (
             np.rad2deg(elbow_angle) > 22
         ), f"Bending elbow {np.rad2deg(elbow_angle):.1f} degrees risks self-collision."
         assert wrist2[2] > 0.08, f"Wrist too close to table ({wrist2[2]*100:.1f} cm)"
 
-        return tcp, joint_config
+        return tcp, joint_config, flipped
 
     def solve_tcp_vertical_down(self, X_target):
         """
@@ -366,11 +369,6 @@ class UR3SophieSolver:
         # > the angle between the xy-plane and base->wrist1
         # > the angle betwen the base->wrist1 and base->elbow segments
         shoulder_angle = angle_base_wrist1_with_xy_plane + angle_elbow_base_wrist1
-        pyout(
-            f"angle base -> wrist1 with xy: {degree_string(angle_base_wrist1_with_xy_plane)}"
-        )
-        pyout(f"angle elbow-base-wrist1: {degree_string(angle_elbow_base_wrist1)}")
-        pyout(f"shoulder_angle: {degree_string(shoulder_angle)}")
 
         joint_config[1] = -shoulder_angle
 

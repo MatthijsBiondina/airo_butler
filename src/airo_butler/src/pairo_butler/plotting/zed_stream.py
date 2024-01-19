@@ -3,6 +3,7 @@ from typing import List, Optional
 from PIL import Image
 import cv2
 import numpy as np
+from pairo_butler.camera.zed_camera import ZEDClient
 from pairo_butler.plotting.plotting_utils import add_info_to_image
 import genpy
 from pairo_butler.utils.tools import pyout
@@ -25,63 +26,38 @@ class ZEDStreamRGB:
     def __init__(self, name: str = "zed_stream") -> None:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
-        self.subscriber: Optional[ros.Subscriber] = None
 
-        # Placeholders
-        self.depth_image: Optional[np.ndarray] = None
-        self.depth_map: Optional[np.ndarray] = None
-        self.point_cloud: Optional[np.ndarray] = None
-        self.rgb_image: Optional[np.ndarray] = None
-        self.intrinsics: Optional[np.ndarray] = None
-        self.timestamps: List[ros.Time] = []
+        self.zed: Optional[ZEDClient] = None
 
         self.window = PygameWindow("Zed2i", size=self.SIZE)
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
-        self.subscriber = ros.Subscriber(
-            "/zed2i", PODMessage, self.__sub_callback, queue_size=self.QUEUE_SIZE
-        )
 
-    def __sub_callback(self, msg):
-        pod: ZEDPOD = pickle.loads(msg.data)
-        self.depth_image = pod.depth_image
-        self.depth_map = pod.depth_map
-        self.point_cloud = pod.point_cloud
-        self.rgb_image = pod.rgb_image
-        self.intrinsics = pod.intrinsics_matrix
-        self.timestamps.append(pod.timestamp)
-        while pod.timestamp - genpy.Duration(secs=1) > self.timestamps[0]:
-            self.timestamps.pop(0)
+        self.zed = ZEDClient()
 
     def run(self):
         while not ros.is_shutdown():
-            if self.rgb_image is not None:
-                fps = len(self.timestamps)
-                latency = ros.Time.now() - self.timestamps[-1]
-                latency_ms = int(latency.to_sec() * 1000)
+            frame = (self.zed.pod.rgb_image * 255).astype(np.uint8)
+            frame = cv2.resize(frame, self.SIZE)
 
-                frame = (self.rgb_image * 255).astype(np.uint8)
-                frame = cv2.resize(frame, self.SIZE)
+            detect_and_visualize_charuco_pose(
+                frame,
+                intrinsics=self.zed.pod.intrinsics_matrix,
+                aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
+                charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
+            )
+            frame = Image.fromarray(frame)
+            frame = frame.resize(self.SIZE)
+            frame = add_info_to_image(
+                frame,
+                title="Zed2i (RGB)",
+                frame_rate=f"{self.zed.fps} Hz",
+                latency=f"{self.zed.latency} ms",
+            )
 
-                detect_and_visualize_charuco_pose(
-                    frame,
-                    intrinsics=self.intrinsics,
-                    aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
-                    charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
-                )
-                frame = Image.fromarray(frame)
-                frame = frame.resize(self.SIZE)
-                frame = add_info_to_image(
-                    frame,
-                    title="Zed2i (RGB)",
-                    frame_rate=f"{fps} Hz",
-                    latency=f"{latency_ms} ms",
-                )
-
-                self.window.imshow(frame)
-
+            self.window.imshow(frame)
             self.rate.sleep()
 
 

@@ -33,8 +33,8 @@ class UR3Measurer:
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
-        self.wilson = UR3Client("left")
-        self.sophie = UR3Client("right")
+        self.wilson = UR3Client("wilson")
+        self.sophie = UR3Client("sophie")
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
@@ -134,39 +134,36 @@ class UR3Measurer:
         # )
         # self.sophie.grasp_down(X)
 
-        X = np.array([-0.3, 0.0, 0.69])
-        for z in (
+        Z = (
             np.array([-1.0, 0.0, 0.0]),
             np.array([0.0, -1.0, 0.0]),
-            np.array([1.0, 0.0, 0.0]),
+            # np.array([1.0, 0.0, 0.0]),
             np.array([0.0, 1.0, 0.0]),
-        ):
-            self.sophie.grasp_horizontal(X, z)
-
-        X = np.array(
-            [
-                -LENGTH_ELBOW_TO_WRIST1 - LENGTH_WRIST3_TO_TOOL,
-                -PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3,
-                LENGHT_ORIGIN_TO_BASE + LENGTH_BASE_TO_ELBOW + LENGTH_WRIST2_TO_WRIST3,
-            ]
         )
-        z = np.array([-1.0, 0.0, 0.0])
 
-        self.sophie.grasp_horizontal(X, z)
-
-        X = np.linspace(-0.25, +0.25, num=2, endpoint=True)
-        Y = np.linspace(-0.5, 0.5, num=3, endpoint=True)
+        X = (
+            # np.array([-0.45, 0.0, 0.9]),
+            # np.array([-0.45, 0.0, 0.85]),
+            # np.array([-0.45, 0.0, 0.8]),
+            # np.array([-0.45, 0.0, 0.75]),
+            # np.array([-0.45, 0.0, 0.7]),
+            # np.array([-0.45, 0.0, 0.65]),
+            np.array([-0.45, 0.0, 0.6]),
+            np.array([-0.45, 0.0, 0.55]),
+            # np.array([-0.45, 0.0, 0.5]),
+            # np.array([-0.45, 0.0, 0.45]),
+            # np.array([-0.45, 0.0, 0.4]),
+            # np.array([-0.45, 0.0, 0.3]),
+        )
         for x in X:
-            for y in Y:
-                try:
-                    self.sophie.grasp_down(np.array([x, y, 0.2]))
-                    self.sophie.grasp_down(np.array([x, y, 0.01]))
-                    self.sophie.close_gripper()
-                    time.sleep(1)
-                    self.sophie.open_gripper()
-                except AssertionError:
-                    pyout("Cannot reach (x,y)")
-            self.sophie.move_to_joint_configuration(SOPHIE_REST)
+            for z in Z:
+                self.sophie.move_to_tcp_horizontal(x, z)
+        self.sophie.move_to_joint_configuration(SOPHIE_REST)
+
+        # X = np.array([-0.3, 0.0, 0.69])
+        # for z in Z:
+        #     self.sophie.grasp_horizontal(X, z)
+        # self.sophie.move_to_joint_configuration(SOPHIE_REST)
 
         return STATE_DONE
 

@@ -58,6 +58,7 @@ add_message_files(
 add_service_files(
   FILES
   PODService.srv
+  Reset.srv
 )
 
 ## Generate actions in the 'action' folder
