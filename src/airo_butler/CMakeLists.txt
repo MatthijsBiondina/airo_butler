@@ -165,6 +165,7 @@ catkin_install_python(PROGRAMS
   nodes/ur3_server
   nodes/realsense2
   nodes/zed2i
+  nodes/zed2i_pointcloud
   nodes/camera_plotter
   nodes/zed_plotter
   nodes/keypoint_detector

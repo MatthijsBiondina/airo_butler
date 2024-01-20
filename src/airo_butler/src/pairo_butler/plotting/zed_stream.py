@@ -1,5 +1,6 @@
 import pickle
 from typing import List, Optional
+import warnings
 from PIL import Image
 import cv2
 import numpy as np
@@ -21,12 +22,11 @@ from airo_camera_toolkit.calibration.fiducial_markers import (
 class ZEDStreamRGB:
     QUEUE_SIZE = 2
     PUBLISH_RATE = 30
-    SIZE = (1280, 720)
+    SIZE = (910, 512)
 
     def __init__(self, name: str = "zed_stream") -> None:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
-
         self.zed: Optional[ZEDClient] = None
 
         self.window = PygameWindow("Zed2i", size=self.SIZE)
@@ -42,12 +42,14 @@ class ZEDStreamRGB:
             frame = (self.zed.pod.rgb_image * 255).astype(np.uint8)
             frame = cv2.resize(frame, self.SIZE)
 
-            detect_and_visualize_charuco_pose(
-                frame,
-                intrinsics=self.zed.pod.intrinsics_matrix,
-                aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
-                charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
-            )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                detect_and_visualize_charuco_pose(
+                    frame,
+                    intrinsics=self.zed.pod.intrinsics_matrix,
+                    aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
+                    charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
+                )
             frame = Image.fromarray(frame)
             frame = frame.resize(self.SIZE)
             frame = add_info_to_image(

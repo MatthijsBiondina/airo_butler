@@ -177,8 +177,6 @@ class CameraCalibration:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
 
-        ros.init_node(self.node_name, log_level=ros.INFO)
-
         self.zed: Optional[ZEDClient] = None
         self.rs2: Optional[RS2Client] = None
         self.wilson: Optional[UR3Client] = None

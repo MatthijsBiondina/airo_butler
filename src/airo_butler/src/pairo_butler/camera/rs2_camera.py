@@ -154,7 +154,7 @@ class RS2_camera:
     def __init__(
         self,
         name: str = "rs2",
-        fps: int = 30,
+        fps: int = 15,
         rs2_resolution: Tuple[int, int] = (960, 540),
         out_resolution: int = 720,
     ):
@@ -204,6 +204,7 @@ class RS2_camera:
         self.intrinsics_matrix = self.__compute_intrinsics_matrix()
 
         # Placeholders
+        self.__last_reset: Optional[ros.Time] = None
         self.__reset: bool = False
         self.__reset_result: Optional[bool] = None
 
@@ -218,6 +219,8 @@ class RS2_camera:
         """
         # Initialize the ROS node with the specified node name and log level.
         ros.init_node(self.node_name, log_level=ros.INFO)
+        # Set reset time
+        self.__last_reset = ros.Time.now()
         # Set the publish rate for the node.
         self.rate = ros.Rate(self.publish_rate)
         # Initialize the ROS publisher with the specified topic, message type, and queue size.
@@ -303,19 +306,24 @@ class RS2_camera:
         Exceptions are caught and logged, and the reset result is set accordingly.
         """
         try:
-            # Log the initiation of the reset process
-            ros.loginfo("Resetting RealSense2 Camera...")
+            if ros.Time.now() < self.__last_reset + ros.Duration(10):
+                self.__reset = False
+                self.__reset_result = True
+            else:
+                # Log the initiation of the reset process
+                ros.loginfo("Resetting RealSense2 Camera...")
 
-            # Stop and restart the camera pipeline to perform the reset
-            self.pipeline.stop()
-            self.pipeline.start()
+                # Stop and restart the camera pipeline to perform the reset
+                self.pipeline.stop()
+                self.pipeline.start()
 
-            # Wait for a brief moment after restarting the pipeline
-            ros.sleep(1.0)
+                # Wait for a brief moment after restarting the pipeline
+                ros.sleep(1.0)
 
-            # Reset process is complete, update flags
-            self.__reset = False
-            self.__reset_result = True
+                # Reset process is complete, update flags
+                self.__reset = False
+                self.__reset_result = True
+                self.__last_reset = ros.Time.now()
 
         except Exception as e:
             # Log any exception during reset and update the reset result to False
