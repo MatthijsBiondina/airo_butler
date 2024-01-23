@@ -9,6 +9,7 @@ from pairo_butler.utils.tools import degree_string, pyout
 
 
 PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3 = 0.13301
+# PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3 = 0.1
 FORBIDDEN_COLUMN_RADIUS = 0.01 + PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
 
 LENGHT_ORIGIN_TO_BASE = 0.16521
@@ -17,18 +18,130 @@ LENGTH_ELBOW_TO_WRIST1 = 0.38978
 LENGTH_WRIST2_TO_WRIST3 = 0.09941
 LENGTH_WRIST3_TO_TOOL = 0.27287
 
-
-# L_BASE_OFFST = 0.000
-# L_FLOOR2BASE = 0.000
-# L_BASE2ELBOW = 0.5
-# L_ELBOW2WRST = 0.5
-# L_WRIST2HAND = 0.000
-# L_HAND2GRIPR = 0.000
+# LENGHT_ORIGIN_TO_BASE = 0.0
+# LENGTH_BASE_TO_ELBOW = 0.5
+# LENGTH_ELBOW_TO_WRIST1 = 0.5
+# LENGTH_WRIST2_TO_WRIST3 = 0.1
+# LENGTH_WRIST3_TO_TOOL = 0.3
 
 
 class UR3WilsonSolver:
     def __init__(self) -> None:
         pass
+
+    def solve_tcp_vertical_up(self, tool_xyz):
+        # Initialize joint configuration
+        joint_config = np.array([+0.00, 0.00, -0.50, -0.50, -0.50, +0.00]) * np.pi
+
+        # Calculate target point below the gripper
+        wrist3 = tool_xyz - np.array([0.0, 0.0, LENGTH_WRIST3_TO_TOOL])
+
+        # Compute intermediate point; the orthogonal projection of wrist3 onto the radius of
+        # the circle around which the base spins.
+        distance_wrist3_projection_on_xy_plane = np.linalg.norm(wrist3[:2])
+        wrist3_offset_angle = np.arcsin(
+            PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3
+            / distance_wrist3_projection_on_xy_plane
+        )
+
+        # First rotate wrist3 around the base
+        wrist3_rotated_projection_xy = np.array(
+            [
+                wrist3[0] * np.cos(wrist3_offset_angle)
+                - wrist3[1] * np.sin(wrist3_offset_angle),
+                wrist3[0] * np.sin(wrist3_offset_angle)
+                + wrist3[1] * np.cos(wrist3_offset_angle),
+            ]
+        )
+        # And determine radius
+        distance_base_intermediate_point1 = (
+            np.cos(-wrist3_offset_angle) * distance_wrist3_projection_on_xy_plane
+        )
+        # Then project onto the circle with computed distance from base.
+        intermediate_point1 = np.array([np.nan, np.nan, wrist3[2]])
+        intermediate_point1[:2] = (
+            wrist3_rotated_projection_xy
+            / np.linalg.norm(wrist3_rotated_projection_xy)
+            * distance_base_intermediate_point1
+        )
+
+        # Compute base joint angle
+        base_angle = (
+            np.arctan2(intermediate_point1[1], intermediate_point1[0]) % (2 * np.pi)
+            + np.pi
+        ) % (2 * np.pi) - np.pi
+        joint_config[0] = base_angle
+
+        # Calculate position of wrist1.
+        # wrist2 -> wrist3 is parallel to the xy-plane. Thus, we find wrist1 by subtracting the
+        # lenght of wrist2 -> wrist 3 from base -> intermediate point.
+        # Calculate what portion of base -> intermediate point is covered by wrist2 -> wrist3
+        ratio = LENGTH_WRIST2_TO_WRIST3 / (
+            np.cos(-wrist3_offset_angle) * distance_wrist3_projection_on_xy_plane
+        )
+        wrist1 = np.copy(intermediate_point1)
+        wrist1[:2] *= 1 - ratio
+
+        # Calculate elbow angle.
+        # We can calculate the distance between base and wrist1, which closes the triangle [base,
+        # elbow, wrist1]. Since we know the lengths of all edges in this triangle, we can compute,
+        # the angle of the elbow joint.
+        base = np.array([0.0, 0.0, LENGHT_ORIGIN_TO_BASE])
+        distance_base_to_wrist1 = np.linalg.norm(wrist1 - base)
+        elbow_angle, _, angle_elbow_base_wrist1 = compute_triangle_angles_sss(
+            distance_base_to_wrist1, LENGTH_BASE_TO_ELBOW, LENGTH_ELBOW_TO_WRIST1
+        )
+        assert (
+            np.rad2deg(elbow_angle) > 22
+        ), f"Elbow angle ({np.rad2deg(elbow_angle):.0f}) too small."
+        joint_config[2] = -np.pi + elbow_angle
+
+        # Determine intermediate point 2. This point is (1, 0, height_base) rotated around z by
+        # base_angle.
+        intermediate_point2 = np.array(
+            [np.cos(base_angle), np.sin(base_angle), LENGHT_ORIGIN_TO_BASE]
+        )
+
+        # Compute the angle between base -> wrist1 and the xy plane
+        # This angle can be larger than 90 degrees if we lean very far backwards. That's why we
+        # use intermediate_point2
+        angle_base_wrist1_with_xy_plane, _, _ = compute_triangle_angles_sss(
+            np.linalg.norm(wrist1 - intermediate_point2),
+            distance_base_to_wrist1,
+            np.linalg.norm(intermediate_point2[:2]),
+        )
+
+        # Compute shoulder angle, which is the sum of ...
+        # > the angle between the xy-plane and base->wrist1
+        # > the angle betwen the base->wrist1 and base->elbow segments
+        if wrist1[2] > LENGHT_ORIGIN_TO_BASE:
+            shoulder_angle = angle_base_wrist1_with_xy_plane + angle_elbow_base_wrist1
+        else:
+            shoulder_angle = angle_elbow_base_wrist1 - angle_base_wrist1_with_xy_plane
+        joint_config[1] = -np.pi + shoulder_angle
+
+        wrist2_angle = joint_config[1] + joint_config[2]
+        joint_config[3] = -1.5 * np.pi - wrist2_angle
+
+        tcp = np.array(
+            [
+                [np.nan, np.nan, 0.0, tool_xyz[0]],
+                [np.nan, np.nan, 0.0, tool_xyz[1]],
+                [0.0, 0.0, 1.0, tool_xyz[2]],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                ],
+            ]
+        )
+        tcp[:2, 1] = -intermediate_point1[:2] / np.linalg.norm(intermediate_point1[:2])
+        tcp[:3, 0] = np.cross(tcp[:3, 1], tcp[:3, 2])
+
+        return tcp, joint_config
+
+        pyout()
 
 
 class UR3SophieSolver:
@@ -242,7 +355,7 @@ class UR3SophieSolver:
 
         return tcp, joint_config, flipped
 
-    def solve_tcp_vertical_down(self, X_target):
+    def solve_tcp_vertical_down(self, tool_xyz):
         """
             a: Base
             b: Shoulder
@@ -292,7 +405,7 @@ class UR3SophieSolver:
         joint_config = np.array([np.nan, np.nan, np.nan, np.nan, -0.50, +0.00]) * np.pi
 
         # Calculate target point above the gripper
-        wrist3 = X_target + np.array([0.0, 0.0, LENGTH_WRIST3_TO_TOOL])
+        wrist3 = tool_xyz + np.array([0.0, 0.0, LENGTH_WRIST3_TO_TOOL])
 
         # Compute intermediate point; the orthogonal projection of wrist3 onto the radius of
         # the circle around which the base spins.
@@ -380,9 +493,9 @@ class UR3SophieSolver:
         # Compute tcp
         tcp = np.array(
             [
-                [np.nan, np.nan, 0.0, X_target[0]],
-                [np.nan, np.nan, 0.0, X_target[1]],
-                [0.0, 0.0, -1.0, X_target[2]],
+                [np.nan, np.nan, 0.0, tool_xyz[0]],
+                [np.nan, np.nan, 0.0, tool_xyz[1]],
+                [0.0, 0.0, -1.0, tool_xyz[2]],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )

@@ -2,12 +2,16 @@ import pickle
 import sys
 import time
 from typing import List, Optional
+
+import numpy as np
 from airo_butler.msg import PODMessage, NPMessage
 from pairo_butler.utils.np_messages import publish_np_array
 from pairo_butler.utils.pods import ZEDPOD, publish_pod
 from pairo_butler.utils.tools import pyout
 import rospy as ros
 from airo_camera_toolkit.cameras.zed.zed2i import Zed2i
+
+CONFIDENCE_THRESHOLD = 20.0  # 0. -> no points, 100. -> all points
 
 
 class ZEDClient:
@@ -199,9 +203,10 @@ class ZED:
         # Main loop running until ROS is shutdown
         while not ros.is_shutdown():
             # Capture data from ZED camera and form a PODMessage
+
             msg = ZEDPOD(
                 rgb_image=self.zed.get_rgb_image(),
-                point_cloud=self.zed.get_colored_point_cloud(),
+                point_cloud=self.__preprocess_point_cloud(),
                 intrinsics_matrix=self.zed.intrinsics_matrix(),
                 timestamp=ros.Time.now(),
             )
@@ -209,6 +214,15 @@ class ZED:
             publish_pod(self.publisher, msg)
             # Sleep to maintain the publish rate
             self.rate.sleep()
+
+    def __preprocess_point_cloud(self):
+        point_cloud = self.zed.get_colored_point_cloud()
+        confidence_map = self.zed._retrieve_confidence_map()
+
+        points = point_cloud.points[confidence_map.reshape(-1) < CONFIDENCE_THRESHOLD]
+        colors = point_cloud.colors[confidence_map.reshape(-1) < CONFIDENCE_THRESHOLD]
+
+        return np.concatenate((points, colors), axis=1)
 
 
 def main():

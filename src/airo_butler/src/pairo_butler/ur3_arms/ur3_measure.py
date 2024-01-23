@@ -53,6 +53,8 @@ class UR3Measurer:
     def __startup(self):
         self.sophie.move_to_joint_configuration(SOPHIE_REST)
         self.wilson.move_to_joint_configuration(WILSON_REST)
+
+        sys.exit(0)
         return STATE_TEST
 
     def __measure(self):
@@ -123,47 +125,14 @@ class UR3Measurer:
         from pairo_butler.ur3_arms.ur3_solver import LENGTH_WRIST2_TO_WRIST3
         from pairo_butler.ur3_arms.ur3_solver import LENGTH_WRIST3_TO_TOOL
 
-        # self.sophie.grasp_down(np.array([0.5, 0.13301, 0.5]))
-
-        # X = np.array(
-        #     [
-        #         -LENGTH_ELBOW_TO_WRIST1 - LENGTH_WRIST2_TO_WRIST3,
-        #         -PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3,
-        #         LENGHT_ORIGIN_TO_BASE + LENGTH_BASE_TO_ELBOW - LENGTH_WRIST3_TO_TOOL,
-        #     ]
-        # )
-        # self.sophie.grasp_down(X)
-
-        Z = (
-            np.array([-1.0, 0.0, 0.0]),
-            np.array([0.0, -1.0, 0.0]),
-            # np.array([1.0, 0.0, 0.0]),
-            np.array([0.0, 1.0, 0.0]),
+        world_pos = np.array(
+            [
+                LENGTH_ELBOW_TO_WRIST1 + LENGTH_WRIST2_TO_WRIST3,
+                -PERPENDICULAR_TRANSLATION_BASE_TO_WRIST3 + 0.5,
+                0.35,
+            ]
         )
-
-        X = (
-            # np.array([-0.45, 0.0, 0.9]),
-            # np.array([-0.45, 0.0, 0.85]),
-            # np.array([-0.45, 0.0, 0.8]),
-            # np.array([-0.45, 0.0, 0.75]),
-            # np.array([-0.45, 0.0, 0.7]),
-            # np.array([-0.45, 0.0, 0.65]),
-            np.array([-0.45, 0.0, 0.6]),
-            np.array([-0.45, 0.0, 0.55]),
-            # np.array([-0.45, 0.0, 0.5]),
-            # np.array([-0.45, 0.0, 0.45]),
-            # np.array([-0.45, 0.0, 0.4]),
-            # np.array([-0.45, 0.0, 0.3]),
-        )
-        for x in X:
-            for z in Z:
-                self.sophie.move_to_tcp_horizontal(x, z)
-        self.sophie.move_to_joint_configuration(SOPHIE_REST)
-
-        # X = np.array([-0.3, 0.0, 0.69])
-        # for z in Z:
-        #     self.sophie.grasp_horizontal(X, z)
-        # self.sophie.move_to_joint_configuration(SOPHIE_REST)
+        self.wilson.move_to_tcp_vertical_up(world_pos)
 
         return STATE_DONE
 

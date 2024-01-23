@@ -82,7 +82,12 @@ class UR3Client:
         )
         return response.value
 
-    def move_to_tcp_pose(self, tcp_pose: np.ndarray, breakpoint) -> bool:
+    def move_to_tcp_pose(
+        self,
+        tcp_pose: np.ndarray,
+        joint_speed: Optional[float] = None,
+        blocking: Optional[bool] = True,
+    ) -> bool:
         pod = UR3PosePOD(tcp_pose, self.arm_name, joint_speed, blocking)
         response = make_pod_request(self.move_to_tcp_pose_service, pod, BooleanPOD)
         return response.value
@@ -135,6 +140,15 @@ class UR3Client:
         if self.__gripper_width is None:
             raise TimeoutError
         return self.__gripper_width
+
+    def move_to_tcp_vertical_up(self, x: np.ndarray, speed: Optional[float] = None):
+        tcp, initial_config = self.solver.solve_tcp_vertical_up(x)
+
+        pyout(tcp)
+
+        self.move_to_joint_configuration(initial_config, joint_speed=speed)
+
+        pyout(self.get_tcp_pose())
 
     def move_to_tcp_vertical_down(self, x: np.ndarray, speed: Optional[float] = None):
         tcp, initial_config = self.solver.solve_tcp_vertical_down(x)

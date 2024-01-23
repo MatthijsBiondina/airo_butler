@@ -16,7 +16,7 @@ import rospy as ros
 
 class PointCloudStream:
     QUEUE_SIZE = 2
-    PUBLISH_RATE = 1
+    PUBLISH_RATE = 10
     SIZE = (768, 512)
 
     def __init__(self, name: str = "point_cloud_stream") -> None:
@@ -27,6 +27,7 @@ class PointCloudStream:
         self.tranformation_matrix_sophie_zed: np.ndarray = (
             self.__load_transformation_matrix()
         )
+        self.view_angle = 1.5 * np.pi
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -51,9 +52,14 @@ class PointCloudStream:
             image = self.__add_info_to_image(point_cloud_image)
 
             cv2.imshow("ZED2i (Point-Cloud)", np.array(image)[..., ::-1])
-            if cv2.waitKey(10) & 0xFF == ord("q"):
+            key_pressed = cv2.waitKey(10) & 0xFF
+            if key_pressed == ord("q"):
                 ros.signal_shutdown("Visualization window closed by user.")
                 break
+            elif key_pressed == ord("a"):
+                self.view_angle = (self.view_angle - np.deg2rad(3)) % (2 * np.pi)
+            elif key_pressed == ord("d"):
+                self.view_angle = (self.view_angle + np.deg2rad(3)) % (2 * np.pi)
 
             self.rate.sleep()
 
@@ -72,14 +78,19 @@ class PointCloudStream:
         self, points: np.ndarray, colors: np.ndarray
     ) -> np.ndarray:
         point_cloud = pv.PolyData(points)
-        point_cloud["colors"] = (255 * colors).astype(np.uint8)
+        point_cloud["colors"] = (colors).astype(np.uint8)
 
         plotter = pv.Plotter(off_screen=True)
         plotter.add_points(point_cloud, scalars="colors", rgb=True)
         labels = {"xlabel": "x", "ylabel": "y", "zlabel": "z"}
         plotter.add_axes(**labels)
 
-        camera_position = [0.5, -2.5, 1.0]
+        camera_position = [
+            3 * np.cos(self.view_angle),
+            3 * np.sin(self.view_angle),
+            1.0,
+        ]
+
         focal_point = [-0.45, 0.0, 0.5]
         view_up = [0, 0, 1]
         plotter.camera_position = [camera_position, focal_point, view_up]
