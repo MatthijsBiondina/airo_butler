@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="airo_butler" type="zed2i" name="zed2i" output="screen"></node>
-  <node pkg="airo_butler" type="zed_plotter" name="zed_plotter" output="screen"></node>
-</launch>
-

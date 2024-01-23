@@ -144,20 +144,19 @@ class UR3Client:
     def move_to_tcp_vertical_up(self, x: np.ndarray, speed: Optional[float] = None):
         tcp, initial_config = self.solver.solve_tcp_vertical_up(x)
 
-        pyout(tcp)
-
         self.move_to_joint_configuration(initial_config, joint_speed=speed)
-
-        pyout(self.get_tcp_pose())
 
     def move_to_tcp_vertical_down(self, x: np.ndarray, speed: Optional[float] = None):
         tcp, initial_config = self.solver.solve_tcp_vertical_down(x)
 
-        joint_config = self.inverse_kinematics(tcp, initial_config)
-        if len(joint_config):
-            self.move_to_joint_configuration(joint_config, joint_speed=speed)
-        else:
+        if tcp is None:
             self.move_to_joint_configuration(initial_config, joint_speed=speed)
+        else:
+            joint_config = self.inverse_kinematics(tcp, initial_config)
+            if len(joint_config):
+                self.move_to_joint_configuration(joint_config, joint_speed=speed)
+            else:
+                self.move_to_joint_configuration(initial_config, joint_speed=speed)
 
     def move_to_tcp_horizontal(
         self,
@@ -166,16 +165,26 @@ class UR3Client:
         speed: Optional[float] = None,
         flipped: bool = False,
         allow_flip: bool = True,
+        blocking: bool = True,
     ):
         tcp, initial_config, flipped = self.solver.solve_tcp_horizontal(
             x, z, flipped=flipped, allow_flip=allow_flip
         )
 
-        joint_config = self.inverse_kinematics(tcp, initial_config=initial_config)
-        if len(joint_config):
-            self.move_to_joint_configuration(joint_config, joint_speed=speed)
+        if tcp is None:
+            self.move_to_joint_configuration(
+                initial_config, joint_speed=speed, blocking=blocking
+            )
         else:
-            self.move_to_joint_configuration(initial_config, joint_speed=speed)
+            joint_config = self.inverse_kinematics(tcp, initial_config=initial_config)
+            if len(joint_config):
+                self.move_to_joint_configuration(
+                    joint_config, joint_speed=speed, blocking=blocking
+                )
+            else:
+                self.move_to_joint_configuration(
+                    initial_config, joint_speed=speed, blocking=blocking
+                )
         return flipped
 
     def grasp_horizontal(

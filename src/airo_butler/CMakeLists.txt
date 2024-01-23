@@ -164,10 +164,12 @@ include_directories(
 catkin_install_python(PROGRAMS
   nodes/ur3_server
   nodes/realsense2
+  nodes/rs2_recorder
   nodes/zed2i
   nodes/zed2i_pointcloud
   nodes/camera_plotter
   nodes/zed_plotter
+  nodes/recorder_plotter
   nodes/keypoint_detector
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

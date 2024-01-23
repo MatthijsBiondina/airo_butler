@@ -11,7 +11,7 @@ from pairo_butler.utils.tools import pyout
 import rospy as ros
 from airo_camera_toolkit.cameras.zed.zed2i import Zed2i
 
-CONFIDENCE_THRESHOLD = 20.0  # 0. -> no points, 100. -> all points
+CONFIDENCE_THRESHOLD = 10.0  # 0. -> no points, 100. -> all points
 
 
 class ZEDClient:

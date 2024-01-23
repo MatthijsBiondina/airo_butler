@@ -141,7 +141,15 @@ class UR3WilsonSolver:
 
         return tcp, joint_config
 
-        pyout()
+    def solve_tcp_vertical_down(self, tool_xyz):
+        xyz = tool_xyz
+        xyz[2] += 2 * LENGTH_WRIST3_TO_TOOL
+
+        _, joint_config = self.solve_tcp_vertical_up(xyz)
+
+        joint_config[4] += np.pi
+
+        return None, joint_config
 
 
 class UR3SophieSolver:

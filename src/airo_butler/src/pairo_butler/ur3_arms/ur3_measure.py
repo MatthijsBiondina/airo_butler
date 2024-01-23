@@ -1,3 +1,4 @@
+import sys
 import time
 from typing import Optional
 import numpy as np
@@ -54,7 +55,6 @@ class UR3Measurer:
         self.sophie.move_to_joint_configuration(SOPHIE_REST)
         self.wilson.move_to_joint_configuration(WILSON_REST)
 
-        sys.exit(0)
         return STATE_TEST
 
     def __measure(self):

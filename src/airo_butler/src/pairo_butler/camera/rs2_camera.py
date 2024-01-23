@@ -99,6 +99,9 @@ class RS2Client:
         except IndexError:
             return -1  # -1 indicates no frames recieved in the last second.
 
+    def reset(self):
+        self.__signal_rs2_reset()
+
     def __sub_callback(self, msg: PODMessage):
         """
         Callback function for the ROS subscriber.
@@ -157,6 +160,7 @@ class RS2_camera:
         fps: int = 15,
         rs2_resolution: Tuple[int, int] = (960, 540),
         out_resolution: int = 720,
+        serial_number: str = "925322060348",
     ):
         """
         Initializes a new instance of the ROS node for interfacing with a RealSense2
@@ -190,12 +194,23 @@ class RS2_camera:
         assert rs2_resolution in self.RESOLUTIONS
         # Create a pipeline for RealSense2 camera data.
         self.pipeline = pyrealsense2.pipeline()
+
+        context = pyrealsense2.context()
+        for device in context.devices:
+            pyout(device.get_info(pyrealsense2.camera_info.serial_number))
+
         # Configure the pipeline to stream color data with given resolution and frame rate.
-        pyrealsense2.config().enable_stream(
-            pyrealsense2.stream.color, *rs2_resolution, pyrealsense2.format.bgr8, fps
+        config = pyrealsense2.config()
+        config.enable_device(str(serial_number))
+        # self.profile = config.resolve(self.pipeline)
+        config.enable_stream(
+            pyrealsense2.stream.color,
+            *rs2_resolution,
+            pyrealsense2.format.rgb8,
+            fps,
         )
         # Start the camera pipeline.
-        self.pipeline.start()
+        self.pipeline.start(config)
         # Set the rate at which frames will be published.
         self.publish_rate = fps
         # Set the output image resolution.
@@ -315,6 +330,7 @@ class RS2_camera:
 
                 # Stop and restart the camera pipeline to perform the reset
                 self.pipeline.stop()
+                ros.sleep(1)
                 self.pipeline.start()
 
                 # Wait for a brief moment after restarting the pipeline
