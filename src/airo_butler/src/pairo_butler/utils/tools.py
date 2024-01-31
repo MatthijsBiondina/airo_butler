@@ -1,10 +1,13 @@
+from datetime import datetime
 import os
+from pathlib import Path
 import random
 import socket
 import subprocess
 import time
 import traceback
 from multiprocessing import current_process
+from typing import Union
 import numpy as np
 from tqdm import tqdm
 
@@ -146,10 +149,16 @@ def toc():
     pyout(f"{time.time() - time_0:.2f}")
 
 
-def makedirs(path):
-    pth = ""
-    for folder in path.split("/"):
-        pth += folder + "/"
+def makedirs(path: Union[str, Path]):
+    if isinstance(path, Path):
+        parts = path.parts
+    else:
+        parts = path.split("/")
+
+    pth = Path(parts[0])
+    os.makedirs(pth, exist_ok=True)
+    for folder in parts[1:]:
+        pth /= folder
         os.makedirs(pth, exist_ok=True)
     pyout(f"mk >> {os.path.abspath(path)}", color="BLUE")
 
@@ -183,3 +192,14 @@ def pbar(iterable, desc="", leave=False, total=None, disable=False):
 
 def degree_string(angle: float):
     return f"{np.rad2deg(angle):.0f}"
+
+
+def rostime2datetime(rostime):
+    seconds = rostime.secs
+    nanoseconds = rostime.nsecs
+
+    dt = datetime.fromtimestamp(seconds + 1e-9 * nanoseconds)
+
+    human_time = dt.strftime("%Y-%m-%d %H:%M:%S:%f")
+
+    return human_time

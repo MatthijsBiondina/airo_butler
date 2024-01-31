@@ -5,6 +5,8 @@ import time
 from typing import Optional, Tuple
 import numpy as np
 import rospkg
+from pairo_butler.ur3_arms.ur3_solver import LENGTH_WRIST3_TO_TOOL
+from pairo_butler.data.data_collector import DataCollector
 from pairo_butler.camera.rs2_camera import RS2Client
 from pairo_butler.utils.point_cloud_utils import transform_points_to_different_frame
 from pairo_butler.utils.tools import pyout
@@ -12,11 +14,14 @@ from pairo_butler.ur3_arms.ur3_client import UR3Client
 from pairo_butler.camera.zed_camera import ZEDClient
 import rospy as ros
 
+SOPHIE_SLEEP = np.array([+0.00, -0.75, +0.50, -0.50, -0.50, +0.00]) * np.pi
+WILSON_SLEEP = np.array([+0.00, -0.25, -0.50, -0.50, +0.50, +0.00]) * np.pi
+
 SOPHIE_REST = np.array([+0.00, -1.00, +0.50, -0.50, -0.50, +0.00]) * np.pi
 WILSON_REST = np.array([+0.00, -0.00, -0.50, -0.50, +0.50, +0.00]) * np.pi
 
 SOPHIE_PULL = np.array([-0.3, 0.0, 0.1])
-SOPHIE_RAISED = (np.array([-0.4, 0.0, 1.0]), np.array([-1.0, 0.0, 0.0]))
+SOPHIE_RAISED = (np.array([-0.4, -0.0, 1.0]), np.array([-1.0, 0.0, 0.0]))
 
 SOPHIE_CLOCK = np.array([-0.50, -1.0, +0.00, +0.00, -0.35, +0.00]) * np.pi
 SOPHIE_MIDDLE = np.array([+0.00, -1.0, +0.50, -0.50, -0.50, +0.00]) * np.pi
@@ -29,10 +34,16 @@ WILSON_PREPARE_GRASP_STEP_1 = (
 WILSON_PREPARE_GRASP_STEP_2 = (
     np.array([+0.50, -0.75, -0.75, -0.00, -0.50, +0.00]) * np.pi
 )
-WILSON_RAISED1 = np.array([+0.00, -0.60, -0.00, -0.90, +0.50, +0.00]) * np.pi
-WILSON_RAISED2 = np.array([+0.00, -0.60, -0.00, -0.90, +1.50, +0.00]) * np.pi
-WILSON_RAISED3 = np.array([+0.00, -0.60, -0.00, -0.90, -0.50, +0.00]) * np.pi
-WILSON_RAISED4 = np.array([+0.00, -0.55, -0.00, -0.45, +0.50, +0.00]) * np.pi
+WILSON_PREPARE_GRASP_STEP_3 = (
+    np.array([+0.50, -0.75, -0.75, -0.00, -0.10, +0.00]) * np.pi
+)
+# WILSON_PREPARE_GRASP_STEP_3 = (
+#     np.array([+0.50, -0.75, -0.75, -0.00, -0.05, +0.00]) * np.pi
+# )
+WILSON_RAISED1 = np.array([+0.00, -0.60, -0.00, -0.90, +0.50, +1.00]) * np.pi
+WILSON_RAISED2 = np.array([+0.00, -0.60, -0.00, -0.90, +1.50, +1.00]) * np.pi
+WILSON_RAISED3 = np.array([+0.00, -0.60, -0.00, -0.90, -0.50, +1.00]) * np.pi
+WILSON_RAISED4 = np.array([+0.00, -0.55, -0.00, -0.45, +0.50, +1.00]) * np.pi
 
 # STATES
 STATE_STARTUP = 0
@@ -48,7 +59,7 @@ STATE_DONE = 7
 # the radius of the cylinder around the xy coordinate of Sophie's tcp when determining
 # grasp point for Wilson. Too small and some of the towel will be cropped. Too large,
 # and we will see sophie's arm.
-SPREAD_FOR_WILSON_GRASP = 0.15
+SPREAD_FOR_WILSON_GRASP = 0.20
 
 
 class PickUpTowelProcedure:
@@ -66,11 +77,12 @@ class PickUpTowelProcedure:
 
         # Placeholders
         self.state: str = STATE_STARTUP
-        # self.state: str = STATE_SOPHIE_LET_GO
+        # self.state: str = STATE_GRASP_CORNER
         (
             self.transformation_matrix_sophie_zed,
             self.transformation_matrix_wilson_zed,
         ) = self.__load_transformation_matrices()
+        self.__t_start: ros.Time = None
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -80,6 +92,8 @@ class PickUpTowelProcedure:
         self.zed = ZEDClient()
         self.wilson = UR3Client("wilson")
         self.sophie = UR3Client("sophie")
+
+        self.__t_start = ros.Time.now()
 
         ros.loginfo(f"{self.node_name}: OK!")
 
@@ -197,12 +211,23 @@ class PickUpTowelProcedure:
     def __grasp_corner(self):
         self.wilson.move_to_joint_configuration(WILSON_PREPARE_GRASP_STEP_1)
         self.wilson.move_to_joint_configuration(WILSON_PREPARE_GRASP_STEP_2)
+
         lowest_point_on_towel = self.__compute_grasp()
         approach_point = lowest_point_on_towel - np.array([0.0, 0.0, 0.1])
         approach_point[2] = max(0.35, approach_point[2])
         grasp_point = lowest_point_on_towel
         grasp_point[2] += 0.02
 
+        self.wilson.move_to_joint_configuration(WILSON_PREPARE_GRASP_STEP_3)
+
+        # _, approach_config = self.wilson.solver.solve_tcp_vertical_up(approach_point)
+        # radius = np.linalg.norm(approach_point[:2])
+        # angle_diff = LENGTH_WRIST3_TO_TOOL / radius
+
+        # approach_config[0] += angle_diff
+        # approach_config[4] = WILSON_PREPARE_GRASP_STEP_3[4]
+
+        # self.wilson.move_to_joint_configuration(approach_config)
         self.wilson.move_to_tcp_vertical_up(approach_point)
         self.wilson.move_to_tcp_vertical_up(grasp_point)
         self.wilson.close_gripper()
@@ -236,11 +261,28 @@ class PickUpTowelProcedure:
         return STATE_SCAN
 
     def __scan_towel(self):
+        try:
+            DataCollector.start_recording()
+        except TimeoutError:
+            pass
         self.sophie.move_to_joint_configuration(SOPHIE_CLOCK, joint_speed=0.1)
         self.sophie.move_to_joint_configuration(SOPHIE_MIDDLE, joint_speed=0.1)
         self.sophie.move_to_joint_configuration(SOPHIE_COUNTER, joint_speed=0.1)
+        try:
+            DataCollector.pause_recording()
+            ros.sleep(0.5)
+            DataCollector.save_recording()
+        except TimeoutError:
+            pass
 
-        return STATE_RESET
+        if (ros.Time.now() - self.__t_start).secs < 600:
+            return STATE_RESET
+        else:
+            self.sophie.open_gripper()
+            self.wilson.open_gripper()
+            self.sophie.move_to_joint_configuration(SOPHIE_SLEEP)
+            self.wilson.move_to_joint_configuration(WILSON_SLEEP)
+            return STATE_DONE
 
     def __reset_towel(self):
         self.sophie.move_to_joint_configuration(SOPHIE_REST)

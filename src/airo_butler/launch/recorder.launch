@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="airo_butler" type="recorder" name="recorder" output="screen"></node>
+</launch>

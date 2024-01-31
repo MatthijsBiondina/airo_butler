@@ -171,6 +171,8 @@ catkin_install_python(PROGRAMS
   nodes/zed_plotter
   nodes/recorder_plotter
   nodes/keypoint_detector
+  nodes/recorder
+  nodes/folder
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

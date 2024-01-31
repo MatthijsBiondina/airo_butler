@@ -150,7 +150,7 @@ class RS2Client:
 
 class RS2_camera:
     # Tuple of tuples containing possible resolutions for the RealSense2 camera
-    RESOLUTIONS = ((640, 480), (960, 540), (1280, 720))
+    RESOLUTIONS = ((640, 480), (1280, 720))
     # Queue size for ROS publisher
     QUEUE_SIZE = 2
 
@@ -158,7 +158,7 @@ class RS2_camera:
         self,
         name: str = "rs2",
         fps: int = 15,
-        rs2_resolution: Tuple[int, int] = (960, 540),
+        rs2_resolution: Tuple[int, int] = (1280, 720),
         out_resolution: int = 720,
         serial_number: str = "925322060348",
     ):
@@ -265,7 +265,11 @@ class RS2_camera:
                 self.reset_camera()
 
             # Wait and capture a color frame from the RealSense2 camera.
-            frame = self.pipeline.wait_for_frames().get_color_frame()
+            try:
+                frame = self.pipeline.wait_for_frames().get_color_frame()
+            except RuntimeError:
+                self.reset_camera()
+                continue
 
             # Convert the captured frame to a PIL image.
             image = self.__frame2pillow(frame)
@@ -309,7 +313,7 @@ class RS2_camera:
         # Return the result of the reset process
         return self.__reset_result
 
-    def reset_camera(self):
+    def reset_camera(self, forced: bool = False):
         """
         Performs the actual hardware reset of the RealSense2 Camera.
 
@@ -321,7 +325,7 @@ class RS2_camera:
         Exceptions are caught and logged, and the reset result is set accordingly.
         """
         try:
-            if ros.Time.now() < self.__last_reset + ros.Duration(10):
+            if not forced and (ros.Time.now() < self.__last_reset + ros.Duration(10)):
                 self.__reset = False
                 self.__reset_result = True
             else:

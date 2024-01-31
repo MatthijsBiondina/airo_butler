@@ -4,7 +4,7 @@ import time
 from typing import List, Optional
 import rospy as ros
 from airo_butler.msg import PODMessage
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import pyout, rostime2datetime
 from pairo_butler.utils.pods import *
 
 
@@ -13,6 +13,7 @@ class ROSMessageCollector:
 
     QUEUE_SIZE: int = 2
     BUFFER_SIZE: int = 32
+    RATE: int = 30
 
     def __init__(self, exact: List[str], approximate: List[str] = []) -> None:
         self.exact_topics: List[str] = exact
@@ -49,22 +50,27 @@ class ROSMessageCollector:
         ii = 0
         while ii < len(self.buffer[topic]) and timestamp < self.buffer[topic][ii][0]:
             ii += 1
+
         self.buffer[topic].insert(ii, (timestamp, pod))
 
         if len(self.buffer[topic]) > self.BUFFER_SIZE:
             self.buffer[topic] = self.buffer[topic][: self.BUFFER_SIZE]
+
+        assert self.buffer[topic][0][0] == timestamp
 
     def next(self, timeout: Optional[float] = None):
         t0 = time.time()
         while timeout is None or time.time() - t0 < timeout:
             stamp, exact_pods = self.__collect_exact()
             if stamp:
-                remaining_time = timeout - (time.time() - t0)
+                remaining_time = (
+                    None if timeout is None else timeout - (time.time() - t0)
+                )
                 aprox_pods = self.__collect_approx(stamp, timeout=remaining_time)
                 if exact_pods is not None and aprox_pods is not None:
                     self.timestamp = stamp
-                    return {**exact_pods, **aprox_pods}
-        return None
+                    return {"timestamp": stamp, **exact_pods, **aprox_pods}
+        raise TimeoutError
 
     def __collect_exact(self):
         b_exact = {}
@@ -93,11 +99,18 @@ class ROSMessageCollector:
         for topic in self.aprox_topics:
             buf_ = deepcopy(self.buffer[topic])
             t0 = time.time()
+            while len(buf_) == 0:
+                ros.sleep(1 / self.RATE)
+
             while len(buf_) == 0 or buf_[0][0] < stamp:
+                buf_ = deepcopy(self.buffer[topic])
+                timediff = stamp - buf_[0][0]
+                ros.loginfo(f"{timediff.secs + 1e-9*timediff.nsecs}")
+
                 if timeout is not None and time.time() - t0 > timeout:
-                    return None
+                    raise TimeoutError
                 else:
-                    time.sleep(0.01)
+                    ros.sleep(1 / self.RATE)
             stamps = [buf_[idx][0] for idx in range(len(buf_))]
             timedelta = [abs(stamp_ - stamp) for stamp_ in stamps]
             idx = min(range(len(timedelta)), key=lambda i: timedelta[i])

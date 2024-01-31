@@ -4,14 +4,13 @@ import time
 from typing import List, Optional
 
 import numpy as np
-from airo_butler.msg import PODMessage, NPMessage
-from pairo_butler.utils.np_messages import publish_np_array
+from airo_butler.msg import PODMessage
 from pairo_butler.utils.pods import ZEDPOD, publish_pod
 from pairo_butler.utils.tools import pyout
 import rospy as ros
 from airo_camera_toolkit.cameras.zed.zed2i import Zed2i
 
-CONFIDENCE_THRESHOLD = 10.0  # 0. -> no points, 100. -> all points
+CONFIDENCE_THRESHOLD = 100.0  # 0. -> no points, 100. -> all points
 
 
 class ZEDClient:
@@ -164,7 +163,7 @@ class ZED:
         self.rate: Optional[ros.Rate] = None
         # Initialize the ZED 2i camera with specified resolution, depth mode, and FPS
         self.zed = Zed2i(
-            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.NEURAL_DEPTH_MODE, fps=30
+            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.QUALITY_DEPTH_MODE, fps=30
         )
         # Placeholder for ROS publishers
         self.rgb_publisher: Optional[ros.Publisher] = None
