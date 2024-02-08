@@ -166,7 +166,7 @@ def makedirs(path: Union[str, Path]):
 def listdir(path: str):
     filenames = sorted(os.listdir(path))
     filepaths = [f"{path}/{fname}" for fname in filenames]
-    filepaths = [os.path.abspath(path) for path in filepaths]
+    filepaths = [Path(os.path.abspath(path)) for path in filepaths]
     return filepaths
 
 

@@ -1,0 +1,6 @@
+<launch>
+  <!-- <node pkg="airo_butler" type="kp_labeler" name="kp_labeler" output="screen"></node> -->
+  <node pkg="airo_butler" type="kalman_filter" name="kalman_filter" output="screen"></node>
+  <node pkg="airo_butler" type="kp_cleaner" name="kp_cleaner" output="screen"></node>
+</launch>
+

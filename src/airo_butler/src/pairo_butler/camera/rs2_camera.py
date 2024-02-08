@@ -181,7 +181,7 @@ class RS2_camera:
         self.fps = fps
         # ROS HOUSEKEEPING
         # Set the node name as provided or default.
-        self.node_name: str = name
+        self.node_name: str = f"{name}_{serial_number}"
         # Define the publication topic for camera frames.
         self.pub_name: str = "/rs2_topic"
         # Initialize a ROS rate object, to be set in 'start_ros' method.

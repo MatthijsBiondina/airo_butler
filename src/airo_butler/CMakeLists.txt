@@ -173,6 +173,9 @@ catkin_install_python(PROGRAMS
   nodes/keypoint_detector
   nodes/recorder
   nodes/folder
+  nodes/kp_labeler
+  nodes/kp_cleaner
+  nodes/kalman_filter
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

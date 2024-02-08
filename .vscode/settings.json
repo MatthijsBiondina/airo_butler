@@ -5,6 +5,7 @@
     ],
     "python.analysis.extraPaths": [
         "/home/matt/catkin_ws/devel/lib/python3/dist-packages",
-        "/opt/ros/noetic/lib/python3/dist-packages"
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "./airo_butler/src/pairo_butler"
     ]
 }

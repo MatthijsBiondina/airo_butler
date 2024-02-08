@@ -1,0 +1,9 @@
+# kalman_config.yaml
+
+variance_camera_plane:           400.0  # pixels^2
+variance_position_prior:           1.0  # meters^2
+variance_orientation_measurement: 1000000000.  # radians^2
+variance_orientation_prior:       40.0  # radians^2
+
+mahalanobis_distance_threshold:    1.0  # standard deviations
+min_camera_barrier_distance:       0.1  # meters

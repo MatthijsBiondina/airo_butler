@@ -182,6 +182,42 @@ class ZEDPOD(POD):
         self.timestamp = timestamp
 
 
+class KeypointMeasurementPOD:
+
+    __slots__ = [
+        "timestamp",
+        "keypoints",
+        "camera_tcp",
+        "orientations",
+        "camera_intrinsics",
+    ]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        keypoints: np.ndarray,
+        camera_tcp: np.ndarray,
+        orientations: np.ndarray,
+        camera_intrinsics: np.ndarray,
+    ):
+        self.timestamp = timestamp
+        self.keypoints = keypoints
+        self.camera_tcp = camera_tcp
+        self.orientations = orientations
+        self.camera_intrinsics = camera_intrinsics
+
+
+class KalmanFilterStatePOD:
+    __slots__ = ["timestamp", "means", "covariances"]
+
+    def __init__(
+        self, timestamp: ros.Time, means: np.ndarray, covariances: np.ndarray
+    ) -> None:
+        self.timestamp = timestamp
+        self.means = means
+        self.covariances = covariances
+
+
 def make_pod_request(
     service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
 ) -> POD:
