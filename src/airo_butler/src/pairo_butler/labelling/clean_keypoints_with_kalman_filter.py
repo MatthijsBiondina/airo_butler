@@ -17,7 +17,7 @@ np.set_printoptions(precision=2, suppress=True)
 
 class KeypointCleaner:
     QUEUE_SIZE = 2
-    RATE = 30
+    RATE = 1
 
     def __init__(self, name: str = "keypoint_cleaner"):
         self.node_name = name

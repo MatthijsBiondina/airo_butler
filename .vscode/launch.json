@@ -4,7 +4,7 @@
             "name": "Python: rs2_camera",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/airo_butler/src/pairo_butler/kalman_filters/kalman_filter.py",
+            "program": "${workspaceFolder}/src/airo_butler/src/pairo_butler/plotting/kalman_state_stream.py",
             "justMyCode": true
         }
     ]

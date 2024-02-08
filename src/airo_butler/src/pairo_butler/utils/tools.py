@@ -38,6 +38,22 @@ class UGENT:
     LIGHTPURPLE = "#BE5190"
     GREEN = "#71A860"
 
+    COLORS = [
+        BLUE,
+        YELLOW,
+        ORANGE,
+        RED,
+        AQUA,
+        PINK,
+        SKY,
+        LIGHTGREEN,
+        PURPLE,
+        WARMORANGE,
+        TURQUOISE,
+        LIGHTPURPLE,
+        GREEN,
+    ]
+
 
 def bash(cmd):
     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
