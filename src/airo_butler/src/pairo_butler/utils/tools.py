@@ -8,8 +8,10 @@ import time
 import traceback
 from multiprocessing import current_process
 from typing import Union
+import cv2
 import numpy as np
 from tqdm import tqdm
+from PIL import Image
 
 bcolors = {
     "PINK": "\033[95m",
@@ -219,3 +221,18 @@ def rostime2datetime(rostime):
     human_time = dt.strftime("%Y-%m-%d %H:%M:%S:%f")
 
     return human_time
+
+
+def load_mp4_video(path: Path):
+    frames = []
+    cap = cv2.VideoCapture(str(path))
+
+    while True:
+        success, frame = cap.read()
+
+        if not success:
+            break
+
+        frames.append(Image.fromarray(frame[..., ::-1]))
+
+    return frames

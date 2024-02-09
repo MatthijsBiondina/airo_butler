@@ -8,6 +8,7 @@ import yaml
 from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.utils.tools import pyout
 from pairo_butler.utils.pods import (
+    BooleanPOD,
     KalmanFilterStatePOD,
     KeypointMeasurementPOD,
     publish_pod,
@@ -16,7 +17,7 @@ import rospy as ros
 from airo_butler.msg import PODMessage
 from airo_butler.srv import PODService, Reset
 
-np.set_printoptions(precision=2, suppress=True)
+np.set_printoptions(precision=3, suppress=True)
 
 
 STATE_SIZE = 4
@@ -90,7 +91,9 @@ class KalmanFilter:
                     )
 
                 self.pending.pop(0)
-                pod = self.__build_state_pod_message(timestamp=timestamp)
+                pod = self.__build_state_pod_message(
+                    timestamp=timestamp, camera_tcp=camera_tcp
+                )
                 publish_pod(self.publisher, pod)
 
             self.rate.sleep()
@@ -105,7 +108,12 @@ class KalmanFilter:
         return True
 
     def __getter_service_callback(self, req):
-        raise NotImplementedError
+        while len(self.pending) > 0:
+            self.rate.sleep()
+        ros.sleep(ros.Duration(secs=1))
+        pod = self.__build_state_pod_message(timestamp=ros.Time.now(), camera_tcp=None)
+
+        return pickle.dumps(pod)
 
     def __sub_callback(self, msg):
         self.pending.append(pickle.loads(msg.data))
@@ -127,8 +135,10 @@ class KalmanFilter:
         camera_intrinsics: np.ndarray,
         n_iterations: int = 2,
     ):
+
         measurement_noise_covariance = self.__make_Q_matrix()
         new_mean, prior_covariance = self.__init_new_mu_and_Sigma()
+
         for _ in range(n_iterations):
             predicted_measurement = self.__calculate_expected_measurements(
                 new_mean, camera_tcp, camera_intrinsics
@@ -159,9 +169,11 @@ class KalmanFilter:
         Q = np.diag(Q)
         return Q
 
-    def __init_new_mu_and_Sigma(self):
-        mu = np.zeros((4, 1))
-        Sigma = np.array(
+    def __init_new_mu_and_Sigma(self, eps=1e-3):
+        new_mean = np.array([-0.5, 0.0, 0.5, 0.0])[:, None]
+
+        # new_mean = np.random.normal(size=(4, 1)) * eps
+        new_covariance = np.array(
             [
                 self.config["variance_position_prior"],
                 self.config["variance_position_prior"],
@@ -169,17 +181,17 @@ class KalmanFilter:
                 self.config["variance_orientation_prior"],
             ]
         )
-        Sigma = np.diag(Sigma)
-        return mu, Sigma
+        new_covariance = np.diag(new_covariance)
+        return new_mean, new_covariance
 
     def __calculate_expected_measurements(
         self, keypoint_world, camera_tcp, camera_intrinsics
     ):
         keypoint_xyz_world = keypoint_world[:3]
-        camera_xyz_workd = camera_tcp[:3, 3][..., None]
+        camera_xyz_world = camera_tcp[:3, 3][..., None]
         camera_rotation_matrix = np.linalg.inv(camera_tcp[:3, :3])
         keypoint_xyz_camera = camera_rotation_matrix @ (
-            keypoint_xyz_world - camera_xyz_workd
+            keypoint_xyz_world - camera_xyz_world
         )
         camera_focal_length_x = camera_intrinsics[0, 0]
         camera_focal_length_y = camera_intrinsics[1, 1]
@@ -202,7 +214,9 @@ class KalmanFilter:
         camera_angle_world = np.arctan2(
             camera_z_projection_on_xy_plane[1], camera_z_projection_on_xy_plane[0]
         )
-        expected_keypoint_angle = keypoint_angle_world - camera_angle_world
+        expected_keypoint_angle = (
+            keypoint_angle_world - camera_angle_world + np.pi
+        ) % (2 * np.pi) - np.pi
 
         return np.array(
             [expected_keypoint_x, expected_keypoint_y, expected_keypoint_angle]
@@ -250,6 +264,7 @@ class KalmanFilter:
         measurement_matrix,
         measurement_noise_covariance,
     ):
+
         kalman_gain = (
             prior_covariance
             @ measurement_matrix.T
@@ -441,7 +456,9 @@ class KalmanFilter:
 
         return new_mean, new_covariance
 
-    def __build_state_pod_message(self, timestamp: ros.Time) -> KalmanFilterStatePOD:
+    def __build_state_pod_message(
+        self, timestamp: ros.Time, camera_tcp: Optional[np.ndarray]
+    ) -> KalmanFilterStatePOD:
         means = self.mean.reshape((-1, STATE_SIZE))
 
         covariances = self.covariance.copy()
@@ -450,7 +467,10 @@ class KalmanFilter:
         covariances = covariances[:, :STATE_SIZE].reshape((-1, STATE_SIZE, STATE_SIZE))
 
         pod = KalmanFilterStatePOD(
-            timestamp=timestamp, means=means, covariances=covariances
+            timestamp=timestamp,
+            means=means,
+            covariances=covariances,
+            camera_tcp=camera_tcp,
         )
 
         return pod

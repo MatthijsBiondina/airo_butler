@@ -11,7 +11,7 @@ class PODClient:
     RATE = 60
 
     def __init__(self, topic: str, pod_type: Type, timeout: int = 5):
-        self.timeout = ros.Duration(timeout)
+        self.timeout = None if timeout <= 0 else ros.Duration(timeout)
         self.topic = topic
         self.msg_type = pod_type
         self.rate = ros.Rate(self.RATE)
@@ -24,11 +24,13 @@ class PODClient:
     @property
     def pod(self) -> POD:
         t0 = ros.Time.now()
-        while self.__pod is None and ros.Time.now() < t0 + self.timeout:
+        while self.__pod is None and (
+            self.timeout is None or ros.Time.now() < t0 + self.timeout
+        ):
             self.rate.sleep()
 
         if self.__pod is None:
-            ros.logerr(f"No POD received on {self.topic}. Is it being published on?")
+            ros.logerr(f"No POD received on {self.topic}. Is it being published?")
             ros.signal_shutdown(f"Did not receive POD on {self.topic}.")
             sys.exit(0)
 

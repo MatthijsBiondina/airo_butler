@@ -176,6 +176,7 @@ catkin_install_python(PROGRAMS
   nodes/kp_labeler
   nodes/kp_cleaner
   nodes/kalman_filter
+  nodes/kalman_plotter
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

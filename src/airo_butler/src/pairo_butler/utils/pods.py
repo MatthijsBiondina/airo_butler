@@ -208,14 +208,19 @@ class KeypointMeasurementPOD:
 
 
 class KalmanFilterStatePOD:
-    __slots__ = ["timestamp", "means", "covariances"]
+    __slots__ = ["timestamp", "means", "covariances", "camera_tcp"]
 
     def __init__(
-        self, timestamp: ros.Time, means: np.ndarray, covariances: np.ndarray
+        self,
+        timestamp: ros.Time,
+        means: np.ndarray,
+        covariances: np.ndarray,
+        camera_tcp: Optional[np.ndarray],
     ) -> None:
         self.timestamp = timestamp
         self.means = means
         self.covariances = covariances
+        self.camera_tcp = camera_tcp
 
 
 def make_pod_request(

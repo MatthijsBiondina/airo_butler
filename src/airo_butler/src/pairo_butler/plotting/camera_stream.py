@@ -11,11 +11,12 @@ import rospy as ros
 from airo_butler.msg import PODMessage
 from pairo_butler.utils.pods import ImagePOD
 from pairo_butler.plotting.plotting_utils import add_info_to_image
-from airo_camera_toolkit.calibration.fiducial_markers import (
-    detect_and_visualize_charuco_pose,
-    AIRO_DEFAULT_ARUCO_DICT,
-    AIRO_DEFAULT_CHARUCO_BOARD,
-)
+
+# from airo_camera_toolkit.calibration.fiducial_markers import (
+#     detect_and_visualize_charuco_pose,
+#     AIRO_DEFAULT_ARUCO_DICT,
+#     AIRO_DEFAULT_CHARUCO_BOARD,
+# )
 
 
 class CameraStream:
@@ -26,7 +27,7 @@ class CameraStream:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
 
-        self.rs2: Optional[RS2Client]
+        self.rs2: Optional[RS2Client] = None
 
         # Placeholders
         self.frame: Optional[PIL.Image] = None
@@ -47,12 +48,12 @@ class CameraStream:
     def run(self):
         while not ros.is_shutdown():
             frame = np.copy(np.array(self.rs2.pod.image))
-            detect_and_visualize_charuco_pose(
-                frame,
-                intrinsics=self.rs2.pod.intrinsics_matrix,
-                aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
-                charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
-            )
+            # detect_and_visualize_charuco_pose(
+            #     frame,
+            #     intrinsics=self.rs2.pod.intrinsics_matrix,
+            #     aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
+            #     charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
+            # )
             frame = Image.fromarray(frame)
             frame = add_info_to_image(
                 frame,
