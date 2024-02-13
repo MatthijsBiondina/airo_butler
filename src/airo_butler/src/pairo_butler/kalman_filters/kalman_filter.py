@@ -140,14 +140,14 @@ class KalmanFilter:
         new_mean, prior_covariance = self.__init_new_mu_and_Sigma()
 
         for _ in range(n_iterations):
-            predicted_measurement = self.__calculate_expected_measurements(
+            predicted_measurement = KalmanFilter.calculate_expected_measurements(
                 new_mean, camera_tcp, camera_intrinsics
             )
-            measurement_matrix = self.__calculate_measurement_jacobian(
+            measurement_matrix = KalmanFilter.calculate_measurement_jacobian(
                 new_mean, camera_tcp, camera_intrinsics
             )
 
-            new_mean, new_covariance = self.__kalman_update_formula(
+            new_mean, new_covariance = KalmanFilter.kalman_update_formula(
                 new_mean,
                 prior_covariance,
                 measurement,
@@ -170,9 +170,8 @@ class KalmanFilter:
         return Q
 
     def __init_new_mu_and_Sigma(self, eps=1e-3):
+        # It is important that we do not initialize at (0,0,0) for numerical stability
         new_mean = np.array([-0.5, 0.0, 0.5, 0.0])[:, None]
-
-        # new_mean = np.random.normal(size=(4, 1)) * eps
         new_covariance = np.array(
             [
                 self.config["variance_position_prior"],
@@ -184,9 +183,19 @@ class KalmanFilter:
         new_covariance = np.diag(new_covariance)
         return new_mean, new_covariance
 
-    def __calculate_expected_measurements(
-        self, keypoint_world, camera_tcp, camera_intrinsics
-    ):
+    @staticmethod
+    def calculate_expected_measurements(
+        keypoint_world: np.ndarray,
+        camera_tcp: np.ndarray,
+        camera_intrinsics: np.ndarray,
+    ) -> np.ndarray:
+        assert isinstance(keypoint_world, np.ndarray)
+        assert isinstance(camera_tcp, np.ndarray)
+        assert isinstance(camera_intrinsics, np.ndarray)
+        assert keypoint_world.shape == (4, 1)
+        assert camera_tcp.shape == (4, 4)
+        assert camera_intrinsics.shape == (3, 3)
+
         keypoint_xyz_world = keypoint_world[:3]
         camera_xyz_world = camera_tcp[:3, 3][..., None]
         camera_rotation_matrix = np.linalg.inv(camera_tcp[:3, :3])
@@ -219,12 +228,15 @@ class KalmanFilter:
         ) % (2 * np.pi) - np.pi
 
         return np.array(
-            [expected_keypoint_x, expected_keypoint_y, expected_keypoint_angle]
+            [
+                expected_keypoint_x,
+                expected_keypoint_y,
+                expected_keypoint_angle,
+            ]
         )
 
-    def __calculate_measurement_jacobian(
-        self, keypoint_world, camera_tcp, camera_intrinsics
-    ):
+    @staticmethod
+    def calculate_measurement_jacobian(keypoint_world, camera_tcp, camera_intrinsics):
         keypoint_xyz_world = keypoint_world[:3]
         camera_xyz_workd = camera_tcp[:3, 3][..., None]
         camera_rotation_matrix = np.linalg.inv(camera_tcp[:3, :3])
@@ -255,8 +267,8 @@ class KalmanFilter:
 
         return jacobian
 
-    def __kalman_update_formula(
-        self,
+    @staticmethod
+    def kalman_update_formula(
         prior_mean,
         prior_covariance,
         measurement,
@@ -388,7 +400,7 @@ class KalmanFilter:
 
         measurement_noise_covariance = np.eye(STATE_SIZE) * eps
 
-        new_mean, new_covariance = self.__kalman_update_formula(
+        new_mean, new_covariance = KalmanFilter.kalman_update_formula(
             prior_mean=old_mean,
             prior_covariance=old_covariance,
             measurement=distance_between_keypoints,

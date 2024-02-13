@@ -177,6 +177,7 @@ catkin_install_python(PROGRAMS
   nodes/kp_cleaner
   nodes/kalman_filter
   nodes/kalman_plotter
+  nodes/visibility_checker
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

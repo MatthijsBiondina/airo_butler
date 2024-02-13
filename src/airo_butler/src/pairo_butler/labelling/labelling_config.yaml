@@ -3,3 +3,8 @@
 folder: /media/matt/Expansion/Datasets/towels/
 only_unlabeled_trials: true
 min_distance_between_keypoints: 5.0
+
+frame_width: 720
+frame_height: 720
+
+axis_length: 0.1
