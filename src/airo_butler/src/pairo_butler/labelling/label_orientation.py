@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import rospkg
 import yaml
+from pairo_butler.labelling.labelling_utils import LabellingUtils
 from pairo_butler.labelling.determine_visibility import VisibilityChecker
 from pairo_butler.kalman_filters.kalman_filter import KalmanFilter
 from pairo_butler.utils.tools import UGENT, listdir, load_mp4_video, pbar, pyout
@@ -44,7 +45,7 @@ class OrientationLabeler:
 
             ros.loginfo(trial)
 
-            data, valid = VisibilityChecker.load_trial_for_checking_visibility(trial)
+            data, valid = LabellingUtils.load_trial_data(trial)
             if not valid:
                 continue
 

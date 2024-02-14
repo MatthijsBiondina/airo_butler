@@ -110,7 +110,7 @@ class VisibilityChecker:
                 break
 
             # Load the trial data and check its validity
-            data, valid = VisibilityChecker.load_trial_for_checking_visibility(trial)
+            data, valid = VisibilityChecker.load_trial_data(trial)
             # Skip processing for invalid trials
             if not valid:
                 continue
@@ -128,7 +128,7 @@ class VisibilityChecker:
             VisibilityChecker.save_data_with_visibility_labels(trial, data)
 
     @staticmethod
-    def load_trial_for_checking_visibility(path: Path) -> Tuple[Dict[str, Any], bool]:
+    def load_trial_data(path: Path) -> Tuple[Dict[str, Any], bool]:
         """
         Loads the trial data for visibility checking from a specified directory path. This method
         reads the trial's state from a JSON file and loads video frames from an MP4 video file located
@@ -146,6 +146,8 @@ class VisibilityChecker:
                                         extracted from the 'state.json' file.
         """
         # Load the trial's state from the 'state.json' file
+        raise NotImplementedError
+
         try:
             with open(path / "state.json", "r") as f:
                 state: Dict[str, Any] = json.load(f)
@@ -334,9 +336,9 @@ class VisibilityChecker:
                 == closest_measured_point[None, :],
                 axis=1,
             )
-            visibility[(visibility == 1.0) & unobscured[:, None]] = (
-                2.0  # Mark as visible if unobscured
-            )
+            visibility[
+                (visibility == 1.0) & unobscured[:, None]
+            ] = 2.0  # Mark as visible if unobscured
 
         return visibility[:, None, :]
 
