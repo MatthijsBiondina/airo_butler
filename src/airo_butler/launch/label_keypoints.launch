@@ -5,6 +5,7 @@
   <!-- <node pkg="airo_butler" type="kp_cleaner" name="kp_cleaner" output="screen"></node> -->
   <!-- <node pkg="airo_butler" type="kalman_plotter" name="kalman_plotter" output="screen"></node> -->
 
-  <node pkg="airo_butler" type="visibility_checker" name="visibility_checker" output="screen"></node>
+  <!-- <node pkg="airo_butler" type="visibility_checker" name="visibility_checker" output="screen"></node> -->
+  <node pkg="airo_butler" type="orientation_labeler" name="orientation_labeler" output="screen"></node>
 </launch>
 
