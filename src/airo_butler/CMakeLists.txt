@@ -179,6 +179,8 @@ catkin_install_python(PROGRAMS
   nodes/kalman_plotter
   nodes/visibility_checker
   nodes/orientation_labeler
+  nodes/orientation_transformer
+  nodes/coco_builder
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

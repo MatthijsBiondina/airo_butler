@@ -6,6 +6,10 @@
   <!-- <node pkg="airo_butler" type="kalman_plotter" name="kalman_plotter" output="screen"></node> -->
 
   <!-- <node pkg="airo_butler" type="visibility_checker" name="visibility_checker" output="screen"></node> -->
-  <node pkg="airo_butler" type="orientation_labeler" name="orientation_labeler" output="screen"></node>
+  <!-- <node pkg="airo_butler" type="orientation_labeler" name="orientation_labeler" output="screen"></node> -->
+
+  <!-- <node pkg="airo_butler" type="orientation_transformer" name="orientation_transformer" output="screen"></node>-->
+
+  <node pkg="airo_butler" type="coco_builder" name="coco_builder" output="screen"></node>
 </launch>
 

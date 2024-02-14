@@ -56,6 +56,21 @@ class UGENT:
         GREEN,
     ]
 
+    PRIMARY_COLORS = [BLUE, YELLOW]
+    SECONDARY_COLORS = [
+        ORANGE,
+        RED,
+        AQUA,
+        PINK,
+        SKY,
+        LIGHTGREEN,
+        PURPLE,
+        WARMORANGE,
+        TURQUOISE,
+        LIGHTPURPLE,
+        GREEN,
+    ]
+
 
 def bash(cmd):
     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)

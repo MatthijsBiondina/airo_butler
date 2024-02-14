@@ -1,0 +1,58 @@
+wandb_version: 1
+
+project:
+  desc: null
+  value: tower_corner_angle_net
+root_folder:
+  desc: null
+  value: /media/matt/Expansion/Datasets/towels_coco
+epochs:
+  desc: null
+  value: 100
+patience:
+  desc: null
+  value: 10
+size:
+  desc: null
+  value: 64
+heatmap_sigma:
+  desc: null
+  value: 20
+heatmap_size:
+  desc: null
+  value: 100
+batch_size:
+  desc: null
+  value: 32
+learning_rate:
+  desc: null
+  value: 1.0e-05
+dropout_rate:
+  desc: null
+  value: 0.5
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.13
+    cli_version: 0.16.3
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1707920096.789958
+    t:
+      1:
+      - 1
+      - 41
+      - 55
+      2:
+      - 1
+      - 41
+      - 55
+      3:
+      - 16
+      - 23
+      4: 3.10.13
+      5: 0.16.3
+      8:
+      - 5
+      13: linux-x86_64

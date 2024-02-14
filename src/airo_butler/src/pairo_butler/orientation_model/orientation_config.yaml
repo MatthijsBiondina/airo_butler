@@ -1,0 +1,13 @@
+# orientation_config.yaml
+
+project: "tower_corner_angle_net"
+root_folder: "/media/matt/Expansion/Datasets/towels_coco"
+epochs: 100
+patience: 10
+
+size: 64
+heatmap_sigma: 20 # degrees
+heatmap_size: 100 # number of values between (-180, 180)
+batch_size: 32
+learning_rate: 0.00001
+dropout_rate: 0.5
