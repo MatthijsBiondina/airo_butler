@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="airo_butler" type="calibration" name="calibration" output="screen"></node>
+</launch>

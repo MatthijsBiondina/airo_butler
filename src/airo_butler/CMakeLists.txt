@@ -181,6 +181,7 @@ catkin_install_python(PROGRAMS
   nodes/orientation_labeler
   nodes/orientation_transformer
   nodes/coco_builder
+  nodes/calibration
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

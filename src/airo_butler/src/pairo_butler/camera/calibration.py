@@ -96,7 +96,8 @@ class CameraCalibration:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
 
-        self.zed: Optional[ZEDClient] = None
+        # todo: debug gorilla crash
+        # self.zed: Optional[ZEDClient] = None
         self.rs2: Optional[RS2Client] = None
         self.wilson: Optional[UR3Client] = None
         self.sophie: Optional[UR3Client] = None
@@ -122,7 +123,8 @@ class CameraCalibration:
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
 
-        self.zed = ZEDClient()
+        # todo: debug gorilla crash
+        # self.zed = ZEDClient()
         self.rs2 = RS2Client()
         self.wilson = UR3Client("wilson")
         self.sophie = UR3Client("sophie")
@@ -167,7 +169,11 @@ class CameraCalibration:
             self.wilson.close_gripper()
             ros.sleep(1.0)
         ros.loginfo(f"Good human!")
-        return STATE_CALIBRATE_ZED_WILSON
+
+        # todo: debug gorilla crash
+        # return STATE_CALIBRATE_ZED_WILSON
+
+        return STATE_CALIBRATE_RS2_SOPHIE
 
     def __calibrate_wilson(self):
         measurements: List[TCPs] = []
@@ -287,7 +293,10 @@ class CameraCalibration:
         self.wilson.move_to_joint_configuration(self.poses["wilson_rest"])
         self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
 
-        return STATE_CALIBRATE_ZED_SOPHIE
+        # todo: debug gorilla crash
+        # return STATE_CALIBRATE_ZED_SOPHIE
+
+        return STATE_DROP_CHARUCO_BOARD
 
     def __drop_charuco_board(self):
         initial_world_pos = np.array([-0.50, -0.3, 0.40])
