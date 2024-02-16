@@ -923,3 +923,170 @@
 2024-02-16 18:29:40,201 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
 2024-02-16 18:29:40,269 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
 2024-02-16 18:29:40,448 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:41,591 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:41,591 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:42,202 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:42,203 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:42,449 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:43,592 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:43,592 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:44,203 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:44,204 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:44,450 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:44,725 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:29:44,726 DEBUG   SenderThread:324083 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:29:44,734 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:29:45,330 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:29:45,593 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:45,593 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:46,205 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:46,205 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:46,452 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:47,594 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:47,595 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:48,206 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:48,206 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:48,453 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:49,601 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:49,601 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:50,207 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:50,207 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:50,406 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:29:50,455 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:51,614 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:51,614 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:52,208 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:52,208 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:52,457 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:53,615 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:53,615 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:54,209 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:54,209 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:54,458 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:55,468 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:29:55,616 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:55,616 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:56,210 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:56,211 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:56,460 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:57,617 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:57,617 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:58,212 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:58,212 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:29:58,462 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:29:59,422 DEBUG   SenderThread:324083 [sender.py:send():382] send: stats
+2024-02-16 18:29:59,618 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:59,618 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:29:59,725 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:29:59,726 DEBUG   SenderThread:324083 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:29:59,735 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:30:00,281 ERROR   gpu       :324083 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-02-16 18:30:00,282 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:00,282 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:00,463 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:00,552 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:01,619 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:01,619 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:02,283 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:02,283 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:02,464 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:03,320 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: partial_history
+2024-02-16 18:30:03,320 DEBUG   SenderThread:324083 [sender.py:send():382] send: files
+2024-02-16 18:30:03,321 INFO    SenderThread:324083 [sender.py:_save_file():1392] saving file media/images/Training_6_862bb102d6f9227b363c.png with policy now
+2024-02-16 18:30:03,322 DEBUG   SenderThread:324083 [sender.py:send():382] send: history
+2024-02-16 18:30:03,322 DEBUG   SenderThread:324083 [sender.py:send_request():409] send_request: summary_record
+2024-02-16 18:30:03,323 INFO    SenderThread:324083 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-02-16 18:30:03,466 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/wandb-summary.json
+2024-02-16 18:30:03,467 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_created():271] file/dir created: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/media/images/Training_6_862bb102d6f9227b363c.png
+2024-02-16 18:30:03,468 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/media/images
+2024-02-16 18:30:03,621 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:03,622 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:04,285 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:04,285 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:04,292 INFO    wandb-upload_0:324083 [upload_job.py:push():131] Uploaded file /tmp/tmphu_1tceuwandb/axgiwg0e-media/images/Training_6_862bb102d6f9227b363c.png
+2024-02-16 18:30:04,488 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:05,428 INFO    wandb-upload_0:324083 [upload_job.py:push():131] Uploaded file /tmp/tmphu_1tceuwandb/m0p6vb5z-media/images/Training_6_862bb102d6f9227b363c.png
+2024-02-16 18:30:05,623 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:05,624 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:05,979 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:06,286 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:06,286 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:06,498 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:07,625 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:07,625 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:08,287 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:08,288 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:08,499 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:09,626 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:09,626 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:10,288 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:10,288 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:10,500 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:11,077 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:11,627 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:11,627 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:12,289 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:12,289 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:12,502 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:13,628 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:13,628 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:14,292 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:14,292 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:14,503 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:14,725 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:30:14,726 DEBUG   SenderThread:324083 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:30:14,734 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:30:15,629 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:15,629 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:16,175 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:16,294 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:16,294 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:16,505 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:17,630 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:17,630 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:18,295 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:18,295 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:18,506 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:19,631 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:19,631 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:20,296 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:20,296 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:20,507 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:21,275 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:21,632 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:21,633 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:22,297 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:22,299 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:22,509 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:23,634 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:23,634 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:24,300 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:24,300 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:24,510 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:25,635 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:25,635 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:26,301 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:26,301 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:26,405 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:26,512 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:27,636 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:27,636 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:28,304 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:28,304 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:28,513 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:29,424 DEBUG   SenderThread:324083 [sender.py:send():382] send: stats
+2024-02-16 18:30:29,637 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:29,637 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:29,725 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:30:29,726 DEBUG   SenderThread:324083 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:30:29,734 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:30:30,364 ERROR   gpu       :324083 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-02-16 18:30:30,365 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:30,365 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:30,515 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
+2024-02-16 18:30:31,495 DEBUG   HandlerThread:324083 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:30:31,639 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:31,639 ERROR   disk      :324083 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:30:32,366 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:32,366 ERROR   gpu       :324083 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:30:32,517 INFO    Thread-17 :324083 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_182458-7yjw9t5a/files/output.log
