@@ -9,10 +9,6 @@ class KeypointNeuralNetwork(nn.Module):
         super(KeypointNeuralNetwork, self).__init__()
 
         self.backbone = load_pretrained_model(backbone)
-        # self.conv_final = nn.Conv2d(out_channels, 1, kernel_size=1)
 
     def forward(self, x):
         return torch.sigmoid(self.backbone(x))
-        # features = self.backbone(x)
-        # output = self.conv_final(features)
-        # return output
