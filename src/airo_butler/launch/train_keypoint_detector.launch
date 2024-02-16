@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="airo_butler" type="keypoint_trainer" name="keypoint_trainer" output="screen"></node>
+</launch>
+
