@@ -43,7 +43,7 @@ class HeatmapStream:
                 image: Image = messages["/color_frame"].image
                 heatmap: np.ndarray = messages["/heatmap"].array
                 self.__update_timestamps(timestamp)
-                overlay_image = self.__overlay_heatmap_on_image(image, heatmap)
+                overlay_image = self.overlay_heatmap_on_image(image, heatmap)
 
                 fps: int = len(self.timestamps)
                 latency: genpy.duration = ros.Time.now() - timestamp
@@ -66,8 +66,16 @@ class HeatmapStream:
         while new_stamp - genpy.Duration(secs=1) > self.timestamps[0]:
             self.timestamps.pop(0)
 
-    def __overlay_heatmap_on_image(self, image: Image, heatmap: np.ndarray):
-        heatmap_normalized = (heatmap) / (np.sum(heatmap) + 1e-6)
+    @staticmethod
+    def overlay_heatmap_on_image(image: Image, heatmap: np.ndarray):
+
+        # Normalize heatmap to [0, 1] range based on its min and max values
+        heatmap_min = np.min(heatmap)
+        heatmap_max = np.max(heatmap)
+        heatmap_normalized = (heatmap - heatmap_min) / (
+            heatmap_max - heatmap_min + 1e-6
+        )
+
         colormap = plt.get_cmap("viridis")
         heatmap_colored = colormap(heatmap_normalized)
 
@@ -75,7 +83,7 @@ class HeatmapStream:
         heatmap_image = Image.fromarray(
             (heatmap_colored * 255).astype(np.uint8)
         ).convert("RGBA")
-        heatmap_image.putalpha(127)
+        heatmap_image.putalpha(100)
 
         # Overlay the heatmap on the image
         overlay_image = Image.new("RGBA", image.size)

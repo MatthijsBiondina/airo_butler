@@ -14,8 +14,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torchvision.transforms import Compose
 
-from torchvision.transforms import Compose
-
 
 class OrientationDataset(Dataset):
     def __init__(

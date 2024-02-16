@@ -1,0 +1,108 @@
+{
+    "os": "Linux-5.15.0-94-generic-x86_64-with-glibc2.29",
+    "python": "3.8.10",
+    "heartbeatAt": "2024-02-16T17:24:59.586627",
+    "startedAt": "2024-02-16T17:24:58.600748",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py",
+    "codePathLocal": "src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py",
+    "codePath": "src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py",
+    "git": {
+        "remote": "git@github.com:MatthijsBiondina/airo_butler.git",
+        "commit": "5c716c557c11b276604598524a11187602b971c0"
+    },
+    "email": "biondina.matthijs@gmail.com",
+    "root": "/home/matt/catkin_ws",
+    "host": "AM",
+    "username": "matt",
+    "executable": "/bin/python3",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 1355.2535,
+        "min": 800.0,
+        "max": 5100.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 935.457,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 954.029,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 945.599,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 902.775,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 913.218,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.082,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.029,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.019,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.062,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.12,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.083,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 900.024,
+            "min": 800.0,
+            "max": 5100.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 219.5783462524414,
+            "used": 130.24921417236328
+        }
+    },
+    "gpu": "NVIDIA GeForce MX250",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce MX250",
+            "memory_total": 2147483648
+        }
+    ],
+    "memory": {
+        "total": 15.225818634033203
+    }
+}

@@ -1,0 +1,19 @@
+# config.yaml
+
+project: "towel_corners"
+root_folder: "/media/matt/Expansion/Datasets/towels_coco"
+checkpoint_dir: "/home/matt/Models/keypoints"
+
+size: 512
+heatmap_sigma: 24
+backbone: "mobilenet_v3_small"
+batch_size: NULL
+learning_rate: 0.00001
+epochs: 1000
+patience: 10
+eval_every_n_steps: 100
+
+# data augmentation
+min_crop_ratio: 0.8
+max_rotate_angle: 30
+

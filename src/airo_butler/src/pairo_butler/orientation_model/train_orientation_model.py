@@ -1,25 +1,12 @@
-import json
 from pathlib import Path
-import random
-import shutil
-import sys
-from typing import Any, Dict, List, Optional, Tuple
-from PIL import Image, ImageDraw
-import PIL
+from typing import Any, Dict
 import torch
 from torch.utils.data import DataLoader
-import cv2
-import numpy as np
-import rospkg
 import wandb
 import yaml
 from pairo_butler.orientation_model.orientation_utils import OrientationUtils
 from pairo_butler.orientation_model.orientation_resnet import OrientationNeuralNetwork
 from pairo_butler.orientation_model.orientation_dataset import OrientationDataset
-from pairo_butler.labelling.coco_dataset_structure import COCODatasetStructure
-from pairo_butler.labelling.labelling_utils import LabellingUtils
-from pairo_butler.labelling.determine_visibility import VisibilityChecker
-from pairo_butler.kalman_filters.kalman_filter import KalmanFilter
 from pairo_butler.utils.tools import UGENT, listdir, load_mp4_video, pbar, poem, pyout
 import rospy as ros
 

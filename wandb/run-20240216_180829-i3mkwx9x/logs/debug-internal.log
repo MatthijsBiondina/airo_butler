@@ -1,0 +1,137 @@
+2024-02-16 18:08:29,288 INFO    StreamThr :315967 [internal.py:wandb_internal():86] W&B internal server running at pid: 315967, started at: 2024-02-16 18:08:29.284680
+2024-02-16 18:08:29,308 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status
+2024-02-16 18:08:29,321 INFO    WriterThread:315967 [datastore.py:open_for_write():85] open: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/run-i3mkwx9x.wandb
+2024-02-16 18:08:29,325 DEBUG   SenderThread:315967 [sender.py:send():382] send: header
+2024-02-16 18:08:29,356 DEBUG   SenderThread:315967 [sender.py:send():382] send: run
+2024-02-16 18:08:29,950 INFO    SenderThread:315967 [dir_watcher.py:__init__():211] watching files in: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files
+2024-02-16 18:08:29,951 INFO    SenderThread:315967 [sender.py:_start_run_threads():1136] run started: i3mkwx9x with start time 1708103309.28149
+2024-02-16 18:08:30,024 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: check_version
+2024-02-16 18:08:30,025 DEBUG   SenderThread:315967 [sender.py:send_request():409] send_request: check_version
+2024-02-16 18:08:30,174 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: run_start
+2024-02-16 18:08:30,196 DEBUG   HandlerThread:315967 [system_info.py:__init__():32] System info init
+2024-02-16 18:08:30,196 DEBUG   HandlerThread:315967 [system_info.py:__init__():47] System info init done
+2024-02-16 18:08:30,197 INFO    HandlerThread:315967 [system_monitor.py:start():194] Starting system monitor
+2024-02-16 18:08:30,200 INFO    HandlerThread:315967 [system_monitor.py:probe():214] Collecting system info
+2024-02-16 18:08:30,201 INFO    SystemMonitor:315967 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-02-16 18:08:30,206 INFO    SystemMonitor:315967 [interfaces.py:start():190] Started cpu monitoring
+2024-02-16 18:08:30,213 INFO    SystemMonitor:315967 [interfaces.py:start():190] Started disk monitoring
+2024-02-16 18:08:30,218 INFO    SystemMonitor:315967 [interfaces.py:start():190] Started gpu monitoring
+2024-02-16 18:08:30,222 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:30,224 INFO    SystemMonitor:315967 [interfaces.py:start():190] Started memory monitoring
+2024-02-16 18:08:30,228 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:30,232 INFO    SystemMonitor:315967 [interfaces.py:start():190] Started network monitoring
+2024-02-16 18:08:30,239 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:30,242 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:30,324 DEBUG   HandlerThread:315967 [system_info.py:probe():196] Probing system
+2024-02-16 18:08:30,345 DEBUG   HandlerThread:315967 [system_info.py:_probe_git():181] Probing git
+2024-02-16 18:08:30,395 DEBUG   HandlerThread:315967 [system_info.py:_probe_git():189] Probing git done
+2024-02-16 18:08:30,396 DEBUG   HandlerThread:315967 [system_info.py:probe():244] Probing system done
+2024-02-16 18:08:30,396 DEBUG   HandlerThread:315967 [system_monitor.py:probe():223] {'os': 'Linux-5.15.0-94-generic-x86_64-with-glibc2.29', 'python': '3.8.10', 'heartbeatAt': '2024-02-16T17:08:30.324597', 'startedAt': '2024-02-16T17:08:29.247592', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py', 'codePathLocal': 'src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py', 'codePath': 'src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py', 'git': {'remote': 'git@github.com:MatthijsBiondina/airo_butler.git', 'commit': '5c716c557c11b276604598524a11187602b971c0'}, 'email': 'biondina.matthijs@gmail.com', 'root': '/home/matt/catkin_ws', 'host': 'AM', 'username': 'matt', 'executable': '/bin/python3', 'cpu_count': 6, 'cpu_count_logical': 12, 'cpu_freq': {'current': 1190.6973333333333, 'min': 800.0, 'max': 5100.0}, 'cpu_freq_per_core': [{'current': 946.228, 'min': 800.0, 'max': 5100.0}, {'current': 2234.784, 'min': 800.0, 'max': 5100.0}, {'current': 802.213, 'min': 800.0, 'max': 5100.0}, {'current': 800.402, 'min': 800.0, 'max': 5100.0}, {'current': 818.704, 'min': 800.0, 'max': 5100.0}, {'current': 802.793, 'min': 800.0, 'max': 5100.0}, {'current': 800.025, 'min': 800.0, 'max': 5100.0}, {'current': 799.529, 'min': 800.0, 'max': 5100.0}, {'current': 800.001, 'min': 800.0, 'max': 5100.0}, {'current': 800.012, 'min': 800.0, 'max': 5100.0}, {'current': 800.022, 'min': 800.0, 'max': 5100.0}, {'current': 800.045, 'min': 800.0, 'max': 5100.0}], 'disk': {'/': {'total': 219.5783462524414, 'used': 130.21659469604492}}, 'gpu': 'NVIDIA GeForce MX250', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA GeForce MX250', 'memory_total': 2147483648}], 'memory': {'total': 15.225818634033203}}
+2024-02-16 18:08:30,397 INFO    HandlerThread:315967 [system_monitor.py:probe():224] Finished collecting system info
+2024-02-16 18:08:30,397 INFO    HandlerThread:315967 [system_monitor.py:probe():227] Publishing system info
+2024-02-16 18:08:30,398 DEBUG   HandlerThread:315967 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2024-02-16 18:08:30,403 DEBUG   HandlerThread:315967 [system_info.py:_save_pip():68] Saving pip packages done
+2024-02-16 18:08:30,411 INFO    HandlerThread:315967 [system_monitor.py:probe():229] Finished publishing system info
+2024-02-16 18:08:30,427 DEBUG   SenderThread:315967 [sender.py:send():382] send: files
+2024-02-16 18:08:30,428 INFO    SenderThread:315967 [sender.py:_save_file():1392] saving file wandb-metadata.json with policy now
+2024-02-16 18:08:30,481 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:08:30,483 DEBUG   SenderThread:315967 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:08:30,513 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:08:30,739 DEBUG   SenderThread:315967 [sender.py:send():382] send: telemetry
+2024-02-16 18:08:30,955 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_created():271] file/dir created: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/requirements.txt
+2024-02-16 18:08:30,956 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_created():271] file/dir created: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/wandb-metadata.json
+2024-02-16 18:08:30,956 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_created():271] file/dir created: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/output.log
+2024-02-16 18:08:30,989 INFO    wandb-upload_0:315967 [upload_job.py:push():131] Uploaded file /tmp/tmp2rg8coxmwandb/1v2lotgz-wandb-metadata.json
+2024-02-16 18:08:32,229 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:32,230 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:32,243 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:32,243 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:32,951 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/output.log
+2024-02-16 18:08:34,231 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:34,231 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:34,244 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:34,244 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:34,353 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:08:36,232 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:36,233 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:36,245 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:36,246 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:36,955 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/output.log
+2024-02-16 18:08:38,234 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:38,235 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:38,248 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:38,249 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:39,796 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:08:40,237 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:40,238 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:40,250 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:40,251 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:42,240 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:42,241 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:42,253 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:42,254 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:44,242 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:44,243 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:44,255 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:44,255 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:44,798 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:08:45,480 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:08:45,482 DEBUG   SenderThread:315967 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:08:45,490 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:08:46,244 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:46,245 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:46,257 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:46,258 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:48,247 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:48,248 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:48,260 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:48,260 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:50,250 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:50,251 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:50,262 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:50,263 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:50,662 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:08:52,252 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:52,253 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:52,265 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:52,265 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:54,255 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:54,256 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:54,267 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:54,268 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:55,664 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:08:56,258 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:56,259 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:56,270 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:56,271 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:58,261 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:58,264 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:08:58,274 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:08:58,275 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:00,271 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:00,272 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:00,384 ERROR   gpu       :315967 [interfaces.py:aggregate():161] Failed to serialize metric: division by zero
+2024-02-16 18:09:00,386 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:00,386 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:00,481 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: stop_status
+2024-02-16 18:09:00,483 DEBUG   SenderThread:315967 [sender.py:send_request():409] send_request: stop_status
+2024-02-16 18:09:00,522 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: internal_messages
+2024-02-16 18:09:00,761 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:09:02,011 INFO    Thread-17 :315967 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/matt/catkin_ws/wandb/run-20240216_180829-i3mkwx9x/files/config.yaml
+2024-02-16 18:09:02,274 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:02,276 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:02,388 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:02,389 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:04,277 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:04,277 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:04,390 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:04,391 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:06,013 DEBUG   HandlerThread:315967 [handler.py:handle_request():146] handle_request: status_report
+2024-02-16 18:09:06,279 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:06,280 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:06,393 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:06,394 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:08,281 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:08,281 ERROR   disk      :315967 [interfaces.py:monitor():144] Failed to sample metric: not sure how to interpret line '   7       0 loop0 14 0 34 0 0 0 0 0 0 12 0 0 0 0 0 0 0\n'
+2024-02-16 18:09:08,396 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
+2024-02-16 18:09:08,397 ERROR   gpu       :315967 [interfaces.py:monitor():144] Failed to sample metric: Not Supported
