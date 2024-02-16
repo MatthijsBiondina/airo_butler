@@ -3,3 +3,4 @@ devel/
 airo_butler/src/res/models/
 airo_butler/src/res/tmp/
 *.pyc
+src/wandb/
