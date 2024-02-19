@@ -8,11 +8,10 @@ from pairo_butler.utils.tools import pyout
 def load_timm_model(model: str):
     pyout(f"Loading pretrained model: {model}")
     backbone = timm.create_model(model, pretrained=True, features_only=True)
-    pyout(f"Done!")
+    pyout(backbone.feature_info)
+    sys.exit(0)
 
     return backbone
-
-    pyout()
 
 
 def load_pretrained_model(model: str):
