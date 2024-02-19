@@ -36,8 +36,4 @@ class KeypointNeuralNetwork(nn.Module):
         hidden_layer = torch.relu(self.line_1(concatenated_feature_map))
         output = torch.sigmoid(self.line_2(hidden_layer))
 
-        pyout(output.shape)
-
-        sys.exit(0)
-
-        return torch.sigmoid(self.backbone(x))
+        return output
