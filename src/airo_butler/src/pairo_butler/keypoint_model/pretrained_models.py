@@ -1,8 +1,26 @@
 import torchvision.models as models
 import torch.nn as nn
+import timm
+import rospy as ros
+from pairo_butler.utils.tools import pyout
+
+
+def load_timm_model(model: str):
+    pyout(f"Loading pretrained model: {model}")
+    backbone = timm.create_model(model, pretrained=True, features_only=True)
+    pyout(f"Done!")
+
+    return backbone
+
+    pyout()
 
 
 def load_pretrained_model(model: str):
+
+    if model == "maxvit_large_tf_512":
+        backbone = timm.create_model("maxvit_large_tf_512", pretrained=True)
+
+        pyout()
 
     if model == "resnet50":
         backbone = models.resnet50(pretrained=True)

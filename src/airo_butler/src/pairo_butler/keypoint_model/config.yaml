@@ -6,8 +6,8 @@ checkpoint_dir: "/home/matt/Models/keypoints"
 
 size: 512
 heatmap_sigma: 24
-backbone: "resnet50"
-batch_size: NULL
+backbone: "maxvit_tiny_tf_512"
+batch_size: 1
 learning_rate: 0.00001
 epochs: 1000
 patience: 10

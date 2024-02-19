@@ -22,14 +22,16 @@ class KeypointModelTrainer:
         with open(config_path, "r") as f:
             self.config: Dict[str, Any] = yaml.safe_load(f)
 
-        self.__init_wandb_run()
+        # self.__init_wandb_run()
         self.device = torch.device("cuda:0")
+        # self.device = torch.device("cpu")
         self.criterion = nn.functional.mse_loss
         self.batch_size = self.config["batch_size"]
         self.model, self.optim = self.__initialize_model()
         self.train_loader, self.valid_loader = self.__load_datasets()
 
     def start_ros(self):
+        return
         ros.init_node(self.node_name, log_level=ros.INFO)
         ros.loginfo(f"{self.node_name}: OK!")
 
