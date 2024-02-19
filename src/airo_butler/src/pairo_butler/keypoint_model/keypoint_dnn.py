@@ -13,9 +13,9 @@ class KeypointNeuralNetwork(nn.Module):
     def __init__(self, backbone: str):
         super(KeypointNeuralNetwork, self).__init__()
 
-        self.backbone = load_timm_model(backbone)
+        self.backbone, nr_of_channels = load_timm_model(backbone)
 
-        self.line_1 = nn.Conv2d(2048, out_channels=1024, kernel_size=1)
+        self.line_1 = nn.Conv2d(nr_of_channels, out_channels=1024, kernel_size=1)
         self.line_2 = nn.Conv2d(1024, out_channels=1, kernel_size=1)
 
     def forward(self, x):
