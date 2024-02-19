@@ -34,7 +34,7 @@ class KeypointNeuralNetwork(nn.Module):
         concatenated_feature_map = torch.cat(upscaled_maps, dim=1)
 
         hidden_layer = torch.relu(self.line_1(concatenated_feature_map))
-        output = torch.sigmoid(self.line_2(h))
+        output = torch.sigmoid(self.line_2(hidden_layer))
 
         pyout(output.shape)
 
