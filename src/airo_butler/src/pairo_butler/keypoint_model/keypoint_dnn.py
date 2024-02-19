@@ -19,7 +19,7 @@ class KeypointNeuralNetwork(nn.Module):
         h = self.backbone(x)
 
         for h_ in h:
-            pyout(h.shape)
+            pyout(h_.shape)
 
         sys.exit(0)
 
