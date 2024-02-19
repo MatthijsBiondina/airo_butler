@@ -10,22 +10,26 @@ import torch
 
 
 class KeypointNeuralNetwork(nn.Module):
-    def __init__(self, backbone: str):
+    def __init__(self, backbone: str, hidden_channels=16):
         super(KeypointNeuralNetwork, self).__init__()
 
         self.backbone, feature_channels = load_timm_model(backbone)
 
         self.reduce_channels_layers = nn.ModuleList(
             [
-                nn.Conv2d(in_channels=channels, out_channels=128, kernel_size=1)
+                nn.Conv2d(
+                    in_channels=channels, out_channels=hidden_channels, kernel_size=1
+                )
                 for channels in feature_channels
             ]
         )
 
         self.line_1 = nn.Conv2d(
-            128 * len(feature_channels), out_channels=128, kernel_size=1
+            hidden_channels * len(feature_channels),
+            out_channels=hidden_channels,
+            kernel_size=1,
         )
-        self.line_2 = nn.Conv2d(128, out_channels=1, kernel_size=1)
+        self.line_2 = nn.Conv2d(hidden_channels, out_channels=1, kernel_size=1)
 
     def forward(self, x):
 
