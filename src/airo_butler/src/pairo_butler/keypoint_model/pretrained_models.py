@@ -1,3 +1,4 @@
+import sys
 import torchvision.models as models
 import torch.nn as nn
 import timm
@@ -8,7 +9,9 @@ from pairo_butler.utils.tools import pyout
 def load_timm_model(model: str):
     pyout(f"Loading pretrained model: {model}")
     backbone = timm.create_model(model, pretrained=True, features_only=True)
-    pyout(backbone.feature_info)
+    for idx, feature in enumerate(backbone.feature_info):
+        num_channels = feature["num_chs"]
+        pyout(f"Output {idx}: {num_channels} channels")
     sys.exit(0)
 
     return backbone
