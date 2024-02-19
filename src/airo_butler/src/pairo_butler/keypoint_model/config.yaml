@@ -6,7 +6,7 @@ checkpoint_dir: "/home/matt/Models/keypoints"
 
 size: 512
 heatmap_sigma: 24
-backbone: "mobilenet_v3_small"
+backbone: "resnet50"
 batch_size: NULL
 learning_rate: 0.00001
 epochs: 1000
