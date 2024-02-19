@@ -15,6 +15,9 @@ class KeypointNeuralNetwork(nn.Module):
 
         self.backbone = load_timm_model(backbone)
 
+        self.line_1 = nn.Conv2d(2048, out_channels=1024, kernel_size=1)
+        self.line_2 = nn.Conv2d(1024, out_channels=1, kernel_size=1)
+
     def forward(self, x):
 
         feature_maps = self.backbone(x)
@@ -30,7 +33,10 @@ class KeypointNeuralNetwork(nn.Module):
 
         concatenated_feature_map = torch.cat(upscaled_maps, dim=1)
 
-        pyout(concatenated_feature_map.shape)
+        hidden_layer = torch.relu(self.line_1(concatenated_feature_map))
+        output = torch.sigmoid(self.line_2(h))
+
+        pyout(output.shape)
 
         sys.exit(0)
 
