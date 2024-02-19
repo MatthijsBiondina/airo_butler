@@ -13,25 +13,35 @@ class KeypointNeuralNetwork(nn.Module):
     def __init__(self, backbone: str):
         super(KeypointNeuralNetwork, self).__init__()
 
-        self.backbone, nr_of_channels = load_timm_model(backbone)
+        self.backbone, feature_channels = load_timm_model(backbone)
 
-        self.line_1 = nn.Conv2d(nr_of_channels, out_channels=1024, kernel_size=1)
-        self.line_2 = nn.Conv2d(1024, out_channels=1, kernel_size=1)
+        self.reduce_channels_layers = nn.ModuleList(
+            [
+                nn.Conv2d(in_channels=channels, out_channels=128, kernel_size=1)
+                for channels in feature_channels
+            ]
+        )
+
+        self.line_1 = nn.Conv2d(
+            128 * len(feature_channels), out_channels=128, kernel_size=1
+        )
+        self.line_2 = nn.Conv2d(128, out_channels=1, kernel_size=1)
 
     def forward(self, x):
 
         feature_maps = self.backbone(x)
 
-        upscaled_maps = []
-
-        # Upscale each feature map to 512x512
-        for feature_map in feature_maps:
+        # Reduce channel dimensions and upscale each feature map
+        reduced_and_upscaled_maps = []
+        for layer, feature_map in zip(self.reduce_channels_layers, feature_maps):
+            reduced_map = layer(feature_map)  # Reduce channels to 128
             upscaled_map = F.interpolate(
-                feature_map, size=(512, 512), mode="bilinear", align_corners=False
+                reduced_map, size=(512, 512), mode="bilinear", align_corners=False
             )
-            upscaled_maps.append(upscaled_map)
+            reduced_and_upscaled_maps.append(upscaled_map)
 
-        concatenated_feature_map = torch.cat(upscaled_maps, dim=1)
+        # Concatenate the reduced and upscaled feature maps
+        concatenated_feature_map = torch.cat(reduced_and_upscaled_maps, dim=1)
 
         hidden_layer = torch.relu(self.line_1(concatenated_feature_map))
         output = torch.sigmoid(self.line_2(hidden_layer))

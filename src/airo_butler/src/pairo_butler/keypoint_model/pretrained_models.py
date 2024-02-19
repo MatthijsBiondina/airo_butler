@@ -9,10 +9,10 @@ from pairo_butler.utils.tools import pyout
 def load_timm_model(model: str):
     pyout(f"Loading pretrained model: {model}")
     backbone = timm.create_model(model, pretrained=True, features_only=True)
-    output_channels = 0
+    output_channels = []
 
     for idx, feature in enumerate(backbone.feature_info):
-        output_channels += feature["num_chs"]
+        output_channels.append(feature["num_chs"])
 
     return backbone, output_channels
 
