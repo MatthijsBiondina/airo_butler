@@ -12,7 +12,8 @@ from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.keypoint_model.keypoint_dnn import KeypointNeuralNetwork
 from pairo_butler.keypoint_model.keypoint_dataset import KeypointDataset
 from pairo_butler.utils.tools import UGENT, listdir, load_mp4_video, pbar, poem, pyout
-import rospy as ros
+
+# import rospy as ros
 
 
 class HeatmapStream:
