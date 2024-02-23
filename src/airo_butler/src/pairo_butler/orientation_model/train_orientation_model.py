@@ -16,6 +16,7 @@ class OrientationModelTrainer:
         self.node_name: str = name
 
         config_path: Path = Path(__file__).parent / "orientation_config.yaml"
+
         with open(config_path, "r") as f:
             self.config: Dict[str, Any] = yaml.safe_load(f)
 

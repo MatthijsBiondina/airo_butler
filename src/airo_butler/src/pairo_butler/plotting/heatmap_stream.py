@@ -1,11 +1,9 @@
-import time
 from typing import List, Optional
 
 from PIL import Image
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
-from airo_butler.msg import PODMessage
 import genpy
 from pairo_butler.plotting.plotting_utils import add_info_to_image
 from pairo_butler.utils.tools import pyout
