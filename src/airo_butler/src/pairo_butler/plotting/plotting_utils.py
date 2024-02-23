@@ -2,9 +2,7 @@ import os
 from typing import Optional, Tuple
 import PIL
 from PIL import ImageDraw, ImageFont
-import rospy as ros
 from pairo_butler.utils.tools import UGENT, pyout
-import rospkg
 
 
 def add_info_to_image(
@@ -71,6 +69,8 @@ def format_info(title: Optional[str] = None, **kwargs) -> str:
 
 
 def get_monospace_font(size: int = 14):
+    import rospkg
+
     rospack = rospkg.RosPack()
     package_path = rospack.get_path("airo_butler")
     font_path = os.path.join(package_path, "res", "fonts", "UbuntuMono-B.ttf")
