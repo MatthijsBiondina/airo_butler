@@ -142,7 +142,9 @@ class ArrayPOD(POD):
         timestamp
     """
 
-    __slots__ = ["array", "timestamp"]rospkgme) -> None:
+    __slots__ = ["array", "timestamp"]
+
+    def __init__(self, array: np.ndarray, timestamp: ros.Time) -> None:
         self.array = array
         self.timestamp = timestamp
 
