@@ -2,8 +2,9 @@ from copy import deepcopy
 import pickle
 import time
 from typing import List, Optional
-import rospy as ros
-from airo_butler.msg import PODMessage
+
+# import rospy as ros
+# from airo_butler.msg import PODMessage
 from pairo_butler.utils.tools import pyout, rostime2datetime
 from pairo_butler.utils.pods import *
 
