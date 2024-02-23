@@ -2,7 +2,6 @@ import sys
 import torchvision.models as models
 import torch.nn as nn
 import timm
-import rospy as ros
 from pairo_butler.utils.tools import pyout
 
 
