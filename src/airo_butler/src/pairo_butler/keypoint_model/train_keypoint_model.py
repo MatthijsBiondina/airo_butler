@@ -184,6 +184,18 @@ class KeypointModelTrainer:
         y = self.model(X)
         loss = self.criterion(y, t)
         loss.backward()
+
+        # Clip gradients to avoid exploding gradient problem
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2)
+
+        # Iterate through model parameters and set NaN gradients to 0
+        for param in self.model.parameters():
+            if param.grad is not None:
+                with torch.no_grad():
+                    param.grad[param.grad != param.grad] = (
+                        0.0  # Sets NaN gradients to 0
+                    )
+
         self.optim.step()
 
         ema = loss if ema is None else alpha * loss.item() + (1 - alpha) * ema
