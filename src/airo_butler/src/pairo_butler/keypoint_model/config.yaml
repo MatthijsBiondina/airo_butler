@@ -8,7 +8,7 @@ size: 512
 heatmap_sigma: 24
 backbone: "maxvit_base_tf_512"
 batch_size: ~
-learning_rate: 0.00001
+learning_rate: 0.000001
 epochs: 1000
 patience: 10
 eval_every_n_steps: 100
