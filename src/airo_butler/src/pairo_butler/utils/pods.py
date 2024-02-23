@@ -1,7 +1,7 @@
 import PIL
 from PIL import Image
 
-import rospy as ros
+# import rospy as ros
 import pickle
 import sys
 from typing import Optional, Type, Union
@@ -142,9 +142,7 @@ class ArrayPOD(POD):
         timestamp
     """
 
-    __slots__ = ["array", "timestamp"]
-
-    def __init__(self, array: np.ndarray, timestamp: ros.Time) -> None:
+    __slots__ = ["array", "timestamp"]rospkgme) -> None:
         self.array = array
         self.timestamp = timestamp
 
