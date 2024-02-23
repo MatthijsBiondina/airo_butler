@@ -66,8 +66,9 @@ class KeypointModelTrainer:
         self.train_loader, self.valid_loader = self.__load_datasets()
 
     def start_ros(self):
-        ros.init_node(self.node_name, log_level=ros.INFO)
-        ros.loginfo(f"{self.node_name}: OK!")
+        pass
+        # ros.init_node(self.node_name, log_level=ros.INFO)
+        # ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         step = 0
@@ -96,7 +97,8 @@ class KeypointModelTrainer:
                 wandb.log({"train_loss": ema})
 
         except BreakException:
-            ros.loginfo(f"Exiting training loop.")
+            pyout(f"Exiting training loop.")
+            # ros.loginfo(f"Exiting training loop.")
 
     def __init_wandb_run(self):
         wandb.init(project=self.config["project"], config=self.config)
@@ -165,7 +167,8 @@ class KeypointModelTrainer:
 
     def __check_early_stopping_criteria(self, epoch, best_epoch):
         if epoch - best_epoch > self.config["patience"]:
-            ros.loginfo(f"Eary stop after {epoch+1} epochs. Ran out of patience.")
+            pyout(f"Eary stop after {epoch+1} epochs. Ran out of patience.")
+            # ros.loginfo(f"Eary stop after {epoch+1} epochs. Ran out of patience.")
             raise BreakException
 
     def __do_train_step(
