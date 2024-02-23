@@ -7,12 +7,46 @@ from torch.utils.data import DataLoader
 import wandb
 from PIL import Image
 import yaml
-from pairo_butler.plotting.heatmap_stream import HeatmapStream
+import matplotlib.pyplot as plt
 from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.keypoint_model.keypoint_dnn import KeypointNeuralNetwork
 from pairo_butler.keypoint_model.keypoint_dataset import KeypointDataset
 from pairo_butler.utils.tools import UGENT, listdir, load_mp4_video, pbar, poem, pyout
 import rospy as ros
+
+
+class HeatmapStream:
+    @staticmethod
+    def overlay_heatmap_on_image(image: Image, heatmap: np.ndarray):
+
+        # Normalize heatmap to [0, 1] range based on its min and max values
+        heatmap_min = np.min(heatmap)
+        heatmap_max = np.max(heatmap)
+        heatmap_normalized = (heatmap - heatmap_min) / (
+            heatmap_max - heatmap_min + 1e-6
+        )
+
+        colormap = plt.get_cmap("viridis")
+        heatmap_colored = colormap(heatmap_normalized)
+
+        # Convert to PIL image and ensure same size as original
+        heatmap_image = Image.fromarray(
+            (heatmap_colored * 255).astype(np.uint8)
+        ).convert("RGBA")
+        heatmap_image.putalpha(100)
+
+        # Overlay the heatmap on the image
+        overlay_image = Image.new("RGBA", image.size)
+        overlay_image = Image.alpha_composite(overlay_image, image.convert("RGBA"))
+        overlay_image = Image.alpha_composite(overlay_image, heatmap_image)
+
+        # Convert to rgb
+        background = Image.new("RGB", overlay_image.size, (255, 255, 255))
+        rgb_image = Image.alpha_composite(
+            background.convert("RGBA"), overlay_image
+        ).convert("RGB")
+
+        return rgb_image
 
 
 class KeypointModelTrainer:
