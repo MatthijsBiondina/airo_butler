@@ -162,7 +162,7 @@ class KeypointModelTrainer:
             y = self.model(X)
             loss = self.criterion(y, t)
             loss.backward()
-            self.optim.step()
+            # self.optim.step()
             break
 
     def __check_early_stopping_criteria(self, epoch, best_epoch):
