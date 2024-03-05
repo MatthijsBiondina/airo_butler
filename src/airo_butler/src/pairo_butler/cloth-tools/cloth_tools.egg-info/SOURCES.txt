@@ -1,0 +1,14 @@
+pyproject.toml
+setup.py
+cloth_tools/__init__.py
+cloth_tools/bounding_boxes.py
+cloth_tools/config.py
+cloth_tools/dummy.py
+cloth_tools/motion_blur_detector.py
+cloth_tools/wrench_smoother.py
+cloth_tools.egg-info/PKG-INFO
+cloth_tools.egg-info/SOURCES.txt
+cloth_tools.egg-info/dependency_links.txt
+cloth_tools.egg-info/requires.txt
+cloth_tools.egg-info/top_level.txt
+test/test_dummy.py

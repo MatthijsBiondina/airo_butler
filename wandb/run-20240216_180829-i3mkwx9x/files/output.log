@@ -1,7 +1,0 @@
-/home/matt/.local/lib/python3.8/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
-  warnings.warn(
-/home/matt/.local/lib/python3.8/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1`. You can also use `weights=MobileNet_V3_Small_Weights.DEFAULT` to get the most up-to-date weights.
-  warnings.warn(msg)
-[95m[1m.../src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py: __optimize_batch_size(...) - ln105
-OOM at batch size: 8, rolling back to 4
-[INFO] [1708103314.819848]: keypoint_model_trainer: OK!
