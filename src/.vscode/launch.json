@@ -8,7 +8,7 @@
             "name": "Python: Airo Butler",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/cantrips/purge_cuda.py",
+            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/cantrips/zed_test.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

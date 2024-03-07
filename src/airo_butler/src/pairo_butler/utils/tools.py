@@ -1,4 +1,6 @@
 from datetime import datetime
+import inspect
+import linecache
 import os
 from pathlib import Path
 import random
@@ -251,3 +253,20 @@ def load_mp4_video(path: Path):
         frames.append(Image.fromarray(frame[..., ::-1]))
 
     return frames
+
+
+def prog():
+    # Get the caller's frame
+    caller_frame = inspect.currentframe().f_back
+    # Get the filename and line number of the caller
+    filename = caller_frame.f_code.co_filename
+    line_number = caller_frame.f_lineno
+
+    # Get the previous line from the file
+    previous_line = linecache.getline(filename, line_number + 1).strip()
+
+    print(f"ln {line_number}: {previous_line}")
+
+    # Clear the cache and delete the frame to help with garbage collection
+    linecache.clearcache()
+    del caller_frame

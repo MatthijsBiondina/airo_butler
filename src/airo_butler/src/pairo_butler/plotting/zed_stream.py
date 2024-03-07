@@ -1,4 +1,5 @@
 import pickle
+import sys
 from typing import List, Optional
 import warnings
 from PIL import Image
@@ -7,7 +8,7 @@ import numpy as np
 from pairo_butler.camera.zed_camera import ZEDClient
 from pairo_butler.plotting.plotting_utils import add_info_to_image
 import genpy
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import prog, pyout
 from pairo_butler.utils.pods import ZEDPOD
 from pairo_butler.plotting.pygame_plotter import PygameWindow
 import rospy as ros
@@ -34,7 +35,6 @@ class ZEDStreamRGB:
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
-
         self.zed = ZEDClient()
 
     def run(self):
@@ -42,6 +42,14 @@ class ZEDStreamRGB:
             frame = (self.zed.pod.rgb_image * 255).astype(np.uint8)
             frame = frame.transpose(1, 0, 2)[:, ::-1]
             frame = cv2.resize(frame, self.SIZE)
+
+            # cv2.imwrite("/home/matt/Pictures/frame.png", frame)
+
+            # intrinsics = self.zed.pod.intrinsics_matrix
+
+            # np.save("/home/matt/Pictures/intrinsics.npy", intrinsics)
+
+            # sys.exit(0)
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
@@ -59,7 +67,6 @@ class ZEDStreamRGB:
                 frame_rate=f"{self.zed.fps} Hz",
                 latency=f"{self.zed.latency} ms",
             )
-
             self.window.imshow(frame)
             self.rate.sleep()
 

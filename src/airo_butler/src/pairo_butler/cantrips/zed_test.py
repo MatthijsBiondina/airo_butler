@@ -1,37 +1,29 @@
-import pyzed.sl as sl
 import cv2
+from cv2 import aruco
+import numpy as np
+
+from airo_camera_toolkit.calibration.fiducial_markers import (
+    detect_aruco_markers,
+    AIRO_DEFAULT_ARUCO_DICT,
+    AIRO_DEFAULT_CHARUCO_BOARD,
+)
+
+root = "/home/matt/Pictures"
+img = cv2.imread(f"{root}/frame.png")
+intrinsics = np.load(f"{root}/intrinsics.npy")
+aruco_dict = AIRO_DEFAULT_ARUCO_DICT
+charuco_board = AIRO_DEFAULT_CHARUCO_BOARD
+
+aruco_result = detect_aruco_markers(img, aruco_dict)
 
 
-def main():
-    # Create a Camera object
-    zed = sl.Camera()
+print(f"Version: {cv2.__version__}")
 
-    # Set configuration parameters
-    init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD1080  # Set the resolution
-    init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE  # Set the depth mode
-    init_params.coordinate_units = sl.UNIT.METER  # Set the unit of measurement
-
-    # Open the camera
-    status = zed.open(init_params)
-    if status != sl.ERROR_CODE.SUCCESS:
-        print(f"Failed to open ZED camera: {status}")
-        exit(-1)
-
-    # Capture an image
-    image = sl.Mat()
-    runtime_parameters = sl.RuntimeParameters()
-    if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
-        # Retrieve the left image
-        zed.retrieve_image(image, sl.VIEW.LEFT)
-        # Get the image data
-        image_data = image.get_data()
-        cv2.imshow("ZED Image", image_data)
-        cv2.waitKey(0)  # Wait for a key press before closing
-
-    # Close the camera
-    zed.close()
-
-
-if __name__ == "__main__":
-    main()
+print("Foo!")
+nb_corners, charuco_corners, charuco_ids = aruco.interpolateCornersCharuco(
+    markerCorners=aruco_result.corners,  # type: ignore # typed as Seq but accepts np.ndarray
+    markerIds=aruco_result.ids,
+    image=img,
+    board=charuco_board,
+)
+print("Bar!")
