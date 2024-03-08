@@ -163,6 +163,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   nodes/ur3_server
+  nodes/ur5_server
   nodes/realsense2
   nodes/rs2_recorder
   nodes/zed2i

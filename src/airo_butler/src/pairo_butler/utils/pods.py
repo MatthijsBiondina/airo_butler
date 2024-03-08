@@ -69,7 +69,7 @@ class UR3PosePOD(POD):
         self.blocking = blocking
 
 
-class UR3StatePOD(POD):
+class URStatePOD(POD):
     """
     Represents the pose STATE data for a UR3 robot arm
 

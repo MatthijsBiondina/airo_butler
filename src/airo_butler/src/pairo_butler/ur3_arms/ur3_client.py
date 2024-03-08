@@ -14,7 +14,7 @@ from airo_butler.srv import PODService
 from airo_butler.msg import PODMessage
 from pairo_butler.utils.pods import (
     BooleanPOD,
-    UR3StatePOD,
+    URStatePOD,
     make_pod_request,
     UR3PosePOD,
     UR3GripperPOD,
@@ -64,7 +64,7 @@ class UR3Client:
         self.__gripper_width: Optional[float] = None
 
     def __callback(self, msg):
-        msg: UR3StatePOD = pickle.loads(msg.data)
+        msg: URStatePOD = pickle.loads(msg.data)
 
         self.__joint_configuration = msg.joint_configuration
         self.__tcp_pose = msg.tcp_pose
@@ -108,13 +108,13 @@ class UR3Client:
         return response.value
 
     def inverse_kinematics(self, tcp: np.ndarray, initial_config: Optional[np.ndarray]):
-        pod = UR3StatePOD(
+        pod = URStatePOD(
             tcp_pose=tcp,
             joint_configuration=initial_config,
             timestamp=ros.Time.now(),
             arm_name=self.arm_name,
         )
-        response = make_pod_request(self.inverse_kinematics_service, pod, UR3StatePOD)
+        response = make_pod_request(self.inverse_kinematics_service, pod, URStatePOD)
         return response.joint_configuration
 
     def get_tcp_pose(self, timeout=1):

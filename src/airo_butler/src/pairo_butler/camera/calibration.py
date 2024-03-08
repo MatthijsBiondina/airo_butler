@@ -97,7 +97,7 @@ class CameraCalibration:
         self.rate: Optional[ros.Rate] = None
 
         # todo: debug gorilla crash
-        # self.zed: Optional[ZEDClient] = None
+        self.zed: Optional[ZEDClient] = None
         self.rs2: Optional[RS2Client] = None
         self.wilson: Optional[UR3Client] = None
         self.sophie: Optional[UR3Client] = None
@@ -124,7 +124,7 @@ class CameraCalibration:
         self.rate = ros.Rate(self.PUBLISH_RATE)
 
         # todo: debug gorilla crash
-        # self.zed = ZEDClient()
+        self.zed = ZEDClient()
         self.rs2 = RS2Client()
         self.wilson = UR3Client("wilson")
         self.sophie = UR3Client("sophie")
@@ -171,9 +171,9 @@ class CameraCalibration:
         ros.loginfo(f"Good human!")
 
         # todo: debug gorilla crash
-        # return STATE_CALIBRATE_ZED_WILSON
+        return STATE_CALIBRATE_ZED_WILSON
 
-        return STATE_CALIBRATE_RS2_SOPHIE
+        # return STATE_CALIBRATE_RS2_SOPHIE
 
     def __calibrate_wilson(self):
         measurements: List[TCPs] = []
@@ -259,11 +259,11 @@ class CameraCalibration:
         self.sophie.open_gripper()
 
         # location of board relative to wilson
-        # T_charuco_zed = self.__wait_for_measurements(ros.Time.now(), camera="zed")
-        # T_zed_wilson = np.load(self.data_root / "T_zed_wilson.npy")
-        # T_charuco_wilson = T_zed_wilson @ T_charuco_zed
-        # pyout(f"T_charuco_wilson:\n{T_charuco_wilson}")
-        # pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
+        T_charuco_zed = self.__wait_for_measurements(ros.Time.now(), camera="zed")
+        T_zed_wilson = np.load(self.data_root / "T_zed_wilson.npy")
+        T_charuco_wilson = T_zed_wilson @ T_charuco_zed
+        pyout(f"T_charuco_wilson:\n{T_charuco_wilson}")
+        pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
 
         # location of board relative to sophie
         T_charuco_rs2 = self.__wait_for_measurements(ros.Time.now(), camera="rs2")
@@ -294,9 +294,9 @@ class CameraCalibration:
         self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
 
         # todo: debug gorilla crash
-        # return STATE_CALIBRATE_ZED_SOPHIE
+        return STATE_CALIBRATE_ZED_SOPHIE
 
-        return STATE_DROP_CHARUCO_BOARD
+        # return STATE_DROP_CHARUCO_BOARD
 
     def __drop_charuco_board(self):
         initial_world_pos = np.array([-0.50, -0.3, 0.40])
