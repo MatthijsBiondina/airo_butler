@@ -41,7 +41,7 @@ class UR3GripperPOD(POD):
         self.blocking = blocking
 
 
-class UR3PosePOD(POD):
+class URPosePOD(POD):
     """
     Represents the pose COMMAND data for a UR3 ro4ot arm.
 
@@ -98,6 +98,38 @@ class URStatePOD(POD):
         self.gripper_width: Optional[float] = gripper_width
         self.timestamp: ros.Time = timestamp
         self.arm_name: Optional[str] = arm_name
+
+
+class DualTCPPOD(POD):
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        tcp_sophie: Optional[np.ndarray] = None,
+        tcp_wilson: Optional[np.ndarray] = None,
+    ):
+        self.timestamp: ros.Time = timestamp
+
+        assert not (tcp_sophie is None and tcp_wilson is None)
+        self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
+        self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
+
+
+class DualPathPOD(POD):
+    __slots__ = ["timestamp", "path_sophie", "path_wilson"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        path_sophie: Optional[np.ndarray] = None,
+        path_wilson: Optional[np.ndarray] = None,
+    ):
+        self.timestamp: ros.Time = timestamp
+
+        assert not (path_sophie is None and path_wilson is None)
+        self.path_sophie: Optional[np.ndarray] = None
+        self.path_wilson: Optional[np.ndarray] = None
 
 
 class BooleanPOD(POD):

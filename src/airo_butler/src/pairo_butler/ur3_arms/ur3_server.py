@@ -18,7 +18,7 @@ from airo_butler.srv import PODService, PODServiceResponse
 from pairo_butler.ur3_arms.ur3_constants import IP_RIGHT_UR3, IP_LEFT_UR3
 from pairo_butler.ur3_arms.ur3_utils import convert_homegeneous_pose_to_rotvec_pose
 from pairo_butler.utils.pods import POD, URStatePOD, publish_pod
-from pairo_butler.utils.pods import BooleanPOD, UR3PosePOD, UR3GripperPOD
+from pairo_butler.utils.pods import BooleanPOD, URPosePOD, UR3GripperPOD
 
 RARM_REST = np.array([+0.00, -1.00, +0.50, -0.50, -0.50, +0.00]) * np.pi
 LARM_REST = np.array([+0.00, -0.00, -0.50, -0.50, +0.50, +0.00]) * np.pi
@@ -128,7 +128,7 @@ class UR3_server:
 
     def move_to_joint_configuration(self, req):
         try:
-            pod: UR3PosePOD = pickle.loads(req.pod)
+            pod: URPosePOD = pickle.loads(req.pod)
 
             if pod.arm_name == "wilson":
                 action = self.wilson.move_to_joint_configuration(
@@ -154,7 +154,7 @@ class UR3_server:
 
     def move_to_tcp_pose(self, req):
         try:
-            pod: UR3PosePOD = pickle.loads(req.pod)
+            pod: URPosePOD = pickle.loads(req.pod)
 
             if pod.side == "wilson":
                 action = self.wilson.move_to_tcp_pose(pod.pose, pod.joint_speed)

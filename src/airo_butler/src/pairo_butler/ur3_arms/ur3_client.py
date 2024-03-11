@@ -16,7 +16,7 @@ from pairo_butler.utils.pods import (
     BooleanPOD,
     URStatePOD,
     make_pod_request,
-    UR3PosePOD,
+    URPosePOD,
     UR3GripperPOD,
 )
 from pairo_butler.utils.tools import pyout
@@ -76,7 +76,7 @@ class UR3Client:
         joint_speed: Optional[float] = None,
         blocking: bool = True,
     ) -> bool:
-        pod = UR3PosePOD(joint_configuration, self.arm_name, joint_speed, blocking)
+        pod = URPosePOD(joint_configuration, self.arm_name, joint_speed, blocking)
         response = make_pod_request(
             self.move_to_joint_configuration_service, pod, BooleanPOD
         )
@@ -88,7 +88,7 @@ class UR3Client:
         joint_speed: Optional[float] = None,
         blocking: Optional[bool] = True,
     ) -> bool:
-        pod = UR3PosePOD(tcp_pose, self.arm_name, joint_speed, blocking)
+        pod = URPosePOD(tcp_pose, self.arm_name, joint_speed, blocking)
         response = make_pod_request(self.move_to_tcp_pose_service, pod, BooleanPOD)
         return response.value
 

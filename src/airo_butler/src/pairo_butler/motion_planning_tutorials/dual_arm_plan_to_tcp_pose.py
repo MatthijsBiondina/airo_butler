@@ -1,7 +1,9 @@
+import sys
 import time
 import numpy as np
 from pydrake.math import RigidTransform, RollPitchYaw
 from pydrake.planning import RobotDiagramBuilder, SceneGraphCollisionChecker
+from pairo_butler.utils.tools import pyout
 from cloth_tools.drake.building import add_meshcat_to_builder, finish_build
 from cloth_tools.drake.scenes import add_dual_ur5e_and_table_to_builder
 from cloth_tools.ompl.dual_arm_planner import DualArmOmplPlanner
@@ -51,6 +53,7 @@ plant = diagram.plant()
 plant_context = plant.GetMyContextFromRoot(context)
 
 arm_left_index, arm_right_index = arm_indices
+
 plant.SetPositions(plant_context, arm_left_index, home_joints_left)
 plant.SetPositions(plant_context, arm_right_index, home_joints_right)
 diagram.ForcedPublish(context)
