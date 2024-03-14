@@ -17,7 +17,7 @@ from pairo_butler.utils.pods import (
     URStatePOD,
     make_pod_request,
     URPosePOD,
-    UR3GripperPOD,
+    URGripperPOD,
 )
 from pairo_butler.utils.tools import pyout
 
@@ -93,17 +93,17 @@ class UR3Client:
         return response.value
 
     def move_gripper(self, width: float, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD(width, self.arm_name, blocking)
+        pod = URGripperPOD(width, self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 
     def close_gripper(self, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD("close", self.arm_name, blocking)
+        pod = URGripperPOD("close", self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 
     def open_gripper(self, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD("open", self.arm_name, blocking)
+        pod = URGripperPOD("open", self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 

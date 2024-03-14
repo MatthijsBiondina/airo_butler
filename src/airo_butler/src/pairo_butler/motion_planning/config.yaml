@@ -1,7 +1,7 @@
 # config.yaml
 
-joint_bounds_lower: [-360, -180, -160, -360, -360, -360]
-joint_bounds_upper: [ 360,    0,  160,  360,  360,  360]
+joint_bounds_lower: [-360, -185, -160, -360, -360, -360]
+joint_bounds_upper: [ 360,    5,  160,  360,  360,  360]
 gripper_length: 0.19
 
 tcp_transform:

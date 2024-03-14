@@ -2,7 +2,15 @@ import pickle
 import sys
 
 import numpy as np
-from pairo_butler.utils.pods import BooleanPOD, URPosePOD, URStatePOD, make_pod_request
+from pairo_butler.utils.pods import (
+    BooleanPOD,
+    DualTrajectoryPOD,
+    SingleTrajectoryPOD,
+    URGripperPOD,
+    URPosePOD,
+    URStatePOD,
+    make_pod_request,
+)
 import rospy as ros
 from typing import Any, Callable, Optional
 from pairo_butler.utils.tools import load_config, pyout
@@ -75,6 +83,20 @@ class UR5eClient:
         response = make_pod_request(
             self.__service_move_to_joint_configuration, pod, BooleanPOD
         )
+        return response.value
+
+    def execute_plan(self, plan: DualTrajectoryPOD):
+        response = make_pod_request(self.__service_execute_trajectory, plan, BooleanPOD)
+        return response.value
+
+    def close_gripper(self, blocking: bool = True) -> bool:
+        pod = URGripperPOD("close", self.arm_name, blocking)
+        response = make_pod_request(self.__service_move_gripper, pod, BooleanPOD)
+        return response.value
+
+    def open_gripper(self, blocking: bool = True) -> bool:
+        pod = URGripperPOD("open", self.arm_name, blocking)
+        response = make_pod_request(self.__service_move_gripper, pod, BooleanPOD)
         return response.value
 
     # SERVICE CLIENTS

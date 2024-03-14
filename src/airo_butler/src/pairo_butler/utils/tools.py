@@ -14,9 +14,11 @@ from typing import Any, Dict, Union
 import cv2
 from munch import Munch
 import numpy as np
+import rospkg
 from tqdm import tqdm
 from PIL import Image
 import yaml
+import rospy as ros
 
 bcolors = {
     "PINK": "\033[95m",
@@ -332,3 +334,18 @@ def load_config() -> Munch:
     with open(config_path, "r") as f:
         config: Dict[str, Any] = yaml.safe_load(f)
     return Munch.fromDict(config)
+
+
+def load_camera_transformation_matrix(name: str):
+    fpath = (
+        Path(rospkg.RosPack().get_path("airo_butler"))
+        / "res"
+        / "camera_tcps"
+        / f"{name}.npy"
+    )
+
+    try:
+        transformation_matrix = np.load(fpath)
+        return transformation_matrix
+    except FileNotFoundError as e:
+        ros.logerr(f"Could not find {name}. Options are {os.listdir(fpath.parent)}")

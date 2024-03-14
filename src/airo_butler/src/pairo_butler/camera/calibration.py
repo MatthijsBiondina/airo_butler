@@ -9,11 +9,11 @@ import cv2
 import numpy as np
 import rospkg
 import yaml
+from pairo_butler.motion_planning.ompl_client import OMPLClient
+from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
 from pairo_butler.camera.zed_camera import ZEDClient
 from pairo_butler.camera.rs2_camera import RS2Client
-from pairo_butler.ur3_arms.ur3_constants import WILSON_SLEEP, SOPHIE_SLEEP
 from pairo_butler.utils.tools import pbar, pyout
-from pairo_butler.ur3_arms.ur3_client import UR3Client
 from pairo_butler.utils.pods import ZEDPOD, ImagePOD
 import rospy as ros
 from airo_butler.msg import PODMessage
@@ -99,12 +99,13 @@ class CameraCalibration:
         # todo: debug gorilla crash
         self.zed: Optional[ZEDClient] = None
         self.rs2: Optional[RS2Client] = None
-        self.wilson: Optional[UR3Client] = None
-        self.sophie: Optional[UR3Client] = None
+        self.wilson: Optional[UR5eClient] = None
+        self.sophie: Optional[UR5eClient] = None
+        self.ompl: OMPLClient
 
         # Placeholders:
         self.state: str = STATE_STARTUP
-        # self.state: str = STATE_CALIBRATE_ZED_SOPHIE
+        # self.state: str = STATE_DROP_CHARUCO_BOARD
 
         # Filesystem
         self.data_root = (
@@ -126,8 +127,9 @@ class CameraCalibration:
         # todo: debug gorilla crash
         self.zed = ZEDClient()
         self.rs2 = RS2Client()
-        self.wilson = UR3Client("wilson")
-        self.sophie = UR3Client("sophie")
+        self.wilson = UR5eClient("wilson")
+        self.sophie = UR5eClient("sophie")
+        self.ompl = OMPLClient()
 
         ros.loginfo(f"{self.node_name}: OK!")
 
@@ -168,7 +170,6 @@ class CameraCalibration:
             self.wilson.open_gripper()
             self.wilson.close_gripper()
             ros.sleep(1.0)
-        ros.loginfo(f"Good human!")
 
         # todo: debug gorilla crash
         return STATE_CALIBRATE_ZED_WILSON
@@ -258,12 +259,12 @@ class CameraCalibration:
         )
         self.sophie.open_gripper()
 
-        # location of board relative to wilson
-        T_charuco_zed = self.__wait_for_measurements(ros.Time.now(), camera="zed")
-        T_zed_wilson = np.load(self.data_root / "T_zed_wilson.npy")
-        T_charuco_wilson = T_zed_wilson @ T_charuco_zed
-        pyout(f"T_charuco_wilson:\n{T_charuco_wilson}")
-        pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
+        # # location of board relative to wilson
+        # T_charuco_zed = self.__wait_for_measurements(ros.Time.now(), camera="zed")
+        # T_zed_wilson = np.load(self.data_root / "T_zed_wilson.npy")
+        # T_charuco_wilson = T_zed_wilson @ T_charuco_zed
+        # pyout(f"T_charuco_wilson:\n{T_charuco_wilson}")
+        # pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
 
         # location of board relative to sophie
         T_charuco_rs2 = self.__wait_for_measurements(ros.Time.now(), camera="rs2")
@@ -278,17 +279,26 @@ class CameraCalibration:
             AIRO_DEFAULT_CHARUCO_BOARD.getChessboardSize()[0]
         )
         charuco_board_square_size = AIRO_DEFAULT_CHARUCO_BOARD.getSquareLength()
-        grasp_X = (
+
+        tcp_grasp = np.eye(4)
+        tcp_grasp[:3, 0] = T_charuco_sophie[:3, 2]
+        tcp_grasp[:3, 1] = T_charuco_sophie[:3, 1]
+        tcp_grasp[:3, 2] = -T_charuco_sophie[:3, 0]
+        tcp_grasp[:3, 3] = (
             T_charuco_sophie[:3, 3]
             + T_charuco_sophie[:3, 0]
-            * (charuco_board_nr_of_squares_along_width - 0.75)
+            * (charuco_board_nr_of_squares_along_width - 1.25)
             * charuco_board_square_size
         )
-        grasp_z = -T_charuco_sophie[:3, 0]
-        grasp_z[-1] = 0.0
-        grasp_z /= np.linalg.norm(grasp_z)
+        tcp_approach = np.copy(tcp_grasp)
+        tcp_approach[:3, 3] = tcp_approach[:3, 3] - 0.1 * tcp_approach[:3, 2]
 
-        self.sophie.grasp_horizontal(world_pos=grasp_X, gripper_z_dir=grasp_z)
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_approach)
+        self.sophie.execute_plan(plan)
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_grasp)
+        self.sophie.execute_plan(plan)
+
+        self.sophie.close_gripper()
         self.wilson.open_gripper()
         self.wilson.move_to_joint_configuration(self.poses["wilson_rest"])
         self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
@@ -299,13 +309,23 @@ class CameraCalibration:
         # return STATE_DROP_CHARUCO_BOARD
 
     def __drop_charuco_board(self):
-        initial_world_pos = np.array([-0.50, -0.3, 0.40])
-        self.sophie.move_to_tcp_vertical_down(initial_world_pos)
-        self.sophie.move_to_tcp_vertical_down(np.array([-0.50, -0.3, 0.27]))
-        self.sophie.move_gripper(0.02, blocking=True)
-        self.sophie.move_to_tcp_vertical_down(np.array([-0.50, +0.2, 0.27]))
+
+        tcp = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, -1.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0, 0.27],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp)
+        self.sophie.execute_plan(plan)
         self.sophie.open_gripper()
-        self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
+
+        plan = self.ompl.plan_to_joint_configuration(
+            sophie=self.poses["sophie_rest"], wilson=self.poses["wilson_rest"]
+        )
+        self.sophie.execute_plan(plan)
 
         return STATE_DONE
 

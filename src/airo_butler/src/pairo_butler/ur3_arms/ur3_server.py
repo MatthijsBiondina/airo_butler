@@ -18,7 +18,7 @@ from airo_butler.srv import PODService, PODServiceResponse
 from pairo_butler.ur3_arms.ur3_constants import IP_RIGHT_UR3, IP_LEFT_UR3
 from pairo_butler.ur3_arms.ur3_utils import convert_homegeneous_pose_to_rotvec_pose
 from pairo_butler.utils.pods import POD, URStatePOD, publish_pod
-from pairo_butler.utils.pods import BooleanPOD, URPosePOD, UR3GripperPOD
+from pairo_butler.utils.pods import BooleanPOD, URPosePOD, URGripperPOD
 
 RARM_REST = np.array([+0.00, -1.00, +0.50, -0.50, -0.50, +0.00]) * np.pi
 LARM_REST = np.array([+0.00, -0.00, -0.50, -0.50, +0.50, +0.00]) * np.pi
@@ -175,7 +175,7 @@ class UR3_server:
 
     def move_gripper(self, req):
         try:
-            pod: UR3GripperPOD = pickle.loads(req.pod)
+            pod: URGripperPOD = pickle.loads(req.pod)
 
             # Determine the arm based on the side
             assert pod.arm_name in ["wilson", "sophie"]

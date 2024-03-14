@@ -4,7 +4,14 @@ from threading import Thread
 import time
 from typing import Dict, Optional
 from airo_butler.msg import PODMessage
-from pairo_butler.utils.pods import DualTCPPOD
+from pairo_butler.procedures import unfold
+from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
+from pairo_butler.utils.pods import (
+    DualJointsPOD,
+    DualTCPPOD,
+    DualTrajectoryPOD,
+    TowelPOD,
+)
 from pairo_butler.motion_planning.ompl_client import OMPLClient
 from airo_butler.srv import PODService, PODServiceRequest, PODServiceResponse
 import numpy as np
@@ -16,16 +23,11 @@ import rospy as ros
 from pydrake.math import RigidTransform, RollPitchYaw
 
 
-def request_service():
-    time.sleep(2)
+np.set_printoptions(precision=0, suppress=True)
 
-    ompl_client = OMPLClient()
-    # ompl_client.start_ros()
 
-    transform_0 = RigidTransform(p=[0, 0, 0.35], rpy=RollPitchYaw([-np.pi, 0, 0]))
-    tcp_pose_0 = np.ascontiguousarray(transform_0.GetAsMatrix4())
-
-    ompl_client.plan_to_tcp_pose(sophie=tcp_pose_0)
+def request_process():
+    unfold.main()
 
 
 class OMPL_server:
@@ -36,43 +38,92 @@ class OMPL_server:
         self.node_name: str = name
         self.rate: ros.Rate
 
-        self.simulator: DrakeSimulation
-        self.planner: DualArmOmplPlanner
+        self.simulator_without_towel: DrakeSimulation
+        self.simulator_with_towel: DrakeSimulation
 
-        self.services: Dict[str, ros.Service] = self.__initialize_services()
+        self.planner_without_towel: DualArmOmplPlanner
+        self.planner_with_towel: DualArmOmplPlanner
+
+        self.services: Dict[ros.Service] = self.__initialize_services()
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
 
-        self.simulator = DrakeSimulation()
+        self.simulator_without_towel = DrakeSimulation()
+        self.simulator_with_towel = DrakeSimulation(TowelObstacle())
 
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         while not ros.is_shutdown():
-            self.simulator.update()
+            try:
+                self.simulator_without_towel.update()
+                self.simulator_with_towel.update()
+            except AttributeError:
+                pass
             self.rate.sleep()
 
     def __initialize_services(self):
         services = {
             "plan_to_tcp_pose": ros.Service(
                 "plan_to_tcp_pose", PODService, self.__plan_to_tcp_pose
-            )
+            ),
+            "plan_to_joint_configuration": ros.Service(
+                "plan_to_joint_configuration",
+                PODService,
+                self.__plan_to_joint_configuration,
+            ),
         }
         return services
 
     def __plan_to_tcp_pose(self, req: PODServiceRequest):
-        pod: DualTCPPOD = pickle.loads(req.pod)
-        path = self.simulator.plan_to_tcp_pose(pod.tcp_sophie, pod.tcp_wilson)
+        input_pod: DualTCPPOD = pickle.loads(req.pod)
+        if input_pod.avoid_towel:
+            simulator = self.simulator_with_towel
+        else:
+            simulator = self.simulator_without_towel
+        path_sophie, path_wilson, period = simulator.plan_to_tcp_pose(
+            input_pod.tcp_sophie, input_pod.tcp_wilson
+        )
+        response_pod: DualTrajectoryPOD = DualTrajectoryPOD(
+            timestamp=input_pod.timestamp,
+            path_sophie=path_sophie,
+            path_wilson=path_wilson,
+            period=period,
+        )
 
-        pyout()
+        response = PODServiceResponse()
+        response.pod = pickle.dumps(response_pod)
+        return response
+
+    def __plan_to_joint_configuration(self, req: PODServiceRequest):
+        input_pod: DualJointsPOD = pickle.loads(req.pod)
+        if input_pod.avoid_towel:
+            simulator = self.simulator_with_towel
+        else:
+            simulator = self.simulator_without_towel
+
+        path_sophie, path_wilson, period = simulator.plan_to_joint_configuration(
+            input_pod.joints_sophie, input_pod.joints_wilson
+        )
+        response_pod: DualTrajectoryPOD = DualTrajectoryPOD(
+            timestamp=input_pod.timestamp,
+            path_sophie=path_sophie,
+            path_wilson=path_wilson,
+            period=period,
+        )
+
+        response = PODServiceResponse()
+        response.pod = pickle.dumps(response_pod)
+        return response
 
 
 def main():
     node = OMPL_server()
     node.start_ros()
-    Process(target=request_service, daemon=True).start()
+    Process(target=request_process, daemon=True).start()
+
     node.run()
 
 

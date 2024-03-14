@@ -1,6 +1,7 @@
 import PIL
 from PIL import Image
 
+from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
 import rospy as ros
 import pickle
 import sys
@@ -20,7 +21,7 @@ class POD:
     pass
 
 
-class UR3GripperPOD(POD):
+class URGripperPOD(POD):
     """
     Represents the data for controlling a UR3 robot's gripper.
 
@@ -101,35 +102,66 @@ class URStatePOD(POD):
 
 
 class DualTCPPOD(POD):
-    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson"]
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "avoid_towel"]
 
     def __init__(
         self,
         timestamp: ros.Time,
         tcp_sophie: Optional[np.ndarray] = None,
         tcp_wilson: Optional[np.ndarray] = None,
+        avoid_towel: bool = False,
     ):
         self.timestamp: ros.Time = timestamp
 
         assert not (tcp_sophie is None and tcp_wilson is None)
         self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
         self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
+        self.avoid_towel: bool = avoid_towel
 
 
-class DualPathPOD(POD):
-    __slots__ = ["timestamp", "path_sophie", "path_wilson"]
+class DualJointsPOD(POD):
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "avoid_towel"]
 
     def __init__(
         self,
         timestamp: ros.Time,
-        path_sophie: Optional[np.ndarray] = None,
-        path_wilson: Optional[np.ndarray] = None,
+        joints_sophie: Optional[np.ndarray] = None,
+        joints_wilson: Optional[np.ndarray] = None,
+        avoid_towel: bool = False,
     ):
         self.timestamp: ros.Time = timestamp
+        assert not (joints_sophie is None and joints_wilson is None)
+        self.joints_sophie: Optional[np.ndarray] = joints_sophie
+        self.joints_wilson: Optional[np.ndarray] = joints_wilson
+        self.avoid_towel: bool = avoid_towel
 
-        assert not (path_sophie is None and path_wilson is None)
-        self.path_sophie: Optional[np.ndarray] = None
-        self.path_wilson: Optional[np.ndarray] = None
+
+class DualTrajectoryPOD(POD):
+    __slots__ = ["timestamp", "path_sophie", "path_wilson", "period"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        path_sophie: np.ndarray,
+        path_wilson: np.ndarray,
+        period: float,
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.path_sophie: np.ndarray = path_sophie
+        self.path_wilson: np.ndarray = path_wilson
+        self.period: float = period
+
+
+class SingleTrajectoryPOD(POD):
+    __slots__ = ["path", "arm_name", "period", "blocking"]
+
+    def __init__(self, path: np.ndarray, arm_name: str, period: float, blocking: bool):
+
+        self.path: np.ndarray = path
+        assert arm_name in ["wilson", "sophie"]
+        self.arm_name: str = arm_name
+        self.period: float = period
+        self.blocking: bool = blocking
 
 
 class BooleanPOD(POD):
@@ -253,6 +285,22 @@ class KalmanFilterStatePOD:
         self.means = means
         self.covariances = covariances
         self.camera_tcp = camera_tcp
+
+
+class CoordinatePOD:
+    __slots__ = ["x", "y", "z"]
+
+    def __init__(self, x: float, y: float, z: float):
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+class TowelPOD:
+    __slots__ = ["towel"]
+
+    def __init__(self, towel: Optional[TowelObstacle] = None):
+        self.towel: Optional[TowelObstacle] = towel
 
 
 def make_pod_request(

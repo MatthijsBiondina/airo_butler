@@ -1,15 +1,29 @@
+import os
 import pickle
 import threading
 from typing import Dict, Optional
 
 from munch import Munch
-from pairo_butler.utils.tools import load_config
-from pairo_butler.utils.pods import BooleanPOD, URPosePOD, URStatePOD, publish_pod
+import numpy as np
+from pairo_butler.utils.tools import load_config, pyout
+from pairo_butler.utils.pods import (
+    BooleanPOD,
+    DualTrajectoryPOD,
+    SingleTrajectoryPOD,
+    URGripperPOD,
+    URPosePOD,
+    URStatePOD,
+    publish_pod,
+)
 import rospy as ros
 from airo_robots.manipulators import URrtde
 from airo_robots.grippers import Robotiq2F85
 from airo_butler.msg import PODMessage
 from airo_butler.srv import PODService, PODServiceResponse
+
+np.set_printoptions(precision=2, suppress=True)
+
+ARM_Y_DEFAULT = 0.45
 
 
 class UR5e_server:
@@ -38,6 +52,23 @@ class UR5e_server:
         # Initialize services
         self.services: Dict[str, ros.Service] = self.__initialize_services()
 
+        self.transform_sophie_to_world = np.array(
+            [
+                [0.0, 1.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0, -ARM_Y_DEFAULT],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        self.transform_wilson_to_world = np.array(
+            [
+                [0.0, 1.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0, ARM_Y_DEFAULT],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.PUBLISH_RATE)
@@ -53,15 +84,25 @@ class UR5e_server:
 
         while not ros.is_shutdown():
             timestamp = ros.Time.now()
+
+            tcp_sophie_in_sophie_frame = self.sophie.get_tcp_pose()
+            tcp_sophie_in_world_frame = (
+                self.transform_sophie_to_world @ tcp_sophie_in_sophie_frame
+            )
+            tcp_wilson_in_wilson_frame = self.wilson.get_tcp_pose()
+            tcp_wilson_in_world_frame = (
+                self.transform_wilson_to_world @ tcp_wilson_in_wilson_frame
+            )
+
             pod_sophie = URStatePOD(
-                tcp_pose=self.sophie.get_tcp_pose(),
+                tcp_pose=tcp_sophie_in_world_frame,
                 joint_configuration=self.sophie.get_joint_configuration(),
                 gripper_width=self.sophie.gripper.get_current_width(),
                 timestamp=timestamp,
                 arm_name="sophie",
             )
             pod_wilson = URStatePOD(
-                tcp_pose=self.wilson.get_tcp_pose(),
+                tcp_pose=tcp_wilson_in_world_frame,
                 joint_configuration=self.wilson.get_joint_configuration(),
                 gripper_width=self.wilson.gripper.get_current_width(),
                 timestamp=timestamp,
@@ -127,10 +168,69 @@ class UR5e_server:
         return response
 
     def __execute_trajectory(self, req):
-        raise NotImplementedError
+        try:
+            pod: DualTrajectoryPOD = pickle.loads(req.pod)
+
+            assert np.all(
+                np.isclose(
+                    pod.path_wilson[0],
+                    self.wilson.get_joint_configuration(),
+                    atol=1e-1,
+                )
+            )
+
+            assert np.all(
+                np.isclose(
+                    pod.path_sophie[0],
+                    self.sophie.get_joint_configuration(),
+                    atol=1e-1,
+                )
+            )
+
+            for joints_wilson, joints_sophie in zip(pod.path_wilson, pod.path_sophie):
+                wilson_servo = self.wilson.servo_to_joint_configuration(
+                    joints_wilson, pod.period
+                )
+                sophie_servo = self.sophie.servo_to_joint_configuration(
+                    joints_sophie, pod.period
+                )
+                wilson_servo.wait()
+                sophie_servo.wait()
+
+            return_value = True
+        except Exception as e:
+            raise e
+            ros.logwarn(f"An exception occurred: {e}")
+            return_value = False
+
+        response = PODServiceResponse()
+        response.pod = pickle.dumps(BooleanPOD(return_value))
+        return response
 
     def __move_gripper(self, req):
-        raise NotImplementedError
+        try:
+            pod: URGripperPOD = pickle.loads(req.pod)
+
+            # Determine the arm based on the side
+            assert pod.arm_name in ["wilson", "sophie"]
+            arm = self.wilson if pod.arm_name == "wilson" else self.sophie
+
+            # Determine the width to move the gripper to
+            if isinstance(pod.pose, float):
+                width = np.clip(pod.pose, 0.0, arm.gripper.gripper_specs.max_width)
+            else:
+                assert pod.pose in ["open", "close"]
+                width = (
+                    0.0 if pod.pose == "close" else arm.gripper.gripper_specs.max_width
+                )
+
+            arm.gripper.move(width, speed=0.15, force=250).wait(timeout=300.0)
+            return_value = True
+        except Exception as e:
+            return_value = False
+        response = PODServiceResponse()
+        response.pod = pickle.dumps(BooleanPOD(return_value))
+        return response
 
     def __interrupt(self, req):
         raise NotImplementedError
