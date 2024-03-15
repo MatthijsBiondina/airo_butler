@@ -1,13 +1,14 @@
+import sys
 from typing import Any, Dict
 
 import numpy as np
-from pairo_butler.procedures.subprocedures.grasp_first_corner import GraspFirstCorner
+from pairo_butler.procedures.subprocedures.holdup import Holdup
 from pairo_butler.procedures.subprocedures.pickup import Pickup
 from pairo_butler.procedures.subprocedures.startup import Startup
 from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
 from pairo_butler.motion_planning.ompl_client import OMPLClient
 import rospy as ros
-from pairo_butler.utils.tools import load_config
+from pairo_butler.utils.tools import load_config, pyout
 
 
 np.set_printoptions(precision=2, suppress=True)
@@ -25,10 +26,8 @@ class UnfoldMachine:
         self.kwargs: Dict[str, Any]
 
     def start_ros(self):
-        try:
-            ros.init_node(self.node_name, log_level=ros.INFO)
-        except ros.exceptions.ROSException:
-            pass
+
+        ros.init_node(self.node_name, log_level=ros.INFO)
 
         self.ompl = OMPLClient()
         self.sophie = UR5eClient("sophie")
@@ -44,9 +43,23 @@ class UnfoldMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        # Startup(**self.kwargs).run()
-        # Pickup(**self.kwargs).run()
-        GraspFirstCorner(**self.kwargs).run()
+
+        # plan = self.ompl.plan_to_joint_configuration(
+        #     sophie=np.deg2rad(self.config.joints_hold_sophie)
+        # )
+        # self.sophie.execute_plan(plan)
+        # sys.exit(0)
+
+        while not ros.is_shutdown():
+            ros.loginfo("Startup")
+            Startup(**self.kwargs).run()
+            ros.loginfo("Pickup")
+            while not Pickup(**self.kwargs).run():
+                pyout(f"Could not pick up towel. Try again.")
+
+            ros.loginfo("Grasp Corner")
+            if Holdup(**self.kwargs).run():
+                break
 
 
 def main():

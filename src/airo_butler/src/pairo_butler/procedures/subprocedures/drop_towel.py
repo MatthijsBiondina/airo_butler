@@ -11,6 +11,7 @@ class DropTowel(Subprocedure):
 
     def run(self):
         self.__sophie_let_go_if_both_holding_towel()
+        self.__move_to_rest_pose()
         self.__let_go_sophie()
         self.__let_go_wilson()
         self.__move_to_rest_pose()
@@ -31,14 +32,25 @@ class DropTowel(Subprocedure):
 
     def __let_go_sophie(self):
         if self.sophie.get_gripper_width() < 0.03:
-            plan = self.ompl.plan_to_tcp_pose(sophie=self.config.tcp_drop)
-            self.sophie.execute_plan(plan)
+            try:
+                plan = self.ompl.plan_to_joint_configuration(
+                    sophie=np.deg2rad(self.config.joints_hold_sophie)
+                )
+                self.sophie.execute_plan(plan)
+
+                plan = self.ompl.plan_to_tcp_pose(sophie=self.config.tcp_drop)
+                self.sophie.execute_plan(plan)
+            except RuntimeError:
+                pass
             self.sophie.open_gripper()
             self.__move_to_rest_pose()
 
     def __let_go_wilson(self):
         if self.wilson.get_gripper_width() < 0.03:
-            plan = self.ompl.plan_to_tcp_pose(wilson=self.config.tcp_drop)
-            self.wilson.execute_plan(plan)
+            try:
+                plan = self.ompl.plan_to_tcp_pose(wilson=self.config.tcp_drop)
+                self.wilson.execute_plan(plan)
+            except RuntimeError:
+                pass
             self.wilson.open_gripper()
             self.__move_to_rest_pose()

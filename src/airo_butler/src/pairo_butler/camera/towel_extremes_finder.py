@@ -51,31 +51,33 @@ class TowelExtremesFinder:
     def compute_highest_point(self, cloud: np.ndarray):
         mask = (
             (cloud[:, 2] > 0)
-            & (cloud[:, 1] < 0.35)
-            & (cloud[:, 1] > -0.35)
+            & (cloud[:, 1] < 0.25)
+            & (cloud[:, 1] > -0.25)
             & (cloud[:, 0] > -0.45)
             & (cloud[:, 0] < 0.45)
         )
         try:
             valid_points = cloud[mask]
-            idx = np.argmax(valid_points[:, 2])
-
-            return valid_points[idx]
+            idxs = np.argsort(valid_points[:, 2])
+            return valid_points[idxs[int(idxs.size * 0.995)]]
         except IndexError:
+            return np.zeros(3)
+        except ValueError:
             return np.zeros(3)
 
     def compute_lowest_point(self, cloud: np.ndarray):
 
-        mask = (cloud[:, 2] > 0.02) & (
+        mask = (cloud[:, 2] > 0.03) & (
             np.sqrt(cloud[:, 0] ** 2 + cloud[:, 1] ** 2) < 0.15  # cone
         )
         valid_points = cloud[mask]
         try:
             valid_points = cloud[mask]
-            idx = np.argmin(valid_points[:, 2])
-
-            return valid_points[idx]
+            idxs = np.argsort(valid_points[:, 2])
+            return valid_points[idxs[int(idxs.size * 0.005)]]
         except IndexError:
+            return np.zeros(3)
+        except ValueError:
             return np.zeros(3)
 
 

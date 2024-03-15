@@ -99,6 +99,9 @@ class UR5eClient:
         response = make_pod_request(self.__service_move_gripper, pod, BooleanPOD)
         return response.value
 
+    def gripper_closed(self) -> bool:
+        return self.get_gripper_width() < 0.01
+
     # SERVICE CLIENTS
 
     def __wait_for_services(self):

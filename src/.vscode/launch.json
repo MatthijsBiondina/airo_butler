@@ -8,7 +8,7 @@
             "name": "Python: Airo Butler",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/motion_planning/ompl_server.py",
+            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/procedures/unfold.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

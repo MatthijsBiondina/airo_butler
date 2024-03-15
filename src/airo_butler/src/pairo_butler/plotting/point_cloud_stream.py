@@ -38,6 +38,8 @@ class PointCloudStream:
 
     def run(self):
         while not ros.is_shutdown():
+            self.tranformation_matrix_sophie_zed = self.__load_transformation_matrix()
+
             cloud = self.zed.pod.point_cloud
 
             xyz_in_zed_frame, points_rgb_colors = cloud[:, :3], cloud[:, 3:]
@@ -88,10 +90,10 @@ class PointCloudStream:
         camera_position = [
             3 * np.cos(self.view_angle),
             3 * np.sin(self.view_angle),
-            1.0,
+            0.1,
         ]
 
-        focal_point = [-0.45, 0.0, 0.5]
+        focal_point = [0.0, 0.0, 0.1]
         view_up = [0, 0, 1]
         plotter.camera_position = [camera_position, focal_point, view_up]
 

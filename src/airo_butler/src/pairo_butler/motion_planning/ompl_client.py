@@ -66,7 +66,9 @@ class OMPLClient:
             self.__service_plan_to_tcp_pose, pod, DualTrajectoryPOD
         )
         if response is None:
-            raise RuntimeError("No plan found.")
+            raise RuntimeError(
+                f"No plan found to tcps: \n\nSophie:\n{sophie}\n\nWilson:\n{wilson}."
+            )
 
         return response
 

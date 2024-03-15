@@ -222,8 +222,8 @@ class DrakeSimulation:
             sophie_start,
             wilson_tgt,
             sophie_tgt,
-            desirable_goal_configurations_left=[self.wilson.get_joint_configuration()],
-            desirable_goal_configurations_right=[self.sophie.get_joint_configuration()],
+            # desirable_goal_configurations_left=[self.wilson.get_joint_configuration()],
+            # desirable_goal_configurations_right=[self.sophie.get_joint_configuration()],
         )
 
         joint_trajectory, time_trajectory = time_parametrize_toppra(path, self.plant)
