@@ -4,7 +4,7 @@
             "name": "Python: rs2_camera",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py",
+            "program": "${workspaceFolder}/src/airo_butler/src/pairo_butler/kalman_filters/3d_filter.py",
             "justMyCode": true
         }
     ]
