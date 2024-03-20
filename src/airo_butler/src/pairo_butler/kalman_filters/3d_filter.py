@@ -10,8 +10,14 @@ import numpy as np
 import rospkg
 from pairo_butler.kalman_filters.kalman_filter_utils import (
     POD3D,
-    compute_Q_matrices,
+    KalmanFilterState,
+    add_new_measurements_to_state,
+    add_remaining_points_as_new_points,
+    compute_covariance_over_color,
+    compute_covariance_over_position,
+    construct_full_covariance_matrix,
     initialize_camera_intrinsics,
+    landmark_fusion,
     load_trial,
     preprocess_measurements,
 )
@@ -39,7 +45,15 @@ class Kalman3DFilter:
         for trial_path in listdir(self.ROOT):
             trial: List[POD3D] = load_trial(trial_path)
             preprocess_measurements(trial, self.intrinsics)
-            compute_Q_matrices(trial, self.intrinsics)
+            compute_covariance_over_position(trial, self.intrinsics)
+            compute_covariance_over_color(trial)
+            construct_full_covariance_matrix(trial)
+
+            state = KalmanFilterState(state_size=trial[0].y[0].size)
+            for frame in trial:
+                add_new_measurements_to_state(frame, state)
+                landmark_fusion(state)
+                add_remaining_points_as_new_points(state)
 
 
 def main():

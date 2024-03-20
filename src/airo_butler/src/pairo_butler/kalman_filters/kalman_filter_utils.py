@@ -15,8 +15,22 @@ class POD3D:
         self.depth: np.ndarray = depth
         self.tcp: np.ndarray = tcp
 
-        self.measurement: np.ndarray
+        self.y: np.ndarray  # Measurement (N, 6)
+        self.Q: np.ndarray  # Measurement noise covariance matrix (N, 6, 6)
+
         self.pixel_index: np.ndarray
+        self.covariance_xyz: np.ndarray
+        self.covariance_hsv: np.ndarray
+
+
+class KalmanFilterState:
+    def __init__(self, state_size=6):
+        self.mu = np.empty((0, state_size))
+        self.Sigma = np.empty((0, state_size, state_size))
+        self.tcps = np.empty((0, 4, 4))
+
+        self.mu_new: np.ndarray
+        self.Sigma_new: np.ndarray
 
 
 def initialize_camera_intrinsics():
@@ -108,7 +122,7 @@ def load_trial(path: Path):
 
 
 MIN_DEPTH = 200
-MAX_DEPTH = 5000
+MAX_DEPTH = 1000
 
 
 def preprocess_measurements(trial: List[POD3D], intrinsics: np.ndarray) -> None:
@@ -143,7 +157,7 @@ def preprocess_measurements(trial: List[POD3D], intrinsics: np.ndarray) -> None:
         measured_points = measured_points.squeeze(-1)[..., :3]
 
         measurement = np.concatenate((measured_points, hsv), axis=1)
-        frame.measurement = measurement
+        frame.y = measurement
         frame.pixel_index = pixel_index
 
         # plot_pointcloud(measured_points, bgr)
@@ -180,7 +194,7 @@ ABSOLUTE_DEPTH_VARIANCE = 0.05
 RELATIVE_DEPTH_VARIANCE = 0.15
 
 
-def compute_Q_matrices(trial: List[POD3D], intrinsics: np.ndarray):
+def compute_covariance_over_position(trial: List[POD3D], intrinsics: np.ndarray):
     # Compute orthogonal variance matrix
     angles_between_pixels_x, angles_between_pixels_y = (
         initialize_orthogonal_angle_matrix(*trial[0].depth.shape, intrinsics)
@@ -204,9 +218,24 @@ def compute_Q_matrices(trial: List[POD3D], intrinsics: np.ndarray):
         # compute depth standard deviations
         stdev_z = ABSOLUTE_DEPTH_VARIANCE + RELATIVE_DEPTH_VARIANCE * depths
 
-        pyout()
+        # compute camera to point vectors
+        points = frame.y[:, :3]
+        vectors_z = points - frame.tcp[:3, 3][None, ...]
+        vectors_z = vectors_z / np.linalg.norm(vectors_z, axis=-1, keepdims=True)
+        vectors_x = np.stack(
+            (vectors_z[:, 1], -vectors_z[:, 0], np.zeros_like(vectors_z[:, 0])), axis=-1
+        )
+        vectors_x = vectors_x / np.linalg.norm(vectors_x, axis=-1, keepdims=True)
+        vectors_y = np.cross(vectors_z, vectors_x)
 
-    pyout()
+        R = np.stack((vectors_x, vectors_y, vectors_z), axis=-1)
+        S = (
+            np.eye(3)[None, ...]
+            * np.stack([stdev_x**2, stdev_y**2, stdev_z**2], axis=-1)[..., None]
+        )
+        Q = R @ S @ R.transpose(0, 2, 1)
+
+        frame.covariance_xyz = Q
 
 
 def initialize_orthogonal_angle_matrix(height, width, M_intr):
@@ -267,3 +296,100 @@ def compute_angle_between_pixels(pixel1, pixel2, intrinsics):
     angle = np.arccos(cos_angle)  # Angle in radians
 
     return angle
+
+
+BASE_STDEV_HUE = 5.0
+MAX_STDEV_HUE = 180.0
+BASE_STDEV_SATURATION = 50.0
+BASE_STDEV_VALUE = 50.0
+
+
+def compute_covariance_over_color(trial: List[POD3D]):
+    for frame in trial:
+        saturation = frame.y[:, 4]
+        value = frame.y[:, 5]
+
+        chroma = (saturation / 255) * (value / 255)
+
+        hue_stdev = chroma * BASE_STDEV_HUE + (1 - chroma) * MAX_STDEV_HUE
+
+        covariance = (
+            np.eye(3)[None, ...]
+            * np.stack(
+                (
+                    hue_stdev**2,
+                    np.full_like(hue_stdev, BASE_STDEV_SATURATION) ** 2,
+                    np.full_like(hue_stdev, BASE_STDEV_VALUE) ** 2,
+                ),
+                axis=-1,
+            )[..., None]
+        )
+
+        frame.covariance_hsv = covariance
+
+
+def construct_full_covariance_matrix(trial: List[POD3D]):
+    for frame in trial:
+        Q_xyz = frame.covariance_xyz
+        Q_hsv = frame.covariance_hsv
+
+        Q = np.zeros(
+            (
+                Q_xyz.shape[0],
+                Q_xyz.shape[1] + Q_hsv.shape[1],
+                Q_xyz.shape[1] + Q_hsv.shape[1],
+            )
+        )
+        Q[:, : Q_xyz.shape[1], : Q_xyz.shape[1]] = Q_xyz
+        Q[:, -Q_hsv.shape[1] :, -Q_hsv.shape[1] :] = Q_hsv
+
+        frame.Q = Q
+
+
+def add_new_measurements_to_state(frame: POD3D, state: KalmanFilterState):
+    state.tcps = np.concatenate((state.tcps, frame.tcp[None, ...]), axis=0)
+    state.mu_new = frame.y
+    state.Sigma_new = frame.Q
+
+
+FUSION_BATCH_SIZE = 10
+SEED = 49
+
+
+def landmark_fusion(state: KalmanFilterState):
+    if state.mu.size == 0:
+        return
+
+    chunks = np.array_split(
+        np.arange(state.mu.shape[0]), state.mu.shape[0] // FUSION_BATCH_SIZE + 1
+    )
+
+    changed = True
+    while changed:
+        changed = False
+        for indexes in chunks:
+            mu_old = state.mu[indexes]
+            Sigma_old = state.Sigma[indexes]
+
+            N_new = state.mu_new.shape[0]
+            N_old = mu_old.shape[0]
+            ss = mu_old.shape[1]
+
+            M_mu = np.empty((N_new, N_old, ss * 2))
+            M_Si = np.empty((N_new, N_old, ss * 2, ss * 2))
+
+            M_mu[..., :ss] = np.tile(state.mu_new[:, None, :], (1, N_old, 1))
+            M_mu[..., -ss:] = np.tile(mu_old[None, ...], (N_new, 1, 1))
+
+            M_Si[..., :ss, :ss] = np.tile(
+                state.Sigma_new[:, None, :, :], (1, N_old, 1, 1)
+            )
+
+            pyout()
+
+
+def add_remaining_points_as_new_points(state: KalmanFilterState):
+    state.mu = np.concatenate((state.mu, state.mu_new), axis=0)
+    state.Sigma = np.concatenate((state.Sigma, state.Sigma_new), axis=0)
+    state.mu_new = None
+    state.Sigma_new = None
