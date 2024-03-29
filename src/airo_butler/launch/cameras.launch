@@ -2,10 +2,10 @@
   <node pkg="airo_butler" type="realsense2" name="realsense2" output="screen"></node>
   <!--<node pkg="airo_butler" type="rs2_recorder" name="rs2_recorder" output="screen"></node>-->
   <node pkg="airo_butler" type="camera_plotter" name="camera_plot" output="screen"></node>
-  <node pkg="airo_butler" type="zed2i" name="zed2i" output="screen"></node>
-  <node pkg="airo_butler" type="zed_plotter" name="zed_plotter" output="screen"></node>
+  <!--<node pkg="airo_butler" type="zed2i" name="zed2i" output="screen"></node>-->
+  <!--<node pkg="airo_butler" type="zed_plotter" name="zed_plotter" output="screen"></node>-->
   <!--<node pkg="airo_butler" type="recorder_plotter" name="recorder_plotter" output="screen"></node>-->
-  <node pkg="airo_butler" type="zed2i_pointcloud" name="zed2i_pointcloud" output="screen"></node>
-  <node pkg="airo_butler" type="towel_extremes_finder" name="towel_extremes_finder" output="screen"></node>
+  <!--<node pkg="airo_butler" type="zed2i_pointcloud" name="zed2i_pointcloud" output="screen"></node>-->
+  <!--<node pkg="airo_butler" type="towel_extremes_finder" name="towel_extremes_finder" output="screen"></node>-->
 </launch>
 

@@ -187,11 +187,24 @@ class ImagePOD(POD):
         timestamp
     """
 
-    __slots__ = ["image", "intrinsics_matrix", "timestamp"]
+    __slots__ = [
+        "color_frame",
+        "depth_frame",
+        "image",
+        "intrinsics_matrix",
+        "timestamp",
+    ]
 
     def __init__(
-        self, image: Image, intrinsics_matrix: np.ndarray, timestamp: ros.Time
+        self,
+        color_frame: np.ndarray,
+        depth_frame: np.ndarray,
+        image: Image,
+        intrinsics_matrix: np.ndarray,
+        timestamp: ros.Time,
     ):
+        self.color_frame = color_frame
+        self.depth_frame = depth_frame
         self.image = image
         self.intrinsics_matrix = intrinsics_matrix
         self.timestamp = timestamp

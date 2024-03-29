@@ -8,6 +8,7 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 import rospkg
+import torch
 from pairo_butler.kalman_filters.kalman_filter_utils import (
     POD3D,
     KalmanFilterState,
@@ -19,7 +20,9 @@ from pairo_butler.kalman_filters.kalman_filter_utils import (
     initialize_camera_intrinsics,
     landmark_fusion,
     load_trial,
+    plot_state,
     preprocess_measurements,
+    scale_hue_within_range,
 )
 import rospy as ros
 import pyrealsense2 as rs
@@ -43,17 +46,24 @@ class Kalman3DFilter:
 
     def run(self):
         for trial_path in listdir(self.ROOT):
-            trial: List[POD3D] = load_trial(trial_path)
-            preprocess_measurements(trial, self.intrinsics)
-            compute_covariance_over_position(trial, self.intrinsics)
-            compute_covariance_over_color(trial)
-            construct_full_covariance_matrix(trial)
+            with torch.no_grad():
+                trial: List[POD3D] = load_trial(trial_path)
+                preprocess_measurements(trial, self.intrinsics)
+                compute_covariance_over_position(trial, self.intrinsics)
+                compute_covariance_over_color(trial)
+                construct_full_covariance_matrix(trial)
 
-            state = KalmanFilterState(state_size=trial[0].y[0].size)
-            for frame in trial:
-                add_new_measurements_to_state(frame, state)
-                landmark_fusion(state)
-                add_remaining_points_as_new_points(state)
+                state = KalmanFilterState(state_size=trial[0].y[0].size)
+                for frame in trial:
+                    state.Sigma = torch.clamp(state.Sigma, -1e12, 1e12)
+
+                    add_new_measurements_to_state(frame, state)
+                    landmark_fusion(state)
+                    add_remaining_points_as_new_points(state)
+                    scale_hue_within_range(state)
+                    plot_state(state)
+                    cv2.imshow("RS2", frame.image)
+                    cv2.waitKey(10)
 
 
 def main():
