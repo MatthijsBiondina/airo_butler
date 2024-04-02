@@ -9,6 +9,9 @@ from airo_butler.srv import Reset
 import rospy as ros
 import pyrealsense2
 from airo_butler.msg import PODMessage
+import sys
+
+print(f"Executable: {sys.executable}")
 
 
 class RS2Client:
