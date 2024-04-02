@@ -3,6 +3,7 @@ import time
 import airo_models
 from airo_typing import HomogeneousMatrixType, JointConfigurationType
 from munch import Munch
+from pairo_butler.motion_planning.obstacles import CharucoBoard, HangingTowel
 from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
 from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
 import rospy as ros
@@ -25,11 +26,12 @@ from ur_analytic_ik import ur5e
 from pydrake.trajectories import Trajectory
 from pydrake.multibody.plant import MultibodyPlant
 
+
 np.set_printoptions(precision=0, suppress=True)
 
 
 class DrakeSimulation:
-    def __init__(self, towel: Optional[TowelObstacle] = None):
+    def __init__(self, scene_name: str = "default"):
         self.config = load_config()
 
         # Init subscribers
@@ -41,13 +43,13 @@ class DrakeSimulation:
         self.is_state_valid_fn: Callable[..., bool]
         self.sophie_idx: Any
         self.wilson_idx: Any
-        self.towel_idx: Any
+        self.object_idx: Any
         self.diagram: Any
         self.context: Any
         self.plant: MultibodyPlant
         self.plant_context: Any
         self.meshcat: Any
-        self.__create_scene(towel)
+        self.__create_scene(scene_name)
 
         self.planner: DualArmOmplPlanner
         self.__create_planner()
@@ -75,7 +77,7 @@ class DrakeSimulation:
     def update_towel(self, towel: Optional[TowelObstacle] = None):
         wilson_tcp = self.wilson.get_tcp_pose()
 
-        body = self.diagram.plant().GetBodyByName("base_link", self.towel_idx)
+        body = self.diagram.plant().GetBodyByName("base_link", self.object_idx)
         self.diagram.plant().SetFreeBodyPose(
             self.diagram.plant().GetMyContextFromRoot(self.context),
             body,
@@ -89,7 +91,7 @@ class DrakeSimulation:
         tcp_transform[2, 3] = self.config.gripper_length
         return tcp_transform
 
-    def __create_scene(self, towel: Optional[TowelObstacle] = None):
+    def __create_scene(self, scenario: str = "default"):
         self.robot_diagram_builder = RobotDiagramBuilder()
         self.meshcat = add_meshcat_to_builder(self.robot_diagram_builder)
 
@@ -116,32 +118,35 @@ class DrakeSimulation:
             plant.WeldFrames(arm_tool_frame, realsense_frame, X_Tool0_RealsenseBase)
 
         # Add obstacle
-        if towel is not None:
-
-            towel_length = towel.top_z - towel.bottom_z
-            towel_urdf_path = airo_models.box_urdf_path(
-                (towel.radius * 2, towel.radius * 2, towel_length), "towel"
+        if scenario == "wilson_holds_charuco" or scenario == "sophie_holds_charuco":
+            arm_idx = (
+                self.wilson_idx
+                if scenario == "wilson_holds_charuco"
+                else self.sophie_idx
             )
+
+            board = CharucoBoard()
+            arm_tool_frame = plant.GetFrameByName("tool0", arm_idx)
+
+            self.object_idx = parser.AddModels(board.urdf)[0]
+            object_frame = plant.GetFrameByName("base_link", self.object_idx)
+
+            p = [0, board.height / 2, 0.165 + board.width / 2]
+            rpy = np.deg2rad([0, 90, 0])
+
+            object_transform = RigidTransform(rpy=RollPitchYaw(rpy), p=p)
+            plant.WeldFrames(arm_tool_frame, object_frame, object_transform)
+        elif scenario == "hanging_towel":
+            towel = HangingTowel()
+            self.object_idx = parser.AddModels(towel.urdf)[0]
+            object_frame = plant.GetFrameByName("base_link", self.object_idx)
             world_frame = plant.world_frame()
-
-            self.towel_idx = parser.AddModels(towel_urdf_path)[0]
-            towel_frame = plant.GetFrameByName("base_link", self.towel_idx)
-
-            towel_x, towel_y, towel_z = 0, 0, towel.bottom_z + 0.5 * towel_length
-            towel_transform = RigidTransform(p=[towel_x, towel_y, towel_z])
-
-            plant.WeldFrames(world_frame, towel_frame, towel_transform)
+            p = [0, 0, towel.bottom + towel.length / 2]
+            plant.WeldFrames(world_frame, object_frame, RigidTransform(p=p))
 
         self.diagram, self.context = finish_build(
             self.robot_diagram_builder, self.meshcat
         )
-
-        # body = self.diagram.plant().GetBodyByName("base_link", self.towel_idx)
-        # self.diagram.plant().SetFreeBodyPose(
-        #     self.diagram.plant().GetMyContextFromRoot(self.context),
-        #     body,
-        #     towel_transform,
-        # )
 
         self.collision_checker = SceneGraphCollisionChecker(
             model=self.diagram,

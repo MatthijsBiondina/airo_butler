@@ -102,38 +102,38 @@ class URStatePOD(POD):
 
 
 class DualTCPPOD(POD):
-    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "avoid_towel"]
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
 
     def __init__(
         self,
         timestamp: ros.Time,
         tcp_sophie: Optional[np.ndarray] = None,
         tcp_wilson: Optional[np.ndarray] = None,
-        avoid_towel: bool = False,
+        scene: str = "default",
     ):
         self.timestamp: ros.Time = timestamp
 
         assert not (tcp_sophie is None and tcp_wilson is None)
         self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
         self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
-        self.avoid_towel: bool = avoid_towel
+        self.scene: str = scene
 
 
 class DualJointsPOD(POD):
-    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "avoid_towel"]
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
 
     def __init__(
         self,
         timestamp: ros.Time,
         joints_sophie: Optional[np.ndarray] = None,
         joints_wilson: Optional[np.ndarray] = None,
-        avoid_towel: bool = False,
+        scene: str = "default",
     ):
         self.timestamp: ros.Time = timestamp
         assert not (joints_sophie is None and joints_wilson is None)
         self.joints_sophie: Optional[np.ndarray] = joints_sophie
         self.joints_wilson: Optional[np.ndarray] = joints_wilson
-        self.avoid_towel: bool = avoid_towel
+        self.scene: str = scene
 
 
 class DualTrajectoryPOD(POD):

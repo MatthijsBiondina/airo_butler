@@ -52,7 +52,7 @@ class OMPLClient:
         self,
         sophie: Optional[np.ndarray] = None,
         wilson: Optional[np.ndarray] = None,
-        avoid_towel: bool = False,
+        scene: str = "default",
     ) -> Tuple[DualTrajectoryPOD]:
         assert not (sophie is None and wilson is None)
 
@@ -60,7 +60,7 @@ class OMPLClient:
             ros.Time.now(),
             tcp_sophie=sophie,
             tcp_wilson=wilson,
-            avoid_towel=avoid_towel,
+            scene=scene,
         )
         response = make_pod_request(
             self.__service_plan_to_tcp_pose, pod, DualTrajectoryPOD
@@ -76,7 +76,7 @@ class OMPLClient:
         self,
         sophie: Optional[np.ndarray] = None,
         wilson: Optional[np.ndarray] = None,
-        avoid_towel: bool = False,
+        scene: str = "default",
     ) -> Tuple[DualTrajectoryPOD]:
         assert not (sophie is None and wilson is None)
 
@@ -84,7 +84,7 @@ class OMPLClient:
             ros.Time.now(),
             joints_sophie=sophie,
             joints_wilson=wilson,
-            avoid_towel=avoid_towel,
+            scene=scene,
         )
         response = make_pod_request(
             self.__service_plan_to_joint_configuration, pod, DualTrajectoryPOD

@@ -1,4 +1,4 @@
 <launch>
     <node pkg="airo_butler" type="ur5_server" name="ur5_server" output="screen"></node>
-    <node pkg="airo_butler" type="ompl_server" name="ompl_server" output="screen"></node>
+    <!--<node pkg="airo_butler" type="ompl_server" name="ompl_server" output="screen"></node>-->
 </launch>

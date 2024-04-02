@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="airo_butler" type="ompl_server" name="ompl_server" output="screen">
+		<param name="scenarios" value="['default', 'wilson_holds_charuco', 'sophie_holds_charuco']" />
+	</node>
+</launch>
