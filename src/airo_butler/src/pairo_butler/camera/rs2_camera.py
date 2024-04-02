@@ -452,8 +452,9 @@ class RS2_camera:
 
 
 def main():
-    print(f"Executable: {sys.executable}")
+
     node = RS2_camera()
+    ros.loginfo(f"Executable: {sys.executable}")
     node.start_ros()
     node.run()
 
