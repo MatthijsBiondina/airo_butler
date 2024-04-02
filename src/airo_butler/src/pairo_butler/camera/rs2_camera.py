@@ -1,10 +1,15 @@
+import sys
+from pairo_butler.utils.tools import pyout
+
+pyout(sys.executable)
+
 import pickle
 import sys
 from typing import List, Optional, Tuple
 from PIL import Image
 import numpy as np
 from pairo_butler.utils.pods import ImagePOD, publish_pod
-from pairo_butler.utils.tools import pyout
+
 from airo_butler.srv import Reset
 import rospy as ros
 import pyrealsense2
