@@ -11,8 +11,6 @@ import pyrealsense2
 from airo_butler.msg import PODMessage
 import sys
 
-print(f"Executable: {sys.executable}")
-
 
 class RS2Client:
     """
@@ -454,6 +452,7 @@ class RS2_camera:
 
 
 def main():
+    print(f"Executable: {sys.executable}")
     node = RS2_camera()
     node.start_ros()
     node.run()
