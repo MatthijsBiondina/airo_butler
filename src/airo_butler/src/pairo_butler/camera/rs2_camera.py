@@ -1,8 +1,5 @@
 import sys
 from pairo_butler.utils.tools import pyout
-
-pyout(sys.executable)
-
 import pickle
 import sys
 from typing import List, Optional, Tuple
