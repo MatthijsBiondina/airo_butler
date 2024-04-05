@@ -19,9 +19,6 @@ class Pickup(Subprocedure):
         self.kwargs = kwargs
 
     def run(self):
-        if self.__pickup_with_wilson():
-            return True
-        Startup(**self.kwargs).run()
         if self.__pickup_with_sophie():
             return True
         DropTowel(**self.kwargs).run()
@@ -96,10 +93,13 @@ class Pickup(Subprocedure):
                 if fails >= 5:
                     return False
 
-        plan = self.ompl.plan_to_joint_configuration(
-            sophie=np.deg2rad(self.config.joints_hold_sophie)
-        )
+        plan = self.ompl.plan_to_tcp_pose(sophie=self.config.tcp_hold_sophie)
         self.sophie.execute_plan(plan)
+
+        # plan = self.ompl.plan_to_joint_configuration(
+        #     sophie=np.deg2rad(self.config.joints_hold_sophie)
+        # )
+        # self.sophie.execute_plan(plan)
 
         time.sleep(2)
 

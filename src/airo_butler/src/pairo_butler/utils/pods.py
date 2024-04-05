@@ -346,7 +346,7 @@ def make_pod_request(
         response: response_type = pickle.loads(service(service_request).pod)
         return response
     except ros.ServiceException as e:
-        pyout()
+        pass
     except ros.ROSInterruptException:
         sys.exit(0)
 

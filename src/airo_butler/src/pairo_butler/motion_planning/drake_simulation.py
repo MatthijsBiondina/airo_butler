@@ -43,7 +43,7 @@ class DrakeSimulation:
         self.is_state_valid_fn: Callable[..., bool]
         self.sophie_idx: Any
         self.wilson_idx: Any
-        self.object_idx: Any
+        self.object_idx: Any = None
         self.diagram: Any
         self.context: Any
         self.plant: MultibodyPlant
@@ -98,17 +98,31 @@ class DrakeSimulation:
         arm_indices, gripper_indices = add_dual_ur5e_and_table_to_builder(
             self.robot_diagram_builder
         )
+        plant = self.robot_diagram_builder.plant()
+        parser = self.robot_diagram_builder.parser()
+
+        # Add front wall to table
+
+        wall_length = 1.5
+        wall_front_urdf_path = airo_models.box_urdf_path(
+            (0.2, wall_length, 2.0), "wall_front"
+        )
+        wall_front_index = parser.AddModels(wall_front_urdf_path)[0]
+        wall_front_frame = plant.GetFrameByName("base_link", wall_front_index)
+        wall_front_transform = RigidTransform(p=[-0.8, wall_length / 2 - 0.15, 0])
+        world_frame = plant.world_frame()
+        plant.WeldFrames(world_frame, wall_front_frame, wall_front_transform)
 
         self.wilson_idx, self.sophie_idx = arm_indices
 
-        plant = self.robot_diagram_builder.plant()
-        parser = self.robot_diagram_builder.parser()
         realsense_urdf_path = airo_models.get_urdf_path("d435")
 
+        rs2_indexes = []
         for arm_index in (self.wilson_idx, self.sophie_idx):
             arm_tool_frame = plant.GetFrameByName("tool0", arm_index)
 
             realsense_index = parser.AddModels(realsense_urdf_path)[0]
+            rs2_indexes.append(realsense_index)
             realsense_frame = plant.GetFrameByName("base_link", realsense_index)
 
             X_Tool0_RealsenseBase = RigidTransform(
@@ -148,9 +162,13 @@ class DrakeSimulation:
             self.robot_diagram_builder, self.meshcat
         )
 
+        collision_indexes = [*arm_indices, *gripper_indices, *rs2_indexes]
+        if self.object_idx is not None:
+            collision_indexes.append(self.object_idx)
+
         self.collision_checker = SceneGraphCollisionChecker(
             model=self.diagram,
-            robot_model_instances=[*arm_indices, *gripper_indices],
+            robot_model_instances=collision_indexes,
             edge_step_size=0.125,  # Arbitrary value: we don't use the CheckEdgeCollisionFree
             env_collision_padding=0.005,
             self_collision_padding=0.005,
@@ -205,6 +223,7 @@ class DrakeSimulation:
             inverse_kinematics_sophie,
             joint_bounds_left=joint_bounds,
             joint_bounds_right=joint_bounds,
+            num_interpolated_states=self.config.num_interpolated_states,
         )
 
     def plan_to_tcp_pose(

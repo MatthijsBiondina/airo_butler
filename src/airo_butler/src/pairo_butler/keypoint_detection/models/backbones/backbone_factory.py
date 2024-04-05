@@ -30,7 +30,7 @@ class BackboneFactory:
         for backbone_class in BackboneFactory.registered_backbone_classes:
             if backbone_type == backbone_class.__name__:
                 return backbone_class(**kwargs)
-        raise Exception("Unknown backbone type")
+        raise Exception(f"Unknown backbone type: {backbone_type}")
 
     @staticmethod
     def add_to_argparse(

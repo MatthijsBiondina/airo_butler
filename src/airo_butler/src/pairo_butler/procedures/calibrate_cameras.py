@@ -1,3 +1,13 @@
+from pairo_butler.procedures.subprocedures.drop_charuco_board import DropCharucoBoard
+from pairo_butler.procedures.subprocedures.calibrate_sophie_zed import (
+    CalibrateSophieZed,
+)
+from pairo_butler.procedures.subprocedures.transfer_charuco_board import (
+    TransferCharucoBoard,
+)
+from pairo_butler.procedures.subprocedures.calibrate_sophie_rs2 import (
+    CalibrateSophieRS2,
+)
 from pairo_butler.procedures.subprocedures.calibrate_wilson_zed import (
     CalibrateWilsonZed,
 )
@@ -19,7 +29,10 @@ class CalibrateMachine(Machine):
         Startup(drop=False, **self.kwargs).run()
         WilsonRecieveCharuco(**self.kwargs).run()
         CalibrateWilsonZed(**self.kwargs).run()
-        pyout()
+        CalibrateSophieRS2(**self.kwargs).run()
+        TransferCharucoBoard(**self.kwargs).run()
+        CalibrateSophieZed(**self.kwargs).run()
+        DropCharucoBoard(**self.kwargs).run()
 
 
 def main():

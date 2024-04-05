@@ -86,12 +86,15 @@ class OMPLClient:
             joints_wilson=wilson,
             scene=scene,
         )
-        response = make_pod_request(
-            self.__service_plan_to_joint_configuration, pod, DualTrajectoryPOD
-        )
-        if response is None:
-            pyout(sophie)
-            pyout(wilson)
-            raise RuntimeError("No plan found.")
 
-        return response
+        response = None
+        for _ in range(3):
+            if response is not None:
+                return response
+            response = make_pod_request(
+                self.__service_plan_to_joint_configuration, pod, DualTrajectoryPOD
+            )
+
+        pyout(sophie)
+        pyout(wilson)
+        raise RuntimeError("No plan found.")

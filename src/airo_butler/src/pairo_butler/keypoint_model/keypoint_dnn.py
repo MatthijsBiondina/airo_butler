@@ -1,7 +1,5 @@
-import sys
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import load_config
 from pairo_butler.keypoint_model.pretrained_models import (
-    load_pretrained_model,
     load_timm_model,
 )
 import torch.nn as nn
@@ -10,44 +8,22 @@ import torch
 
 
 class KeypointNeuralNetwork(nn.Module):
-    def __init__(self, backbone: str, hidden_channels=16):
+    def __init__(self, backbone: str):
         super(KeypointNeuralNetwork, self).__init__()
+        config = load_config()
 
-        self.backbone, feature_channels = load_timm_model(backbone)
-
-        self.reduce_channels_layers = nn.ModuleList(
-            [
-                nn.Conv2d(
-                    in_channels=channels, out_channels=hidden_channels, kernel_size=1
-                )
-                for channels in feature_channels
-            ]
+        self.backbone = load_timm_model(backbone)
+        self.head = nn.Conv2d(
+            in_channels=self.backbone.get_n_channels_out(),
+            out_channels=config.max_nr_of_keypoints,
+            kernel_size=(3, 3),
+            padding="same",
         )
-
-        self.line_1 = nn.Conv2d(
-            hidden_channels * len(feature_channels),
-            out_channels=hidden_channels,
-            kernel_size=1,
-        )
-        self.line_2 = nn.Conv2d(hidden_channels, out_channels=1, kernel_size=1)
+        self.head.bias.data.fill_(-4)
 
     def forward(self, x):
 
-        feature_maps = self.backbone(x)
+        h = self.backbone(x)
+        h = self.head(h)
 
-        # Reduce channel dimensions and upscale each feature map
-        reduced_and_upscaled_maps = []
-        for layer, feature_map in zip(self.reduce_channels_layers, feature_maps):
-            reduced_map = layer(feature_map)  # Reduce channels to 128
-            upscaled_map = F.interpolate(
-                reduced_map, size=(512, 512), mode="bilinear", align_corners=False
-            )
-            reduced_and_upscaled_maps.append(upscaled_map)
-
-        # Concatenate the reduced and upscaled feature maps
-        concatenated_feature_map = torch.cat(reduced_and_upscaled_maps, dim=1)
-
-        hidden_layer = torch.relu(self.line_1(concatenated_feature_map))
-        output = torch.sigmoid(self.line_2(hidden_layer))
-
-        return output
+        return torch.sigmoid(h)

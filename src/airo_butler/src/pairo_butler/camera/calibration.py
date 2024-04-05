@@ -3,7 +3,7 @@ from pathlib import Path
 import pickle
 import sys
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import cv2
 
 import numpy as np
@@ -186,14 +186,16 @@ class CameraCalibration:
             try:
                 measurements.append(
                     TCPs(
-                        tcp_cam=self.__wait_for_measurements(ros.Time.now()),
+                        tcp_cam=self.wait_for_measurements(ros.Time.now()),
                         tcp_arm=self.wilson.get_tcp_pose(),
                     )
                 )
             except TimeoutError:
                 ros.logwarn(f"Cannot see the charuco board.")
 
-        zed_pose, error = self.__compute_calibration(measurements, mode="eye_to_hand")
+        zed_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_to_hand"
+        )
         ros.loginfo(f"Calibrated Wilson with error: {error:.3f}")
         save_path = self.data_root / "T_zed_wilson.npy"
         np.save(save_path, zed_pose)
@@ -212,14 +214,16 @@ class CameraCalibration:
             try:
                 measurements.append(
                     TCPs(
-                        tcp_cam=self.__wait_for_measurements(ros.Time.now()),
+                        tcp_cam=self.wait_for_measurements(ros.Time.now()),
                         tcp_arm=self.sophie.get_tcp_pose(),
                     )
                 )
             except TimeoutError:
                 ros.logwarn(f"Cannot see the charuco board.")
 
-        zed_pose, error = self.__compute_calibration(measurements, mode="eye_to_hand")
+        zed_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_to_hand"
+        )
         ros.loginfo(f"Calibrated Sophie ZED with error: {error:.3f}")
         save_path = self.data_root / "T_zed_sophie.npy"
         np.save(save_path, zed_pose)
@@ -238,11 +242,13 @@ class CameraCalibration:
             self.sophie.move_to_joint_configuration(joint_config)
             measurements.append(
                 TCPs(
-                    tcp_cam=self.__wait_for_measurements(ros.Time.now(), camera="rs2"),
+                    tcp_cam=self.wait_for_measurements(ros.Time.now(), camera="rs2"),
                     tcp_arm=self.sophie.get_tcp_pose(),
                 )
             )
-        rs2_pose, error = self.__compute_calibration(measurements, mode="eye_in_hand")
+        rs2_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_in_hand"
+        )
         ros.loginfo(f"Calibrated Sophie rs2 with error: {error:.3f}")
         save_path = self.data_root / "T_rs2_tcp_sophie.npy"
         np.save(save_path, rs2_pose)
@@ -267,7 +273,7 @@ class CameraCalibration:
         # pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
 
         # location of board relative to sophie
-        T_charuco_rs2 = self.__wait_for_measurements(ros.Time.now(), camera="rs2")
+        T_charuco_rs2 = self.wait_for_measurements(ros.Time.now(), camera="rs2")
         T_rs2_tcp_sophie = np.load(self.data_root / "T_rs2_tcp_sophie.npy")
         T_tcp_sophie = self.sophie.get_tcp_pose()
         T_charuco_sophie = T_tcp_sophie @ T_rs2_tcp_sophie @ T_charuco_rs2
@@ -329,27 +335,32 @@ class CameraCalibration:
 
         return STATE_DONE
 
-    def __wait_for_measurements(self, t0: ros.Time, timeout=10, camera: str = "zed"):
+    def wait_for_measurements(
+        camera: Union[ZEDClient, RS2Client],
+        nr_of_frames=6,
+        timeout=5,
+    ):
         t_start = ros.Time.now()
         timestamps: List[ros.Time] = []
         imgs: List[np.ndarray] = []
         TCP: List[np.ndarray] = []
 
-        while not ros.is_shutdown() and len(imgs) < self.CHARUCO_FRAMES:
+        while not ros.is_shutdown() and len(imgs) < nr_of_frames:
             if ros.Time.now() > t_start + ros.Duration(timeout):
                 raise TimeoutError
-            if camera == "zed":
-                pod = deepcopy(self.zed.pod)
+
+            if isinstance(camera, ZEDClient):
+                pod = deepcopy(camera.pod)
                 img = (pod.rgb_image * 255)[..., ::-1].astype(np.uint8)
-            elif camera == "rs2":
-                pod = deepcopy(self.rs2.pod)
+            elif isinstance(camera, RS2Client):
+                pod = deepcopy(camera.pod)
                 img = np.array(pod.image)
 
             if pod is None:
                 pass
             elif pod.timestamp in timestamps:
                 pass
-            elif pod.timestamp < t0:
+            elif pod.timestamp < t_start:
                 pass
             else:
                 tcp = detect_charuco_board(
@@ -363,7 +374,7 @@ class CameraCalibration:
                     imgs.append(img)
                     timestamps.append(pod.timestamp)
 
-            self.rate.sleep()
+            ros.sleep(0.01)
 
         # Average transforms:
         M = np.stack(TCP, axis=0)
@@ -380,8 +391,9 @@ class CameraCalibration:
 
         return tcp_zed
 
-    def __compute_calibration(
-        self, measurements: List[TCPs], mode: str = "eye_to_hand"
+    @staticmethod
+    def compute_calibration_from_measurements(
+        measurements: List[TCPs], mode: str = "eye_to_hand"
     ):
         tcp_poses_in_base = [tcp.arm for tcp in measurements]
         board_poses_in_camera = [tcp.cam for tcp in measurements]

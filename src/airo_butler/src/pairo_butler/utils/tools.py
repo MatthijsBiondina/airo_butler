@@ -4,7 +4,6 @@ import linecache
 import os
 from pathlib import Path
 import random
-import re
 import socket
 import subprocess
 import time
@@ -12,11 +11,6 @@ import traceback
 from multiprocessing import current_process
 from typing import Any, Dict, Union
 import cv2
-
-import sys
-
-print(f"*** EXECUTABLE {sys.executable} ***")
-
 from munch import Munch
 import numpy as np
 import rospkg

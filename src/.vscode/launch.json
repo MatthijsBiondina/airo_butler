@@ -8,7 +8,7 @@
             "name": "Python: Airo Butler",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/procedures/calibrate_cameras.py",
+            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/keypoint_model/train_keypoint_model.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

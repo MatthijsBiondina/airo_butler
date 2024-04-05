@@ -10,8 +10,8 @@ from pairo_butler.camera.zed_camera import ZEDClient
 import rospy as ros
 
 
-class CalibrateWilsonZed(Subprocedure):
-    SCENE = "wilson_holds_charuco"
+class CalibrateSophieZed(Subprocedure):
+    SCENE = "sophie_holds_charuco"
     N_MEASUREMENTS = 10
 
     def __init__(self, *args, **kwargs):
@@ -26,7 +26,7 @@ class CalibrateWilsonZed(Subprocedure):
         measurements = []
 
         while len(measurements) < self.N_MEASUREMENTS:
-            tcp = self.config.tcp_calibration_wilson
+            tcp = self.config.tcp_calibration_sophie
             H = homogenous_transformation(
                 roll=np.random.uniform(-179, 179),
                 pitch=np.random.uniform(-10, 10),
@@ -37,8 +37,8 @@ class CalibrateWilsonZed(Subprocedure):
             )
 
             try:
-                plan = self.ompl.plan_to_tcp_pose(wilson=tcp @ H, scene=self.SCENE)
-                self.wilson.execute_plan(plan)
+                plan = self.ompl.plan_to_tcp_pose(sophie=tcp @ H, scene=self.SCENE)
+                self.sophie.execute_plan(plan)
             except RuntimeError:
                 continue
 
@@ -48,7 +48,7 @@ class CalibrateWilsonZed(Subprocedure):
                         tcp_cam=CameraCalibration.wait_for_measurements(
                             self.zed,
                         ),
-                        tcp_arm=self.wilson.get_tcp_pose(),
+                        tcp_arm=self.sophie.get_tcp_pose(),
                     )
                 )
             except TimeoutError:
@@ -57,6 +57,6 @@ class CalibrateWilsonZed(Subprocedure):
         poses, errors = CameraCalibration.compute_calibration_from_measurements(
             measurements, mode="eye_to_hand"
         )
-        ros.loginfo(f"Zed_Wilson error: {errors}")
-        save_path = self.data_root / "T_zed_wilson.npy"
+        ros.loginfo(f"Zed_Sophie error: {errors}")
+        save_path = self.data_root / "T_zed_sophie.npy"
         np.save(save_path, poses)

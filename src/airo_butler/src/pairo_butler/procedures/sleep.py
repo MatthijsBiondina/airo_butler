@@ -1,3 +1,4 @@
+from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.procedures.subprocedures.startup import Startup
 import rospy as ros
 from typing import Any, Dict
@@ -33,6 +34,7 @@ class StartupMachine:
 
     def run(self):
         Startup(**self.kwargs).run()
+        Goodnight(**self.kwargs).run()
 
 
 def main():

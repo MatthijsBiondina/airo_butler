@@ -44,4 +44,5 @@ class Subprocedure(ABC):
         self.towel_bot = np.array([pod.x, pod.y, pod.z])
 
     def towel_on_table(self):
+        ros.sleep(2)
         return not (self.towel_bot[2] > 0.05 and self.towel_bot[2] < 1.0)

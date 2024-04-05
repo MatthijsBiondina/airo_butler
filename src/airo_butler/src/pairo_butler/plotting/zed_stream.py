@@ -23,7 +23,7 @@ from airo_camera_toolkit.calibration.fiducial_markers import (
 class ZEDStreamRGB:
     QUEUE_SIZE = 2
     PUBLISH_RATE = 30
-    SIZE = (720, 405)
+    SIZE = (405, 720)
 
     def __init__(self, name: str = "zed_stream") -> None:
         self.node_name: str = name
@@ -40,7 +40,9 @@ class ZEDStreamRGB:
     def run(self):
         while not ros.is_shutdown():
             frame = (self.zed.pod.rgb_image * 255).astype(np.uint8)
-            frame = frame[:, ::-1]
+            frame = frame.transpose(1, 0, 2)[::-1]
+
+            # frame = frame[:, :, ::-1]
             frame = cv2.resize(frame, self.SIZE)
 
             # cv2.imwrite("/home/matt/Pictures/frame.png", frame)

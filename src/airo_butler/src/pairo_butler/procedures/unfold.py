@@ -2,6 +2,7 @@ import sys
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
 from pairo_butler.procedures.subprocedures.holdup import Holdup
 from pairo_butler.procedures.subprocedures.pickup import Pickup
 from pairo_butler.procedures.subprocedures.startup import Startup
@@ -43,12 +44,12 @@ class UnfoldMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-
         # plan = self.ompl.plan_to_joint_configuration(
-        #     sophie=np.deg2rad(self.config.joints_hold_sophie)
+        #     wilson=np.deg2rad(self.config.joints_shake_wilson),
+        #     sophie=np.deg2rad(self.config.joints_shake_sophie)
+
         # )
-        # self.sophie.execute_plan(plan)
-        # sys.exit(0)
+        # self.wilson.execute_plan(plan)
 
         while not ros.is_shutdown():
             ros.loginfo("Startup")
@@ -61,6 +62,8 @@ class UnfoldMachine:
             if Holdup(**self.kwargs).run():
                 break
 
+        KalmanScan(**self.kwargs).run()
+
 
 def main():
     node = UnfoldMachine()
@@ -70,25 +73,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# def request_service():
-#     SOPHIE_SLEEP = np.array([+0.00, -1, +0.50, -0.50, -0.50, +0.00]) * np.pi
-#     WILSON_SLEEP = np.array([+0.00, -0, -0.50, -0.50, +0.50, +0.00]) * np.pi
-
-#     sophie = UR5eClient("sophie")
-
-#     ompl_client = OMPLClient()
-
-#     plan = ompl_client.plan_to_joint_configuration(
-#         sophie=SOPHIE_SLEEP,
-#         wilson=WILSON_SLEEP,
-#     )
-#     sophie.execute_plan(plan)
-
-#     # transform_0 = RigidTransform(p=[0, 0, 0.35], rpy=RollPitchYaw([-np.pi, 0, 0]))
-#     # tcp_pose_0 = np.ascontiguousarray(transform_0.GetAsMatrix4())
-#     # plan = ompl_client.plan_to_tcp_pose(sophie=tcp_pose_0)
-#     # sophie.execute_plan(plan)
-
-#     pyout("Done!")

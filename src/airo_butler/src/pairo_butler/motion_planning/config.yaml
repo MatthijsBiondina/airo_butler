@@ -10,3 +10,4 @@ tcp_transform:
 - [0.0, 0.0, 1.0, 0.19]
 - [0.0, 0.0, 0.0, 1.0 ]
 
+num_interpolated_states: 500

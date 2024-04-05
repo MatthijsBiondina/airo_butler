@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pairo_butler.keypoint_model.keypoint_model import main
+from pairo_butler.plotting.keypoint_heatmap_stream import main
 
 if __name__ == "__main__":
     main()

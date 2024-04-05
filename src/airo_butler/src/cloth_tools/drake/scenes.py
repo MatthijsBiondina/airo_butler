@@ -20,10 +20,14 @@ X_CB_B = RigidTransform(rpy=RollPitchYaw([0, 0, np.pi]), p=[0, 0, 0])
 ARM_Y_DEFAULT = 0.45
 
 # The default pose of the left robot base when using the ROS URDFs
-X_W_L_DEFAULT = RigidTransform(rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, ARM_Y_DEFAULT, 0])
+X_W_L_DEFAULT = RigidTransform(
+    rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, ARM_Y_DEFAULT, 0]
+)
 
 # The default pose of the right robot base when using the ROS URDFs
-X_W_R_DEFAULT = RigidTransform(rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, -ARM_Y_DEFAULT, 0])
+X_W_R_DEFAULT = RigidTransform(
+    rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, -ARM_Y_DEFAULT, 0]
+)
 
 X_URTOOL0_ROBOTIQ = RigidTransform(rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, 0, 0])
 
@@ -67,7 +71,10 @@ def add_dual_ur5e_and_table_to_builder(
     robot_diagram_builder: RobotDiagramBuilder,
     X_W_LCB: HomogeneousMatrixType | None = None,
     X_W_RCB: HomogeneousMatrixType | None = None,
-) -> Tuple[Tuple[ModelInstanceIndex, ModelInstanceIndex], Tuple[ModelInstanceIndex, ModelInstanceIndex]]:
+) -> Tuple[
+    Tuple[ModelInstanceIndex, ModelInstanceIndex],
+    Tuple[ModelInstanceIndex, ModelInstanceIndex],
+]:
     plant = robot_diagram_builder.plant()
     parser = robot_diagram_builder.parser()
     parser.SetAutoRenaming(True)
@@ -79,9 +86,15 @@ def add_dual_ur5e_and_table_to_builder(
     table_thickness = 0.2
     table_urdf_path = airo_models.box_urdf_path((2.0, 2.4, table_thickness), "table")
     wall_thickness = 0.2
-    wall_back_urdf_path = airo_models.box_urdf_path((wall_thickness, 2.7, 2.0), "wall_back")
-    wall_left_urdf_path = airo_models.box_urdf_path((2.0, wall_thickness, 2.0), "wall_left")
-    wall_right_urdf_path = airo_models.box_urdf_path((2.0, wall_thickness, 2.0), "wall_right")
+    wall_back_urdf_path = airo_models.box_urdf_path(
+        (wall_thickness, 2.7, 2.0), "wall_back"
+    )
+    wall_left_urdf_path = airo_models.box_urdf_path(
+        (2.0, wall_thickness, 2.0), "wall_left"
+    )
+    wall_right_urdf_path = airo_models.box_urdf_path(
+        (2.0, wall_thickness, 2.0), "wall_right"
+    )
 
     arm_left_index = parser.AddModels(ur5e_urdf_path)[0]
     arm_right_index = parser.AddModels(ur5e_urdf_path)[0]
@@ -107,17 +120,25 @@ def add_dual_ur5e_and_table_to_builder(
     wall_left_frame = plant.GetFrameByName("base_link", wall_left_index)
     wall_right_frame = plant.GetFrameByName("base_link", wall_right_index)
 
-    X_W_L = X_W_L_DEFAULT if X_W_LCB is None else RigidTransform(X_W_LCB @ X_CB_B.GetAsMatrix4())
-    X_W_R = X_W_R_DEFAULT if X_W_RCB is None else RigidTransform(X_W_RCB @ X_CB_B.GetAsMatrix4())
+    X_W_L = (
+        X_W_L_DEFAULT
+        if X_W_LCB is None
+        else RigidTransform(X_W_LCB @ X_CB_B.GetAsMatrix4())
+    )
+    X_W_R = (
+        X_W_R_DEFAULT
+        if X_W_RCB is None
+        else RigidTransform(X_W_RCB @ X_CB_B.GetAsMatrix4())
+    )
 
     arm_left_transform = X_W_L
     arm_right_transform = X_W_R
     arm_y = arm_left_transform.translation()[1]
 
     table_transform = RigidTransform(p=[0, 0, -table_thickness / 2])
-    wall_back_transform = RigidTransform(p=[0.9 + wall_thickness / 2, 0, 0])
-    wall_left_transform = RigidTransform(p=[0, arm_y + 0.7 + wall_thickness / 2, 0])
-    wall_right_transform = RigidTransform(p=[0, -arm_y - 0.7 - wall_thickness / 2, 0])
+    wall_back_transform = RigidTransform(p=[0.8 + wall_thickness / 2, 0, 0])
+    wall_left_transform = RigidTransform(p=[0, arm_y + 0.6 + wall_thickness / 2, 0])
+    wall_right_transform = RigidTransform(p=[0, -arm_y - 0.6 - wall_thickness / 2, 0])
 
     plant.WeldFrames(world_frame, arm_left_frame, arm_left_transform)
     plant.WeldFrames(world_frame, arm_right_frame, arm_right_transform)
@@ -142,9 +163,13 @@ def add_cloth_obstacle_to_builder(
     # Scaling disable for now because this might make it collide with that gripper that's holding it in the air
     # hull.scale(1.1, hull.get_center())  # make 10% larger
 
-    hull_file = tempfile.NamedTemporaryFile(prefix="cloth_hull_", suffix=".obj", delete=False)
+    hull_file = tempfile.NamedTemporaryFile(
+        prefix="cloth_hull_", suffix=".obj", delete=False
+    )
     hull_filename = hull_file.name
-    o3d.t.io.write_triangle_mesh(hull_filename, hull)  # equiv? hull.write_obj(hull_filename)
+    o3d.t.io.write_triangle_mesh(
+        hull_filename, hull
+    )  # equiv? hull.write_obj(hull_filename)
 
     hull_urdf_path = mesh_urdf_path(hull_filename, "cloth_hull")
 
@@ -172,7 +197,9 @@ def add_safety_wall_to_builder(
     plant = robot_diagram_builder.plant()
     parser = robot_diagram_builder.parser()
     safety_wall_thickness = 0.05
-    safety_wall_urdf_path = airo_models.box_urdf_path((0.2, safety_wall_thickness, 0.3), "safety_wall")
+    safety_wall_urdf_path = airo_models.box_urdf_path(
+        (0.2, safety_wall_thickness, 0.3), "safety_wall"
+    )
 
     # Position the safety wall in front of the left TCP
     shift = safety_wall_thickness / 2 + 0.01

@@ -177,6 +177,7 @@ catkin_install_python(PROGRAMS
   nodes/recorder
   nodes/folder
   nodes/unfolder
+  nodes/keypoint_heatmap_stream
   nodes/kp_labeler
   nodes/kp_cleaner
   nodes/kalman_filter
