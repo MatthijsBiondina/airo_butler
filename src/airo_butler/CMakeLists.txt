@@ -162,32 +162,28 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  nodes/ur3_server
-  nodes/ur5_server
-  nodes/ompl_server
-  nodes/realsense2
-  nodes/rs2_recorder
-  nodes/zed2i
-  nodes/zed2i_pointcloud
-  nodes/towel_extremes_finder
-  nodes/camera_plotter
-  nodes/zed_plotter
-  nodes/recorder_plotter
-  nodes/keypoint_detector
-  nodes/recorder
-  nodes/folder
-  nodes/unfolder
-  nodes/keypoint_heatmap_stream
-  nodes/kp_labeler
-  nodes/kp_cleaner
-  nodes/kalman_filter
-  nodes/kalman_plotter
-  nodes/visibility_checker
-  nodes/orientation_labeler
-  nodes/orientation_transformer
-  nodes/coco_builder
   nodes/calibration
-  nodes/path_checker
+  nodes/camera_stream
+  nodes/clean_keypoints_with_kalman_filter
+  nodes/coco_builder
+  nodes/collect_data
+  nodes/data_collector
+  nodes/determine_visibility
+  nodes/kalman_filter
+  nodes/kalman_state_stream
+  nodes/keypoint_heatmap_stream
+  nodes/keypoint_model
+  nodes/label_keypoints
+  nodes/ompl_server
+  nodes/path_check
+  nodes/point_cloud_stream
+  nodes/rs2_camera
+  nodes/towel_extremes_finder
+  nodes/transform_orientation_world_to_camera_frame
+  nodes/unfold
+  nodes/ur5e_server
+  nodes/zed_camera
+  nodes/zed_stream
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

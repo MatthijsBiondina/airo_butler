@@ -7,6 +7,11 @@ joints_rest_sophie: [   0, -180,  90, -90, -90,   0]
 joints_rest_wilson: [   0,    0, -90, -90,  90,   0]
 
 joints_hold_wilson: [   0., -109.,    0., -180.,  -90.,   180.]
+joints_fling1_wilson: [   0., -90.,    140., -180.,  -90.,   180.]
+joints_fling2_wilson: [   0., -130.,    0., -180.,  -90.,   180.]
+
+
+
 joints_hold_sophie: [   -15., -90.,     0.,  -0.,  -90.,   -0.]
 
 joints_scan1_sophie: [ -90., -180.,    0.,    0.,  -63.,    0.]

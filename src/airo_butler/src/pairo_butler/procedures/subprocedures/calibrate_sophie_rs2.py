@@ -21,6 +21,7 @@ class CalibrateSophieRS2(Subprocedure):
     SCENE = "wilson_holds_charuco"
     N_MEASUREMENTS = 10
     BOARD_Z = 0.7
+    DISTANCE = 0.3
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,7 +45,7 @@ class CalibrateSophieRS2(Subprocedure):
                 ]
             )
 
-            dxyz = dxyz / np.linalg.norm(dxyz) * 0.65
+            dxyz = dxyz / np.linalg.norm(dxyz) * self.DISTANCE
             xyz_coords = np.array([0.0, 0.0, self.BOARD_Z]) + dxyz
             tcp = horizontal_view_rotation_matrix(z_axis=-dxyz / np.linalg.norm(dxyz))
             tcp[:3, 3] = xyz_coords

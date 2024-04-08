@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="airo_butler" type="data_collector" name="data_collector" output="screen"></node>
+</launch>

@@ -66,9 +66,10 @@ class KeypointDNN:
     def classify(self, img: Image.Image):
         X = self.transform(img)
         X = X.to(self.device)[None, ...]
-        y = self.model(X).squeeze(1).squeeze(0)
-        heatmap = y.cpu().numpy()
-        heatmap = cv2.resize(heatmap, (img.width, img.height))
+        y = self.model(X).squeeze(1).squeeze(0).cpu().numpy()
+        heatmap = np.zeros((y.shape[0], img.height, img.width))
+        for ii in range(y.shape[0]):
+            heatmap[ii] = cv2.resize(y[ii], (img.width, img.height))
         heatmap = np.clip(heatmap * 255, 0, 255).astype(np.uint8)
         return heatmap
 

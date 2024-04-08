@@ -38,6 +38,8 @@ class KeypointHeatmapStream:
             img: Image.Image = packages["/rs2_topic"]["pod"].image
             heatmap: np.array = packages["/keypoints_heatmap"]["pod"].array
 
+            heatmap = np.max(heatmap, axis=0)
+
             img = overlay_heatmap_on_image(img, heatmap)
             img = img.resize((512, 512))
             fps, latency = compute_fps_and_latency(self.timestamps)

@@ -10,16 +10,23 @@ class KalmanScan(Subprocedure):
         super().__init__(**kwargs)
 
     def run(self):
-        while not ros.is_shutdown():
-            self.sophie.move_to_joint_configuration(
-                np.deg2rad(self.config.joints_scan1_sophie)
+        if not np.all(
+            np.isclose(
+                np.deg2rad(self.config.joints_scan1_sophie),
+                self.sophie.get_joint_configuration(),
+                atol=1e-1,
             )
-            self.sophie.move_to_joint_configuration(
-                np.deg2rad(self.config.joints_scan2_sophie)
+        ):
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                scene="hanging_towel",
             )
-            self.sophie.move_to_joint_configuration(
-                np.deg2rad(self.config.joints_scan3_sophie)
-            )
-            self.sophie.move_to_joint_configuration(
-                np.deg2rad(self.config.joints_scan2_sophie)
-            )
+            self.sophie.execute_plan(plan)
+            ros.sleep(0.5)
+
+        self.sophie.move_to_joint_configuration(
+            np.deg2rad(self.config.joints_scan2_sophie)
+        )
+        self.sophie.move_to_joint_configuration(
+            np.deg2rad(self.config.joints_scan3_sophie)
+        )

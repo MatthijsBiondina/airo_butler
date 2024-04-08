@@ -259,70 +259,15 @@ class KeypointModelTrainer:
             "optimizer_state_dict": self.optim.state_dict(),
             "loss": loss,
         }
-        checkpoint_dir = Path(self.config.checkpoint_dir)
+        checkpoint_dir = Path(self.config.checkpoint_dir) / "wandb"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
         torch.save(checkpoint, checkpoint_dir / (wandb.run.name + ".pth"))
 
     def criterion_train(self, y: torch.Tensor, t: torch.Tensor):
         return nn.functional.mse_loss(y, t, reduction="mean")
 
-        # # Extract the dimensions of the prediction tensor.
-        # bs, n_channels, _, _ = y.shape
-
-        # # Temporarily disable gradient computation to save memory and computations
-        # # for this part of the code that's used for determining the best matching
-        # # between prediction and target channels.
-        # with torch.no_grad():
-        #     # Initialize a tensor to hold the computed losses for all possible
-        #     # pairings of channels between the prediction and target tensors.
-        #     losses = torch.zeros((bs, n_channels, n_channels), device=y.device)
-
-        #     # Calculate the loss for every possible pairing of prediction and target
-        #     # channels. This double loop iterates over all pairs of channels.
-        #     for ii in range(n_channels):
-        #         for jj in range(n_channels):
-        #             # Compute the loss between channel ii of the prediction and channel jj of the target
-        #             # across all batch items. The loss is calculated pixel-wise and then averaged
-        #             # over the spatial dimensions (height and width).
-        #             losses[:, ii, jj] = self.loss_func(
-        #                 y[:, ii], t[:, jj], reduction="none"
-        #             ).mean(dim=(1, 2))
-
-        #     # Calculate the sum of losses for each permutation of channel pairings
-        #     # and find the permutation with the minimum loss for each item in the batch.
-        #     # `self.indexes` and `self.index_permutations` are used to index into the
-        #     # computed losses to consider all possible permutations.
-        #     permutation_losses = losses[:, self.indexes, self.index_permutations].sum(
-        #         -1
-        #     )
-        #     permutations_argmin = torch.argmin(permutation_losses, dim=1)
-
-        #     # Based on the selected permutations, find the corresponding channel indexes
-        #     # for the target tensor that match best with the prediction tensor's channels.
-        #     matching_heatmap_indexes = self.index_permutations[permutations_argmin]
-
-        # # Re-index the target tensor based on the selected channel permutations
-        # # to align it with the prediction tensor's channels. This forms the target tensor `t_`
-        # # that will be used for the final loss calculation.
-        # t_reindexed = t[
-        #     torch.arange(bs, device=self.device)[:, None], matching_heatmap_indexes
-        # ]
-
-        # # Calculate the final loss between the prediction tensor and the re-indexed
-        # # target tensor using the specified loss function. This loss is computed with
-        # # gradients enabled, allowing backpropagation for model training.
-        # loss = self.loss_func(y, t_reindexed, reduction="mean")
-
-        # # The final calculated loss is returned from the function.
-        # return loss
-
     def criterion_eval(self, y: torch.Tensor, t: torch.Tensor):
         return nn.functional.mse_loss(y, t, reduction="mean")
-        y = y.sum(dim=1)
-        t = t.sum(dim=1)
-
-        loss = nn.functional.mse_loss(y, t, reduction="mean")
-        return loss
 
 
 import signal

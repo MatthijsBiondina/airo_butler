@@ -1,8 +1,9 @@
+import math
 import sys
 from typing import Any, Dict
 
 import numpy as np
-from pairo_butler.procedures.subprocedures.fling import Fling
+from pairo_butler.data.data_collector import DataCollector
 from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
 from pairo_butler.procedures.subprocedures.holdup import Holdup
 from pairo_butler.procedures.subprocedures.pickup import Pickup
@@ -12,12 +13,14 @@ from pairo_butler.motion_planning.ompl_client import OMPLClient
 import rospy as ros
 from pairo_butler.utils.tools import load_config, pyout
 
+from pairo_butler.utils.tools import load_config
 
-np.set_printoptions(precision=2, suppress=True)
 
+class CollectDataProcedure:
+    NR_OF_TRIALS = 10
+    NR_OF_TOWELS = 1
 
-class UnfoldMachine:
-    def __init__(self, name: str = "unfold_machine"):
+    def __init__(self, name: str = "collect_data_procedure"):
         self.node_name = name
         self.config = load_config()
 
@@ -45,29 +48,36 @@ class UnfoldMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        # plan = self.ompl.plan_to_joint_configuration(
-        #     wilson=np.deg2rad(self.config.joints_shake_wilson),
-        #     sophie=np.deg2rad(self.config.joints_shake_sophie)
+        n_trials = int(math.ceil(self.NR_OF_TRIALS / self.NR_OF_TOWELS))
 
-        # )
-        # self.wilson.execute_plan(plan)
+        for trial_nr in range(n_trials):
+            while not ros.is_shutdown():
+                ros.loginfo("Startup")
+                Startup(**self.kwargs).run()
+                ros.loginfo("Pickup")
+                while not Pickup(**self.kwargs).run():
+                    pyout(f"Could not pick up towel. Try again.")
 
-        while not ros.is_shutdown():
-            ros.loginfo("Startup")
-            Startup(**self.kwargs).run()
-            ros.loginfo("Pickup")
-            while not Pickup(**self.kwargs).run():
-                pyout(f"Could not pick up towel. Try again.")
+                ros.loginfo("Grasp Corner")
+                if Holdup(**self.kwargs).run():
+                    break
 
-            ros.loginfo("Grasp Corner")
-            if Holdup(**self.kwargs).run():
-                break
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                scene="hanging_towel",
+            )
+            self.sophie.execute_plan(plan)
 
-        KalmanScan(**self.kwargs).run()
+            ros.sleep(10)
+
+            DataCollector.start_recording()
+            KalmanScan(**self.kwargs).run()
+            DataCollector.pause_recording()
+            DataCollector.save_recording()
 
 
 def main():
-    node = UnfoldMachine()
+    node = CollectDataProcedure()
     node.start_ros()
     node.run()
 

@@ -1,6 +1,0 @@
-#!/home/matt/anaconda3/envs/airo-mono/bin/python
-
-from pairo_butler.ur3_arms.ur3_server import main
-
-if __name__ == "__main__":
-    main()

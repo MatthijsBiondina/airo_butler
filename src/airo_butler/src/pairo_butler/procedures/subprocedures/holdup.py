@@ -4,7 +4,10 @@ import time
 from typing import Optional
 
 import numpy as np
-from pairo_butler.utils.transformations_3d import horizontal_view_rotation_matrix
+from pairo_butler.utils.transformations_3d import (
+    homogenous_transformation,
+    horizontal_view_rotation_matrix,
+)
 from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
 from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.utils.tools import pyout
@@ -19,12 +22,15 @@ class Holdup(Subprocedure):
         self.kwargs = kwargs
 
     def run(self):
-        self.__wilson_grab_first_corner()
-        self.sophie.open_gripper()
-        self.__present()
-        if self.towel_on_table():
+        try:
+            self.__wilson_grab_first_corner()
             self.sophie.open_gripper()
-            self.wilson.open_gripper()
+            self.__present()
+            if self.towel_on_table():
+                self.sophie.open_gripper()
+                self.wilson.open_gripper()
+                return False
+        except RuntimeError:
             return False
 
         return True
@@ -46,6 +52,8 @@ class Holdup(Subprocedure):
                 self.towel_bot.copy(), distance
             ):
                 try:
+                    R = homogenous_transformation(yaw=-90)
+                    approach_tcp = approach_tcp @ R
                     plan = self.ompl.plan_to_tcp_pose(
                         wilson=approach_tcp, scene="hanging_towel"
                     )
@@ -69,7 +77,7 @@ class Holdup(Subprocedure):
         tcps = []
 
         for z_ in np.linspace(0.1, 0.7, num=steps):
-            for theta in np.linspace(45, 135, num=steps):
+            for theta in np.linspace(0, 90, num=steps):
                 theta = np.deg2rad(theta)
 
                 x, y = -np.cos(theta) * distance, np.sin(theta) * distance

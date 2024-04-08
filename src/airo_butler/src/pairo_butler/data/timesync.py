@@ -73,6 +73,7 @@ class TimeSync:
 
         ankor_package = self.buffer[self.ankor_topic][0]
         ankor_timestamp = ankor_package["timestamp"]
+        self.timestamp = ankor_timestamp
 
         synchronized_packages = {self.ankor_topic: ankor_package}
 

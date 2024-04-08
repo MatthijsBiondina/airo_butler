@@ -47,6 +47,8 @@ class KeypointDataset(Dataset):
         if self.transform:
             image = np.array(Image.open(sample.path))
             keypoints = sorted(sample.keypoints, key=lambda kp: -kp.y)
+            if len(keypoints) == 1:
+                keypoints = [keypoints[0], keypoints[0]]
             keypoints = [[(kp.x, kp.y) for kp in keypoints]]
             transformed = self.transform(image=image, keypoints=keypoints)
             image = PIL.Image.fromarray(transformed["image"])
