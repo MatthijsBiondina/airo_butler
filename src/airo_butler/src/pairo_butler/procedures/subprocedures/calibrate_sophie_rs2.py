@@ -51,8 +51,8 @@ class CalibrateSophieRS2(Subprocedure):
             tcp[:3, 3] = xyz_coords
 
             R = homogenous_transformation(
-                roll=np.random.uniform(-10, 10),
-                pitch=np.random.uniform(-10, 10),
+                roll=np.random.uniform(-0, 0),
+                pitch=np.random.uniform(-0, 0),
                 yaw=np.random.uniform(-179, 179),
             )
             tcp = tcp @ R

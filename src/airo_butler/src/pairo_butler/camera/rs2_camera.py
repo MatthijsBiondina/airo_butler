@@ -163,7 +163,7 @@ class RS2_camera:
         fps: int = 15,
         rs2_resolution: Tuple[int, int] = (640, 480),
         out_resolution: int = 720,
-        serial_number: str = "943222073454",
+        serial_number: str = "925322060348",
     ):
         """
         Initializes a new instance of the ROS node for interfacing with a RealSense2

@@ -99,13 +99,13 @@ class Holdup(Subprocedure):
         self.wilson.execute_plan(plan)
 
         plan = self.ompl.plan_to_joint_configuration(
-            sophie=np.deg2rad(self.config.joints_hold_sophie),
-            wilson=np.deg2rad(self.config.joints_rest_wilson),
+            sophie=np.deg2rad(self.config.joints_rest_sophie),
+            wilson=np.deg2rad(self.config.joints_drop_wilson),
         )
         self.wilson.execute_plan(plan)
 
         plan = self.ompl.plan_to_joint_configuration(
-            sophie=np.deg2rad(self.config.joints_rest_sophie),
+            # sophie=np.deg2rad(self.config.joints_rest_sophie),
             wilson=np.deg2rad(self.config.joints_hold_wilson),
         )
         self.wilson.execute_plan(plan)

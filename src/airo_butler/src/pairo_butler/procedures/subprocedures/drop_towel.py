@@ -38,7 +38,9 @@ class DropTowel(Subprocedure):
                 )
                 self.sophie.execute_plan(plan)
 
-                plan = self.ompl.plan_to_tcp_pose(sophie=self.config.tcp_drop)
+                plan = self.ompl.plan_to_joint_configuration(
+                    sophie=np.deg2rad(self.config.joints_drop_sophie)
+                )
                 self.sophie.execute_plan(plan)
             except RuntimeError:
                 pass
@@ -48,7 +50,14 @@ class DropTowel(Subprocedure):
     def __let_go_wilson(self):
         if self.wilson.get_gripper_width() < 0.03:
             try:
-                plan = self.ompl.plan_to_tcp_pose(wilson=self.config.tcp_drop)
+                plan = self.ompl.plan_to_joint_configuration(
+                    wilson=np.deg2rad(self.config.joints_hold_wilson)
+                )
+                self.wilson.execute_plan(plan)
+
+                plan = self.ompl.plan_to_joint_configuration(
+                    wilson=np.deg2rad(self.config.joints_drop_wilson)
+                )
                 self.wilson.execute_plan(plan)
             except RuntimeError:
                 pass

@@ -127,7 +127,8 @@ class DataCollector:
             "rs2_intrinsics": self.packages["/rs2_topic"][0].intrinsics_matrix.tolist(),
         }
 
-        tmp_dir = Path(rospkg.RosPack().get_path("airo_butler")) / "res" / "tmp"
+        res_dir = Path(rospkg.RosPack().get_path("airo_butler")) / "res"
+        tmp_dir = res_dir / "tmp"
         shutil.rmtree(tmp_dir, ignore_errors=True)
         makedirs(tmp_dir)
 
@@ -148,17 +149,21 @@ class DataCollector:
                     },
                 }
             )
-        os.system(
+
+        cmd = (
             f"ffmpeg -framerate 24 -i {tmp_dir}/%04d.png "
             f"-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p "
-            f"{save_dir}/video.mp4"
+            f"{res_dir}/video.mp4"
         )
+
+        os.system(cmd)
+        shutil.move(f"{res_dir}/video.mp4", f"{save_dir}/video.mp4")
 
         with open(save_dir / "state.json", "w+") as f:
             json.dump(data, f, indent=2)
 
         self.reset()
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        # shutil.rmtree(tmp_dir, ignore_errors=True)
         return True
 
 

@@ -1,8 +1,10 @@
 import math
 import sys
+import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.data.data_collector import DataCollector
 from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
 from pairo_butler.procedures.subprocedures.holdup import Holdup
@@ -48,9 +50,13 @@ class CollectDataProcedure:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        n_trials = int(math.ceil(self.NR_OF_TRIALS / self.NR_OF_TOWELS))
+        t_start = time.time()
+        trial_nr = 0
+        while time.time() < t_start + 60 * 60:
+            trial_nr += 1
 
-        for trial_nr in range(n_trials):
+            ros.loginfo(f"TRIAL: {trial_nr}")
+
             while not ros.is_shutdown():
                 ros.loginfo("Startup")
                 Startup(**self.kwargs).run()
@@ -69,11 +75,13 @@ class CollectDataProcedure:
             self.sophie.execute_plan(plan)
 
             ros.sleep(10)
-
             DataCollector.start_recording()
             KalmanScan(**self.kwargs).run()
             DataCollector.pause_recording()
             DataCollector.save_recording()
+
+        Startup(**self.kwargs).run()
+        Goodnight(**self.kwargs).run()
 
 
 def main():

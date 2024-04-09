@@ -2,6 +2,7 @@ import sys
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.procedures.subprocedures.fling import Fling
 from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
 from pairo_butler.procedures.subprocedures.holdup import Holdup
@@ -46,11 +47,13 @@ class UnfoldMachine:
 
     def run(self):
         # plan = self.ompl.plan_to_joint_configuration(
-        #     wilson=np.deg2rad(self.config.joints_shake_wilson),
-        #     sophie=np.deg2rad(self.config.joints_shake_sophie)
-
+        #     wilson=np.deg2rad(self.config.joints_hold_wilson),
+        #     sophie=np.deg2rad(self.config.joints_scan3_sophie),
         # )
         # self.wilson.execute_plan(plan)
+        # ros.sleep(1)
+        # pyout(self.sophie.get_tcp_pose())
+        # sys.exit(0)
 
         while not ros.is_shutdown():
             ros.loginfo("Startup")
@@ -64,6 +67,9 @@ class UnfoldMachine:
                 break
 
         KalmanScan(**self.kwargs).run()
+
+        Startup(**self.kwargs).run()
+        Goodnight(**self.kwargs).run()
 
 
 def main():

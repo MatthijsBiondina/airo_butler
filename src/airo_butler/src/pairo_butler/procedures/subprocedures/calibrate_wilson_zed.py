@@ -32,7 +32,7 @@ class CalibrateWilsonZed(Subprocedure):
                 pitch=np.random.uniform(-10, 10),
                 yaw=np.random.uniform(-10, 10),
                 dx=np.random.uniform(-0.1, 0.1),
-                dy=np.random.uniform(-0.4, 0.4),
+                dy=np.random.uniform(-0.2, 0.2),
                 dz=np.random.uniform(-0.2, 0.2),
             )
 
