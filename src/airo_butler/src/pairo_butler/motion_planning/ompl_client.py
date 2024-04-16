@@ -81,10 +81,7 @@ class OMPLClient:
         assert not (sophie is None and wilson is None)
 
         pod = DualJointsPOD(
-            ros.Time.now(),
-            joints_sophie=sophie,
-            joints_wilson=wilson,
-            scene=scene,
+            ros.Time.now(), joints_sophie=sophie, joints_wilson=wilson, scene=scene
         )
 
         response = None

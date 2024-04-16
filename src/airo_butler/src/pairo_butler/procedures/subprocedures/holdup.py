@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pickle
 import sys
 import time
@@ -41,7 +42,7 @@ class Holdup(Subprocedure):
             scene="hanging_towel",
         )
         self.wilson.execute_plan(plan)
-        ros.sleep(10)
+        ros.sleep(1)
 
         plan = None
         distance = 0.2
@@ -98,8 +99,11 @@ class Holdup(Subprocedure):
         )
         self.wilson.execute_plan(plan)
 
+        sophie_rest = deepcopy(self.config.joints_rest_sophie)
+        sophie_rest[-1] = 180
+
         plan = self.ompl.plan_to_joint_configuration(
-            sophie=np.deg2rad(self.config.joints_rest_sophie),
+            sophie=np.deg2rad(sophie_rest),
             wilson=np.deg2rad(self.config.joints_drop_wilson),
         )
         self.wilson.execute_plan(plan)

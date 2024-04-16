@@ -54,6 +54,8 @@ class CollectDataProcedure:
         trial_nr = 0
         while time.time() < t_start + 60 * 60:
             trial_nr += 1
+            if trial_nr > 25:
+                break
 
             ros.loginfo(f"TRIAL: {trial_nr}")
 

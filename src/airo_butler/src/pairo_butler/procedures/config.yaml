@@ -17,7 +17,7 @@ joints_drop_wilson: [    17., -115.,     0., -155.,   90.,    0.]
 joints_drop_sophie: [   -17.,  -65.,     0.,  -25.,  -90.,    0.]
 
 joints_shake_wilson: [   25, -90, -90, -90,  90,   0]
-joints_shake_sophie: [   25, -90,  90, -90, -90,   0]
+joints_shake_sophie: [   25, -90,  90, -90, -90, 180]
 
 matrix_4x4:
 - [0.0, 0.0, 0.0, 0.0]
