@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 import rospkg
+from pairo_butler.labelling.determine_visibility import VisibilityChecker
 from pairo_butler.utils.pods import (
     BooleanPOD,
     KalmanFilterStatePOD,
@@ -48,8 +49,8 @@ class KeypointCleaner:
 
     def run(self):
 
-        for trial in pbar(
-            listdir(self.config["folder"]),
+        for ii, trial in pbar(
+            enumerate(listdir(self.config["folder"])),
             desc="Cleaning",
         ):
             raw_data, valid = self.__load_data_trial(trial)
@@ -70,6 +71,9 @@ class KeypointCleaner:
                 if measurement is None or len(measurement) == 0:
                     continue
                 tcp = np.array(state["tcp_pose"]) @ self.T_sophie_cam
+
+                pyout(np.array(raw_data["rs2_intrinsics"]))
+
                 measurement_pod = KeypointMeasurementPOD(
                     timestamp=ros.Time.now(),
                     keypoints=np.array(measurement),
@@ -90,7 +94,7 @@ class KeypointCleaner:
         tcp_path = (
             Path(rospkg.RosPack().get_path("airo_butler")) / "res" / "camera_tcps"
         )
-        camera_tcp = np.load(tcp_path / "T_rs2_sophie.npy")
+        camera_tcp = np.load(tcp_path / "T_rs2_tcp_sophie.npy")
         return config, camera_tcp
 
     def __load_data_trial(self, path: Path):
@@ -181,6 +185,10 @@ def main():
     node = KeypointCleaner()
     node.start_ros()
     node.run()
+
+    node2 = VisibilityChecker()
+    # node2.start_ros()
+    node2.run()
 
 
 if __name__ == "__main__":

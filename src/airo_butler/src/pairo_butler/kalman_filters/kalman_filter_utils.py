@@ -116,7 +116,7 @@ def load_trial(path: Path):
         Path(rospkg.RosPack().get_path("airo_butler"))
         / "res"
         / "camera_tcps"
-        / "T_rs2_sophie.npy"
+        / "T_rs2_tcp_sophie.npy"
     )
     transform_matrix = np.load(transform_path)
     for frame in pbar(listdir(path)):

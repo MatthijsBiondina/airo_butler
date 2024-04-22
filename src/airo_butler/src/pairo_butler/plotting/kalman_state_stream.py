@@ -62,7 +62,7 @@ class KalmanStream:
 
         plotter = pv.Plotter(off_screen=True)
         plotter.add_axes(line_width=5, color=UGENT.BLACK)
-        box = pv.Box(bounds=[-1.0, 0.0, -0.45, 0.45, 0.0, 1.0])
+        box = pv.Box(bounds=[-0.45, 0.45, -0.45, 0.45, 0.0, 1.0])
         plotter.add_mesh(box, color=UGENT.BLACK, line_width=2, style="wireframe")
 
         for ii, (mean, covariance) in enumerate(zip(means, covariances)):

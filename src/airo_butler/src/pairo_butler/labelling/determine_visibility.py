@@ -57,7 +57,7 @@ class VisibilityChecker:
             Path(rospkg.RosPack().get_path("airo_butler"))
             / "res"
             / "camera_tcps"
-            / "T_rs2_sophie.npy"
+            / "T_rs2_tcp_sophie.npy"
         )
         self.T_sophie_cam: np.ndarray = np.load(matrix_path)
 
@@ -100,8 +100,8 @@ class VisibilityChecker:
         trials with the required data are processed.
         """
         # Iterate through each trial in the specified folder, with a progress bar for feedback
-        for trial in pbar(
-            listdir(self.config["folder"]), desc="Determining Visibility"
+        for ii, trial in pbar(
+            enumerate(listdir(self.config["folder"])), desc="Determining Visibility"
         ):
             ros.loginfo(trial)
 
@@ -146,7 +146,7 @@ class VisibilityChecker:
                                         extracted from the 'state.json' file.
         """
         # Load the trial's state from the 'state.json' file
-        raise NotImplementedError
+        # raise NotImplementedError
 
         try:
             with open(path / "state.json", "r") as f:
@@ -336,9 +336,9 @@ class VisibilityChecker:
                 == closest_measured_point[None, :],
                 axis=1,
             )
-            visibility[
-                (visibility == 1.0) & unobscured[:, None]
-            ] = 2.0  # Mark as visible if unobscured
+            visibility[(visibility == 1.0) & unobscured[:, None]] = (
+                2.0  # Mark as visible if unobscured
+            )
 
         return visibility[:, None, :]
 
@@ -390,7 +390,7 @@ class VisibilityChecker:
                 "Visibility", np.array(frame)[..., ::-1]
             )  # Convert frame for correct color display if needed
             # Break and exit if 'q' key is pressed
-            if cv2.waitKey(10) & 0xFF == ord("q"):
+            if cv2.waitKey(100) & 0xFF == ord("q"):
                 ros.loginfo("Process interrupted by user.")
                 ros.signal_shutdown("Interrupted by user")
                 sys.exit(0)

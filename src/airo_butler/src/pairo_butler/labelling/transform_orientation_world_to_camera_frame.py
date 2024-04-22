@@ -26,7 +26,7 @@ class OrientationFrameTransformer:
             Path(rospkg.RosPack().get_path("airo_butler"))
             / "res"
             / "camera_tcps"
-            / "T_rs2_sophie.npy"
+            / "T_rs2_tcp_sophie.npy"
         )
         self.T_sophie_cam: np.ndarray = np.load(matrix_path)
 

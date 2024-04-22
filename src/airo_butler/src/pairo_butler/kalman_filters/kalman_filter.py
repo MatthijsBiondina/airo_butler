@@ -171,7 +171,7 @@ class KalmanFilter:
 
     def __init_new_mu_and_Sigma(self, eps=1e-3):
         # It is important that we do not initialize at (0,0,0) for numerical stability
-        new_mean = np.array([-0.5, 0.0, 0.5, 0.0])[:, None]
+        new_mean = np.array([0.0, 0.0, 0.5, 0.0])[:, None]
         new_covariance = np.array(
             [
                 self.config["variance_position_prior"],
