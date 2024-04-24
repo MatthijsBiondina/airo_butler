@@ -14,10 +14,10 @@ from airo_butler.srv import PODService
 from airo_butler.msg import PODMessage
 from pairo_butler.utils.pods import (
     BooleanPOD,
-    UR3StatePOD,
+    URStatePOD,
     make_pod_request,
-    UR3PosePOD,
-    UR3GripperPOD,
+    URPosePOD,
+    URGripperPOD,
 )
 from pairo_butler.utils.tools import pyout
 
@@ -64,7 +64,7 @@ class UR3Client:
         self.__gripper_width: Optional[float] = None
 
     def __callback(self, msg):
-        msg: UR3StatePOD = pickle.loads(msg.data)
+        msg: URStatePOD = pickle.loads(msg.data)
 
         self.__joint_configuration = msg.joint_configuration
         self.__tcp_pose = msg.tcp_pose
@@ -76,7 +76,7 @@ class UR3Client:
         joint_speed: Optional[float] = None,
         blocking: bool = True,
     ) -> bool:
-        pod = UR3PosePOD(joint_configuration, self.arm_name, joint_speed, blocking)
+        pod = URPosePOD(joint_configuration, self.arm_name, joint_speed, blocking)
         response = make_pod_request(
             self.move_to_joint_configuration_service, pod, BooleanPOD
         )
@@ -88,33 +88,33 @@ class UR3Client:
         joint_speed: Optional[float] = None,
         blocking: Optional[bool] = True,
     ) -> bool:
-        pod = UR3PosePOD(tcp_pose, self.arm_name, joint_speed, blocking)
+        pod = URPosePOD(tcp_pose, self.arm_name, joint_speed, blocking)
         response = make_pod_request(self.move_to_tcp_pose_service, pod, BooleanPOD)
         return response.value
 
     def move_gripper(self, width: float, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD(width, self.arm_name, blocking)
+        pod = URGripperPOD(width, self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 
     def close_gripper(self, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD("close", self.arm_name, blocking)
+        pod = URGripperPOD("close", self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 
     def open_gripper(self, blocking: bool = True) -> bool:
-        pod = UR3GripperPOD("open", self.arm_name, blocking)
+        pod = URGripperPOD("open", self.arm_name, blocking)
         response = make_pod_request(self.move_gripper_service, pod, BooleanPOD)
         return response.value
 
     def inverse_kinematics(self, tcp: np.ndarray, initial_config: Optional[np.ndarray]):
-        pod = UR3StatePOD(
+        pod = URStatePOD(
             tcp_pose=tcp,
             joint_configuration=initial_config,
             timestamp=ros.Time.now(),
             arm_name=self.arm_name,
         )
-        response = make_pod_request(self.inverse_kinematics_service, pod, UR3StatePOD)
+        response = make_pod_request(self.inverse_kinematics_service, pod, URStatePOD)
         return response.joint_configuration
 
     def get_tcp_pose(self, timeout=1):

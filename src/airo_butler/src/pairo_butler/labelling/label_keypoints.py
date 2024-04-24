@@ -73,6 +73,17 @@ class KeypointLabeler:
         Main loop that processes each video file in the specified directory, loading the
         trial data, labeling it, and handling user interactions.
         """
+        controls = """
+        CONTROLS:
+        > a: previous frame
+        > d: next frame
+        > l: save
+        > v: toggle valid/invalid
+        > ESC: exit
+        """
+        pyout(controls)
+
+
         # Iterate through each trial in the directory specified in the config file.
         # `pbar` is a progress bar function that wraps the iterable returned by `listdir`,
         # providing visual feedback in the console about the progress of the labeling process.

@@ -57,7 +57,7 @@ class VisibilityChecker:
             Path(rospkg.RosPack().get_path("airo_butler"))
             / "res"
             / "camera_tcps"
-            / "T_rs2_sophie.npy"
+            / "T_rs2_tcp_sophie.npy"
         )
         self.T_sophie_cam: np.ndarray = np.load(matrix_path)
 
@@ -122,7 +122,8 @@ class VisibilityChecker:
             data = self.determine_keypoints_visibility(data)
 
             # Determine and plot visibility status for keypoints in the trial
-            VisibilityChecker.plot_visible_and_obscured_keypoints(data)
+            if self.config["render"]:
+                VisibilityChecker.plot_visible_and_obscured_keypoints(data)
 
             # Save the updated trial data with visibility information
             VisibilityChecker.save_data_with_visibility_labels(trial, data)
@@ -146,7 +147,7 @@ class VisibilityChecker:
                                         extracted from the 'state.json' file.
         """
         # Load the trial's state from the 'state.json' file
-        raise NotImplementedError
+        # raise NotImplementedError
 
         try:
             with open(path / "state.json", "r") as f:
@@ -163,6 +164,9 @@ class VisibilityChecker:
             )  # Provide a default as False in case 'valid' key is missing
         except json.decoder.JSONDecodeError:
             ros.logwarn(f"Could not decode {path}.")
+            return None, False
+        except Exception as e:
+            ros.logwarn(f"Unexpected exception: {e}")
             return None, False
 
     def __project_keypoints_onto_camera_frames(
@@ -336,9 +340,9 @@ class VisibilityChecker:
                 == closest_measured_point[None, :],
                 axis=1,
             )
-            visibility[
-                (visibility == 1.0) & unobscured[:, None]
-            ] = 2.0  # Mark as visible if unobscured
+            visibility[(visibility == 1.0) & unobscured[:, None]] = (
+                2.0  # Mark as visible if unobscured
+            )
 
         return visibility[:, None, :]
 

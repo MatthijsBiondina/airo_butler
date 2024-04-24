@@ -1,3 +1,4 @@
+import os
 import pickle
 import sys
 import time
@@ -74,6 +75,9 @@ class ZEDClient:
         while self.__zed_pod is None and ros.Time.now() < t0 + self.timeout:
             ros.sleep(1 / self.RATE)  # Sleep to allow other ROS callbacks to process
         # If no data is received, log an error, shutdown ROS, and exit the program
+        # while self.__timestamps[-1] < t0 and ros.Time.now() < t0 + self.timeout:
+        #     ros.sleep(1 / self.RATE)
+
         if self.__zed_pod is None:
             ros.logerr("No POD received from ZED. Is it running?")
             ros.signal_shutdown("Did not receive POD from ZED.")
@@ -225,6 +229,9 @@ class ZED:
 
 
 def main():
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
     node = ZED()
     node.start_ros()
     node.run()

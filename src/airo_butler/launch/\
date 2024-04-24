@@ -1,0 +1,16 @@
+<launch>
+  <!--<node pkg="airo_butler" type="label_keypoints" name="label_keypoints" output="screen"></node>-->
+
+  <!-- <node pkg="airo_butler" type="kalman_filter" name="kalman_filter" output="screen"></node> -->
+  <!-- <node pkg="airo_butler" type="clean_keypoints_with_kalman_filter" name="clean_keypoints_with_kalman_filter" output="screen"></node> -->
+  <!-- <node pkg="airo_butler" type="kalman_state_stream" name="kalman_state_stream" output="screen"></node> -->
+
+  <!-- <node pkg="airo_butler" type="determine_visibility" name="determine_visibility" output="screen"></node> -->
+
+  <!-- <node pkg="airo_butler" type="label_orientation" name="label_orientation" output="screen"></node> -->
+
+  <!-- <node pkg="airo_butler" type="orientation_transformer" name="orientation_transformer" output="screen"></node>-->
+
+  <!--  <node pkg="airo_butler" type="coco_builder" name="coco_builder" output="screen"></node> -->
+</launch>
+

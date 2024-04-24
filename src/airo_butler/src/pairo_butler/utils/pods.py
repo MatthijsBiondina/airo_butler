@@ -1,6 +1,7 @@
 import PIL
 from PIL import Image
 
+from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
 import rospy as ros
 import pickle
 import sys
@@ -20,7 +21,7 @@ class POD:
     pass
 
 
-class UR3GripperPOD(POD):
+class URGripperPOD(POD):
     """
     Represents the data for controlling a UR3 robot's gripper.
 
@@ -41,7 +42,7 @@ class UR3GripperPOD(POD):
         self.blocking = blocking
 
 
-class UR3PosePOD(POD):
+class URPosePOD(POD):
     """
     Represents the pose COMMAND data for a UR3 ro4ot arm.
 
@@ -69,7 +70,7 @@ class UR3PosePOD(POD):
         self.blocking = blocking
 
 
-class UR3StatePOD(POD):
+class URStatePOD(POD):
     """
     Represents the pose STATE data for a UR3 robot arm
 
@@ -100,6 +101,69 @@ class UR3StatePOD(POD):
         self.arm_name: Optional[str] = arm_name
 
 
+class DualTCPPOD(POD):
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        tcp_sophie: Optional[np.ndarray] = None,
+        tcp_wilson: Optional[np.ndarray] = None,
+        scene: str = "default",
+    ):
+        self.timestamp: ros.Time = timestamp
+
+        assert not (tcp_sophie is None and tcp_wilson is None)
+        self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
+        self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
+        self.scene: str = scene
+
+
+class DualJointsPOD(POD):
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        joints_sophie: Optional[np.ndarray] = None,
+        joints_wilson: Optional[np.ndarray] = None,
+        scene: str = "default",
+    ):
+        self.timestamp: ros.Time = timestamp
+        assert not (joints_sophie is None and joints_wilson is None)
+        self.joints_sophie: Optional[np.ndarray] = joints_sophie
+        self.joints_wilson: Optional[np.ndarray] = joints_wilson
+        self.scene: str = scene
+
+
+class DualTrajectoryPOD(POD):
+    __slots__ = ["timestamp", "path_sophie", "path_wilson", "period"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        path_sophie: np.ndarray,
+        path_wilson: np.ndarray,
+        period: float,
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.path_sophie: np.ndarray = path_sophie
+        self.path_wilson: np.ndarray = path_wilson
+        self.period: float = period
+
+
+class SingleTrajectoryPOD(POD):
+    __slots__ = ["path", "arm_name", "period", "blocking"]
+
+    def __init__(self, path: np.ndarray, arm_name: str, period: float, blocking: bool):
+
+        self.path: np.ndarray = path
+        assert arm_name in ["wilson", "sophie"]
+        self.arm_name: str = arm_name
+        self.period: float = period
+        self.blocking: bool = blocking
+
+
 class BooleanPOD(POD):
     """
     Represents a simple boolean data structure.
@@ -123,11 +187,24 @@ class ImagePOD(POD):
         timestamp
     """
 
-    __slots__ = ["image", "intrinsics_matrix", "timestamp"]
+    __slots__ = [
+        "color_frame",
+        "depth_frame",
+        "image",
+        "intrinsics_matrix",
+        "timestamp",
+    ]
 
     def __init__(
-        self, image: Image, intrinsics_matrix: np.ndarray, timestamp: ros.Time
+        self,
+        color_frame: np.ndarray,
+        depth_frame: np.ndarray,
+        image: Image,
+        intrinsics_matrix: np.ndarray,
+        timestamp: ros.Time,
     ):
+        self.color_frame = color_frame
+        self.depth_frame = depth_frame
         self.image = image
         self.intrinsics_matrix = intrinsics_matrix
         self.timestamp = timestamp
@@ -223,6 +300,22 @@ class KalmanFilterStatePOD:
         self.camera_tcp = camera_tcp
 
 
+class CoordinatePOD:
+    __slots__ = ["x", "y", "z"]
+
+    def __init__(self, x: float, y: float, z: float):
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+class TowelPOD:
+    __slots__ = ["towel"]
+
+    def __init__(self, towel: Optional[TowelObstacle] = None):
+        self.towel: Optional[TowelObstacle] = towel
+
+
 def make_pod_request(
     service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
 ) -> POD:
@@ -253,7 +346,7 @@ def make_pod_request(
         response: response_type = pickle.loads(service(service_request).pod)
         return response
     except ros.ServiceException as e:
-        pyout()
+        pass
     except ros.ROSInterruptException:
         sys.exit(0)
 

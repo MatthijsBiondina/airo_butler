@@ -34,6 +34,7 @@ class MultiChannelKeypointsCompose(A.Compose):
         result_dict = super().__call__(*args, force_apply=force_apply, **data)
 
         # rearrange keypoints by channel
+        
         transformed_flattened_keypoints = result_dict["keypoints"]
         transformed_flattened_labels = result_dict["channel_labels"]
         transformed_keypoints = self.order_transformed_keypoints_by_channel(

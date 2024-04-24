@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 import numpy as np
@@ -11,27 +12,39 @@ from pairo_butler.plotting.heatmap_stream import HeatmapStream
 from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.keypoint_model.keypoint_dnn import KeypointNeuralNetwork
 from pairo_butler.keypoint_model.keypoint_dataset import KeypointDataset
-from pairo_butler.utils.tools import UGENT, listdir, load_mp4_video, pbar, poem, pyout
+from pairo_butler.utils.tools import (
+    UGENT,
+    listdir,
+    load_config,
+    load_mp4_video,
+    pbar,
+    poem,
+    pyout,
+)
 import rospy as ros
 
 
 class KeypointModelTrainer:
     def __init__(self, name: str = "keypoint_model_trainer"):
         self.node_name: str = name
-        config_path: Path = Path(__file__).parent / "config.yaml"
-        with open(config_path, "r") as f:
-            self.config: Dict[str, Any] = yaml.safe_load(f)
+        self.config = load_config()
 
         self.__init_wandb_run()
-        self.device = torch.device("cuda:0")
-        # self.device = torch.device("cpu")
-        self.criterion = nn.functional.mse_loss
-        self.batch_size = self.config["batch_size"]
+        self.device = torch.device(self.config.device)
+        # self.criterion = nn.functional.mse_loss  # bce_loss
+        self.loss_func = nn.functional.binary_cross_entropy_with_logits
+        self.batch_size = self.config.batch_size
         self.model, self.optim = self.__initialize_model()
         self.train_loader, self.valid_loader = self.__load_datasets()
 
+        self.indexes, self.index_permutations = self.__init_permutations()
+
     def start_ros(self):
-        ros.init_node(self.node_name, log_level=ros.INFO)
+        ros.init_node(
+            f"{self.node_name}_{self.config.backbone}",
+            anonymous=True,
+            log_level=ros.INFO,
+        )
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
@@ -41,7 +54,7 @@ class KeypointModelTrainer:
         self.model.train()
         ema = None
         try:
-            for epoch in (bar1 := pbar(range(self.config["epochs"]))):
+            for epoch in (bar1 := pbar(range(self.config.epochs))):
                 self.__check_early_stopping_criteria(epoch, best_epoch)
 
                 for X, t in (
@@ -50,7 +63,7 @@ class KeypointModelTrainer:
                     step, ema, y = self.__do_train_step(X, t, ema, step)
                     bar2.desc = poem(f"Train: {ema:.5f}")
 
-                    if step % len(self.valid_loader.dataset) < self.batch_size:
+                    if step % (len(self.valid_loader.dataset)) < self.batch_size:
                         self.__log_image(X, y, t, "Training")
                         best_loss, best_epoch = self.__do_evaluation_procedure(
                             epoch, best_loss, best_epoch
@@ -58,40 +71,54 @@ class KeypointModelTrainer:
                         bar1.desc = poem(f"Best: {best_loss:.5f}")
                         bar1.update(0)
 
-                wandb.log({"train_loss": ema})
+                    wandb.log({"train_loss": ema})
 
         except BreakException:
             ros.loginfo(f"Exiting training loop.")
 
+    def __init_permutations(self):
+        indexes = list(range(self.config.max_nr_of_keypoints))
+        permutations_list = list(itertools.permutations(indexes))
+
+        indexes_tensor = torch.stack(
+            (torch.tensor(indexes).to(self.device),) * self.config.max_nr_of_keypoints,
+            dim=0,
+        )
+        permutations_tensor = torch.tensor(permutations_list).to(self.device)
+        return indexes_tensor, permutations_tensor
+
     def __init_wandb_run(self):
-        wandb.init(project=self.config["project"], config=self.config)
+        wandb.init(project=self.config.project, config=self.config)
 
     def __initialize_model(self):
-        model = KeypointNeuralNetwork(backbone=self.config["backbone"]).to(self.device)
-        optim = torch.optim.Adam(model.parameters(), lr=self.config["learning_rate"])
+        model = KeypointNeuralNetwork(backbone=self.config.backbone).to(self.device)
+        optim = torch.optim.Adam(
+            model.parameters(), lr=self.config.learning_rate, weight_decay=1e-4
+        )
 
         return model, optim
 
     def __load_datasets(self) -> Tuple[DataLoader, DataLoader]:
         train_set = KeypointDataset(
-            root=Path(self.config["root_folder"]) / "train",
+            root=Path(self.config.root_folder) / "train",
             config=self.config,
             augment=True,
         )
         validation_set = KeypointDataset(
-            root=Path(self.config["root_folder"]) / "validation",
+            root=Path(self.config.root_folder) / "validation",
             config=self.config,
             augment=False,
+            validation=True,
         )
 
         if self.batch_size is None:
             self.batch_size = self.__optimize_batch_size(train_set)
 
         train_loader = DataLoader(
-            train_set, batch_size=self.batch_size, shuffle=True, num_workers=8
+            train_set, batch_size=self.batch_size, shuffle=True, num_workers=2
         )
         valid_loader = DataLoader(
-            validation_set, batch_size=self.batch_size, shuffle=True, num_workers=8
+            validation_set, batch_size=self.batch_size, shuffle=False, num_workers=2
         )
 
         return train_loader, valid_loader
@@ -123,13 +150,13 @@ class KeypointModelTrainer:
             X, t = X.to(self.device), t.to(self.device)
             self.optim.zero_grad()
             y = self.model(X)
-            loss = self.criterion(y, t)
+            loss = self.criterion_train(y, t)
             loss.backward()
             self.optim.step()
             break
 
     def __check_early_stopping_criteria(self, epoch, best_epoch):
-        if epoch - best_epoch > self.config["patience"]:
+        if epoch - best_epoch > self.config.patience:
             ros.loginfo(f"Eary stop after {epoch+1} epochs. Ran out of patience.")
             raise BreakException
 
@@ -144,9 +171,11 @@ class KeypointModelTrainer:
         self.optim.zero_grad()
         X, t = X.to(self.device), t.to(self.device)
         y = self.model(X)
-        loss = self.criterion(y, t)
-        loss.backward()
-        self.optim.step()
+        loss = self.criterion_train(y, t)
+
+        if not torch.isnan(loss) and not torch.isinf(loss):
+            loss.backward()
+            self.optim.step()
 
         ema = loss if ema is None else alpha * loss.item() + (1 - alpha) * ema
         step += X.shape[0]
@@ -156,6 +185,10 @@ class KeypointModelTrainer:
     def __log_image(
         self, X: torch.Tensor, y: torch.Tensor, t: torch.Tensor, title: str
     ):
+        # y, t = torch.sigmoid(y), torch.sigmoid(t)
+        y, t = y.sum(dim=1, keepdim=True), t.sum(dim=1, keepdim=True)
+        y, t = torch.clamp(y, 0, 1), torch.clamp(t, 0, 1)
+
         idx = max(list(range(t.shape[0])), key=lambda i: torch.max(t[i]).item())
 
         image = Image.fromarray(
@@ -163,6 +196,7 @@ class KeypointModelTrainer:
                 np.uint8
             )
         )
+
         heatmap_target: np.ndarray = t[idx, 0].detach().cpu().numpy()
         heatmap_predicted: np.ndarray = y[idx, 0].detach().cpu().numpy()
 
@@ -197,19 +231,24 @@ class KeypointModelTrainer:
 
         return best_loss, best_epoch
 
-    def __determine_validation_loss(self):
+    def __determine_validation_loss(self, subset=False):
         self.model.eval()
         with torch.no_grad():
             cumulative_loss, num = 0.0, 0.0
             for X, t in (bar3 := pbar(self.valid_loader)):
                 X, t = X.to(self.device), t.to(self.device)
                 y = self.model(X)
-                loss = self.criterion(y, t)
+                loss = self.criterion_eval(y, t)
                 cumulative_loss += loss.cpu().item() * X.shape[0]
                 num += X.shape[0]
                 bar3.desc = poem(f"Eval: {cumulative_loss / num:.5f}")
+                if subset:
+                    break
         self.model.train()
-        wandb.log({"validation_loss": cumulative_loss / num})
+        if subset:
+            wandb.log({"intermediate_validation_loss": cumulative_loss / num})
+        else:
+            wandb.log({"validation_loss": cumulative_loss / num})
 
         self.__log_image(X, y, t, "Validation")
 
@@ -218,13 +257,30 @@ class KeypointModelTrainer:
     def __save_checkpoint(self, epoch: int, loss: float):
         checkpoint = {
             "epoch": epoch,
+            "backbone": self.config.backbone,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optim.state_dict(),
             "loss": loss,
         }
-        checkpoint_dir = Path(self.config["checkpoint_dir"])
+        checkpoint_dir = Path(self.config.checkpoint_dir) / "wandb"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
         torch.save(checkpoint, checkpoint_dir / (wandb.run.name + ".pth"))
+
+    def criterion_train(self, y: torch.Tensor, t: torch.Tensor):
+        # return nn.functional.binary_cross_entropy_with_logits(y, t, reduce="mean")
+
+        return nn.functional.mse_loss(y, t, reduction="mean")
+
+    def criterion_eval(self, y: torch.Tensor, t: torch.Tensor):
+        # return nn.functional.binary_cross_entropy_with_logits(y, t, reduce="mean")
+        return nn.functional.mse_loss(y, t, reduction="mean")
+
+
+import signal
+import sys
+
+
+signal.signal(signal.SIGINT, lambda *args, **kwargs: sys.exit(0))
 
 
 def main():
@@ -235,3 +291,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+3

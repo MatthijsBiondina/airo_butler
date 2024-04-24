@@ -3,17 +3,17 @@ from pathlib import Path
 import pickle
 import sys
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import cv2
 
 import numpy as np
 import rospkg
 import yaml
+from pairo_butler.motion_planning.ompl_client import OMPLClient
+from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
 from pairo_butler.camera.zed_camera import ZEDClient
 from pairo_butler.camera.rs2_camera import RS2Client
-from pairo_butler.ur3_arms.ur3_constants import WILSON_SLEEP, SOPHIE_SLEEP
 from pairo_butler.utils.tools import pbar, pyout
-from pairo_butler.ur3_arms.ur3_client import UR3Client
 from pairo_butler.utils.pods import ZEDPOD, ImagePOD
 import rospy as ros
 from airo_butler.msg import PODMessage
@@ -97,14 +97,15 @@ class CameraCalibration:
         self.rate: Optional[ros.Rate] = None
 
         # todo: debug gorilla crash
-        # self.zed: Optional[ZEDClient] = None
+        self.zed: Optional[ZEDClient] = None
         self.rs2: Optional[RS2Client] = None
-        self.wilson: Optional[UR3Client] = None
-        self.sophie: Optional[UR3Client] = None
+        self.wilson: Optional[UR5eClient] = None
+        self.sophie: Optional[UR5eClient] = None
+        self.ompl: OMPLClient
 
         # Placeholders:
         self.state: str = STATE_STARTUP
-        # self.state: str = STATE_CALIBRATE_ZED_SOPHIE
+        # self.state: str = STATE_DROP_CHARUCO_BOARD
 
         # Filesystem
         self.data_root = (
@@ -124,10 +125,11 @@ class CameraCalibration:
         self.rate = ros.Rate(self.PUBLISH_RATE)
 
         # todo: debug gorilla crash
-        # self.zed = ZEDClient()
+        self.zed = ZEDClient()
         self.rs2 = RS2Client()
-        self.wilson = UR3Client("wilson")
-        self.sophie = UR3Client("sophie")
+        self.wilson = UR5eClient("wilson")
+        self.sophie = UR5eClient("sophie")
+        self.ompl = OMPLClient()
 
         ros.loginfo(f"{self.node_name}: OK!")
 
@@ -168,12 +170,11 @@ class CameraCalibration:
             self.wilson.open_gripper()
             self.wilson.close_gripper()
             ros.sleep(1.0)
-        ros.loginfo(f"Good human!")
 
         # todo: debug gorilla crash
-        # return STATE_CALIBRATE_ZED_WILSON
+        return STATE_CALIBRATE_ZED_WILSON
 
-        return STATE_CALIBRATE_RS2_SOPHIE
+        # return STATE_CALIBRATE_RS2_SOPHIE
 
     def __calibrate_wilson(self):
         measurements: List[TCPs] = []
@@ -185,14 +186,16 @@ class CameraCalibration:
             try:
                 measurements.append(
                     TCPs(
-                        tcp_cam=self.__wait_for_measurements(ros.Time.now()),
+                        tcp_cam=self.wait_for_measurements(ros.Time.now()),
                         tcp_arm=self.wilson.get_tcp_pose(),
                     )
                 )
             except TimeoutError:
                 ros.logwarn(f"Cannot see the charuco board.")
 
-        zed_pose, error = self.__compute_calibration(measurements, mode="eye_to_hand")
+        zed_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_to_hand"
+        )
         ros.loginfo(f"Calibrated Wilson with error: {error:.3f}")
         save_path = self.data_root / "T_zed_wilson.npy"
         np.save(save_path, zed_pose)
@@ -211,14 +214,16 @@ class CameraCalibration:
             try:
                 measurements.append(
                     TCPs(
-                        tcp_cam=self.__wait_for_measurements(ros.Time.now()),
+                        tcp_cam=self.wait_for_measurements(ros.Time.now()),
                         tcp_arm=self.sophie.get_tcp_pose(),
                     )
                 )
             except TimeoutError:
                 ros.logwarn(f"Cannot see the charuco board.")
 
-        zed_pose, error = self.__compute_calibration(measurements, mode="eye_to_hand")
+        zed_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_to_hand"
+        )
         ros.loginfo(f"Calibrated Sophie ZED with error: {error:.3f}")
         save_path = self.data_root / "T_zed_sophie.npy"
         np.save(save_path, zed_pose)
@@ -237,11 +242,13 @@ class CameraCalibration:
             self.sophie.move_to_joint_configuration(joint_config)
             measurements.append(
                 TCPs(
-                    tcp_cam=self.__wait_for_measurements(ros.Time.now(), camera="rs2"),
+                    tcp_cam=self.wait_for_measurements(ros.Time.now(), camera="rs2"),
                     tcp_arm=self.sophie.get_tcp_pose(),
                 )
             )
-        rs2_pose, error = self.__compute_calibration(measurements, mode="eye_in_hand")
+        rs2_pose, error = self.compute_calibration_from_measurements(
+            measurements, mode="eye_in_hand"
+        )
         ros.loginfo(f"Calibrated Sophie rs2 with error: {error:.3f}")
         save_path = self.data_root / "T_rs2_tcp_sophie.npy"
         np.save(save_path, rs2_pose)
@@ -258,7 +265,7 @@ class CameraCalibration:
         )
         self.sophie.open_gripper()
 
-        # location of board relative to wilson
+        # # location of board relative to wilson
         # T_charuco_zed = self.__wait_for_measurements(ros.Time.now(), camera="zed")
         # T_zed_wilson = np.load(self.data_root / "T_zed_wilson.npy")
         # T_charuco_wilson = T_zed_wilson @ T_charuco_zed
@@ -266,7 +273,7 @@ class CameraCalibration:
         # pyout(f"Wilson TCP:\n{self.wilson.get_tcp_pose()}")
 
         # location of board relative to sophie
-        T_charuco_rs2 = self.__wait_for_measurements(ros.Time.now(), camera="rs2")
+        T_charuco_rs2 = self.wait_for_measurements(ros.Time.now(), camera="rs2")
         T_rs2_tcp_sophie = np.load(self.data_root / "T_rs2_tcp_sophie.npy")
         T_tcp_sophie = self.sophie.get_tcp_pose()
         T_charuco_sophie = T_tcp_sophie @ T_rs2_tcp_sophie @ T_charuco_rs2
@@ -278,58 +285,82 @@ class CameraCalibration:
             AIRO_DEFAULT_CHARUCO_BOARD.getChessboardSize()[0]
         )
         charuco_board_square_size = AIRO_DEFAULT_CHARUCO_BOARD.getSquareLength()
-        grasp_X = (
+
+        tcp_grasp = np.eye(4)
+        tcp_grasp[:3, 0] = T_charuco_sophie[:3, 2]
+        tcp_grasp[:3, 1] = T_charuco_sophie[:3, 1]
+        tcp_grasp[:3, 2] = -T_charuco_sophie[:3, 0]
+        tcp_grasp[:3, 3] = (
             T_charuco_sophie[:3, 3]
             + T_charuco_sophie[:3, 0]
-            * (charuco_board_nr_of_squares_along_width - 0.75)
+            * (charuco_board_nr_of_squares_along_width - 1.25)
             * charuco_board_square_size
         )
-        grasp_z = -T_charuco_sophie[:3, 0]
-        grasp_z[-1] = 0.0
-        grasp_z /= np.linalg.norm(grasp_z)
+        tcp_approach = np.copy(tcp_grasp)
+        tcp_approach[:3, 3] = tcp_approach[:3, 3] - 0.1 * tcp_approach[:3, 2]
 
-        self.sophie.grasp_horizontal(world_pos=grasp_X, gripper_z_dir=grasp_z)
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_approach)
+        self.sophie.execute_plan(plan)
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_grasp)
+        self.sophie.execute_plan(plan)
+
+        self.sophie.close_gripper()
         self.wilson.open_gripper()
         self.wilson.move_to_joint_configuration(self.poses["wilson_rest"])
         self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
 
         # todo: debug gorilla crash
-        # return STATE_CALIBRATE_ZED_SOPHIE
+        return STATE_CALIBRATE_ZED_SOPHIE
 
-        return STATE_DROP_CHARUCO_BOARD
+        # return STATE_DROP_CHARUCO_BOARD
 
     def __drop_charuco_board(self):
-        initial_world_pos = np.array([-0.50, -0.3, 0.40])
-        self.sophie.move_to_tcp_vertical_down(initial_world_pos)
-        self.sophie.move_to_tcp_vertical_down(np.array([-0.50, -0.3, 0.27]))
-        self.sophie.move_gripper(0.02, blocking=True)
-        self.sophie.move_to_tcp_vertical_down(np.array([-0.50, +0.2, 0.27]))
+
+        tcp = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, -1.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0, 0.27],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        plan = self.ompl.plan_to_tcp_pose(sophie=tcp)
+        self.sophie.execute_plan(plan)
         self.sophie.open_gripper()
-        self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
+
+        plan = self.ompl.plan_to_joint_configuration(
+            sophie=self.poses["sophie_rest"], wilson=self.poses["wilson_rest"]
+        )
+        self.sophie.execute_plan(plan)
 
         return STATE_DONE
 
-    def __wait_for_measurements(self, t0: ros.Time, timeout=10, camera: str = "zed"):
+    def wait_for_measurements(
+        camera: Union[ZEDClient, RS2Client],
+        nr_of_frames=6,
+        timeout=5,
+    ):
         t_start = ros.Time.now()
         timestamps: List[ros.Time] = []
         imgs: List[np.ndarray] = []
         TCP: List[np.ndarray] = []
 
-        while not ros.is_shutdown() and len(imgs) < self.CHARUCO_FRAMES:
+        while not ros.is_shutdown() and len(imgs) < nr_of_frames:
             if ros.Time.now() > t_start + ros.Duration(timeout):
                 raise TimeoutError
-            if camera == "zed":
-                pod = deepcopy(self.zed.pod)
+
+            if isinstance(camera, ZEDClient):
+                pod = deepcopy(camera.pod)
                 img = (pod.rgb_image * 255)[..., ::-1].astype(np.uint8)
-            elif camera == "rs2":
-                pod = deepcopy(self.rs2.pod)
+            elif isinstance(camera, RS2Client):
+                pod = deepcopy(camera.pod)
                 img = np.array(pod.image)
 
             if pod is None:
                 pass
             elif pod.timestamp in timestamps:
                 pass
-            elif pod.timestamp < t0:
+            elif pod.timestamp < t_start:
                 pass
             else:
                 tcp = detect_charuco_board(
@@ -343,7 +374,7 @@ class CameraCalibration:
                     imgs.append(img)
                     timestamps.append(pod.timestamp)
 
-            self.rate.sleep()
+            ros.sleep(0.01)
 
         # Average transforms:
         M = np.stack(TCP, axis=0)
@@ -360,8 +391,9 @@ class CameraCalibration:
 
         return tcp_zed
 
-    def __compute_calibration(
-        self, measurements: List[TCPs], mode: str = "eye_to_hand"
+    @staticmethod
+    def compute_calibration_from_measurements(
+        measurements: List[TCPs], mode: str = "eye_to_hand"
     ):
         tcp_poses_in_base = [tcp.arm for tcp in measurements]
         board_poses_in_camera = [tcp.cam for tcp in measurements]

@@ -9,7 +9,7 @@ print(f"Python version: {sys.version}")
 import numpy as np
 from airo_robots.grippers import Robotiq2F85
 from airo_robots.manipulators import URrtde
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import load_config, pyout
 
 import rospy as ros
 
@@ -17,8 +17,8 @@ from airo_butler.msg import PODMessage
 from airo_butler.srv import PODService, PODServiceResponse
 from pairo_butler.ur3_arms.ur3_constants import IP_RIGHT_UR3, IP_LEFT_UR3
 from pairo_butler.ur3_arms.ur3_utils import convert_homegeneous_pose_to_rotvec_pose
-from pairo_butler.utils.pods import POD, UR3StatePOD, publish_pod
-from pairo_butler.utils.pods import BooleanPOD, UR3PosePOD, UR3GripperPOD
+from pairo_butler.utils.pods import POD, URStatePOD, publish_pod
+from pairo_butler.utils.pods import BooleanPOD, URPosePOD, URGripperPOD
 
 RARM_REST = np.array([+0.00, -1.00, +0.50, -0.50, -0.50, +0.00]) * np.pi
 LARM_REST = np.array([+0.00, -0.00, -0.50, -0.50, +0.50, +0.00]) * np.pi
@@ -61,14 +61,14 @@ class UR3_server:
     def run(self):
         while not ros.is_shutdown():
             timestamp = ros.Time.now()
-            pod_left = UR3StatePOD(
+            pod_left = URStatePOD(
                 tcp_pose=self.wilson.get_tcp_pose(),
                 joint_configuration=self.wilson.get_joint_configuration(),
                 gripper_width=self.wilson.gripper.get_current_width(),
                 timestamp=timestamp,
                 arm_name="wilson",
             )
-            pod_right = UR3StatePOD(
+            pod_right = URStatePOD(
                 tcp_pose=self.sophie.get_tcp_pose(),
                 joint_configuration=self.sophie.get_joint_configuration(),
                 gripper_width=self.sophie.gripper.get_current_width(),
@@ -101,7 +101,7 @@ class UR3_server:
 
     def inverse_kinematics(self, req):
         if True:
-            pod: UR3StatePOD = pickle.loads(req.pod)
+            pod: URStatePOD = pickle.loads(req.pod)
 
             assert pod.arm_name in [
                 "sophie",
@@ -117,7 +117,7 @@ class UR3_server:
 
         response = PODServiceResponse()
         response.pod = pickle.dumps(
-            UR3StatePOD(
+            URStatePOD(
                 tcp_pose=pod.tcp_pose,
                 joint_configuration=joint_config,
                 arm_name=pod.arm_name,
@@ -128,7 +128,7 @@ class UR3_server:
 
     def move_to_joint_configuration(self, req):
         try:
-            pod: UR3PosePOD = pickle.loads(req.pod)
+            pod: URPosePOD = pickle.loads(req.pod)
 
             if pod.arm_name == "wilson":
                 action = self.wilson.move_to_joint_configuration(
@@ -154,7 +154,7 @@ class UR3_server:
 
     def move_to_tcp_pose(self, req):
         try:
-            pod: UR3PosePOD = pickle.loads(req.pod)
+            pod: URPosePOD = pickle.loads(req.pod)
 
             if pod.side == "wilson":
                 action = self.wilson.move_to_tcp_pose(pod.pose, pod.joint_speed)
@@ -175,7 +175,7 @@ class UR3_server:
 
     def move_gripper(self, req):
         try:
-            pod: UR3GripperPOD = pickle.loads(req.pod)
+            pod: URGripperPOD = pickle.loads(req.pod)
 
             # Determine the arm based on the side
             assert pod.arm_name in ["wilson", "sophie"]

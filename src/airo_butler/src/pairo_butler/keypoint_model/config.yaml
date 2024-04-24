@@ -1,19 +1,36 @@
 # config.yaml
 
-project: "towel_corners"
-root_folder: "/home/matt/Datasets/towels_coco"
-checkpoint_dir: "/home/matt/Models/keypoints"
+# BACKBONES:
+#   > Unet *
+#   > ConvNeXtUnet *
+#   > MaxVitUnet *  (1)
+#   > MaxVitPicoUnet
+#   > S3K * 
+#   > DilatedCnn
+#   > MobileNetV3 * (7)
+
+backbone: "MobileNetV3"
+
+device: "cuda:0"
+learning_rate: 0.00004
+dropout: 0.
+weight_decay: 0.0000
+
+project: "gorilla"
+root_folder: "/media/matt/Expansion/Datasets/towels_coco_large"
+checkpoint_dir: "/media/matt/Expansion/Models/keypoints"
+model: "crusher-phaser.pth"
 
 size: 512
-heatmap_sigma: 24
-backbone: "maxvit_tiny_tf_512"
-batch_size: ~
-learning_rate: 0.00001
+heatmap_sigma: 18
+batch_size: 50
+
 epochs: 1000
-patience: 10
+patience: 5
 eval_every_n_steps: 100
+max_nr_of_keypoints: 2
 
 # data augmentation
 min_crop_ratio: 0.8
-max_rotate_angle: 30
+max_rotate_angle: 0
 

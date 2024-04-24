@@ -1,7 +1,9 @@
 import os
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import PIL
-from PIL import ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont, Image
+from matplotlib import pyplot as plt
+import numpy as np
 import rospy as ros
 from pairo_butler.utils.tools import UGENT, pyout
 import rospkg
@@ -76,3 +78,51 @@ def get_monospace_font(size: int = 14):
     font_path = os.path.join(package_path, "res", "fonts", "UbuntuMono-B.ttf")
     font = ImageFont.truetype(font_path, size=size)
     return font
+
+
+def compute_fps_and_latency(timestamps: List[ros.Time]):
+    now = ros.Time.now()
+
+    if len(timestamps) == 0:
+        return 0, 0
+
+    while len(timestamps) and timestamps[0] < now - ros.Duration(secs=1):
+        timestamps.pop(0)
+
+    fps = len(timestamps)
+    try:
+        latency_ms: float = int((now - timestamps[-1]).to_sec() * 1000)
+    except IndexError:
+        latency_ms = "1000+"
+
+    return fps, latency_ms
+
+
+def overlay_heatmap_on_image(image: PIL.Image.Image, heatmap: np.ndarray):
+
+    # Normalize heatmap to [0, 1] range based on its min and max values
+    heatmap_min = np.min(heatmap)
+    heatmap_max = np.max(heatmap)
+    heatmap_normalized = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-6)
+
+    colormap = plt.get_cmap("viridis")
+    heatmap_colored = colormap(heatmap_normalized)
+
+    # Convert to PIL image and ensure same size as original
+    heatmap_image = Image.fromarray((heatmap_colored * 255).astype(np.uint8)).convert(
+        "RGBA"
+    )
+    heatmap_image.putalpha(100)
+
+    # Overlay the heatmap on the image
+    overlay_image = Image.new("RGBA", image.size)
+    overlay_image = Image.alpha_composite(overlay_image, image.convert("RGBA"))
+    overlay_image = Image.alpha_composite(overlay_image, heatmap_image)
+
+    # Convert to rgb
+    background = Image.new("RGB", overlay_image.size, (255, 255, 255))
+    rgb_image = Image.alpha_composite(
+        background.convert("RGBA"), overlay_image
+    ).convert("RGB")
+
+    return rgb_image

@@ -1,14 +1,17 @@
+import sys
+from pairo_butler.utils.tools import pyout
 import pickle
 import sys
 from typing import List, Optional, Tuple
 from PIL import Image
 import numpy as np
 from pairo_butler.utils.pods import ImagePOD, publish_pod
-from pairo_butler.utils.tools import pyout
+
 from airo_butler.srv import Reset
 import rospy as ros
 import pyrealsense2
 from airo_butler.msg import PODMessage
+import sys
 
 
 class RS2Client:
@@ -160,7 +163,7 @@ class RS2_camera:
         fps: int = 15,
         rs2_resolution: Tuple[int, int] = (640, 480),
         out_resolution: int = 720,
-        serial_number: str = "943222073454",
+        serial_number: str = "925322060348",
     ):
         """
         Initializes a new instance of the ROS node for interfacing with a RealSense2
@@ -208,6 +211,9 @@ class RS2_camera:
             *rs2_resolution,
             pyrealsense2.format.rgb8,
             fps,
+        )
+        config.enable_stream(
+            pyrealsense2.stream.depth, *rs2_resolution, pyrealsense2.format.z16, fps
         )
         # Start the camera pipeline.
         self.pipeline.start(config)
@@ -266,15 +272,29 @@ class RS2_camera:
 
             # Wait and capture a color frame from the RealSense2 camera.
             try:
-                frame = self.pipeline.wait_for_frames().get_color_frame()
+                frameset = self.pipeline.wait_for_frames()
             except RuntimeError:
                 self.reset_camera()
                 continue
 
             # Convert the captured frame to a PIL image.
-            image = self.__frame2pillow(frame)
+            image = self.__frame2pillow(frameset.get_color_frame())
+
+            align = pyrealsense2.align(pyrealsense2.stream.color)
+            aligned_frames = align.process(frameset)
+            depth_frame = aligned_frames.get_depth_frame()
+            color_frame = aligned_frames.get_color_frame()
+
+            if not depth_frame or not color_frame:
+                continue
+
+            depth_image = np.asanyarray(depth_frame.get_data())
+            color_image = np.asanyarray(color_frame.get_data())
+
             # Create an ImagePOD object with the image and current timestamp.
             pod = ImagePOD(
+                color_frame=color_image,
+                depth_frame=depth_image,
                 image=image,
                 intrinsics_matrix=self.intrinsics_matrix,
                 timestamp=ros.Time.now(),
@@ -434,7 +454,9 @@ class RS2_camera:
 
 
 def main():
+
     node = RS2_camera()
+    ros.loginfo(f"Executable: {sys.executable}")
     node.start_ros()
     node.run()
 

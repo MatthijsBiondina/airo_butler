@@ -1,0 +1,4 @@
+savedir: "/media/matt/Expansion/Datasets/towels_large"
+
+ankor_topic: "/rs2_topic"
+unsynced_topics: ["/ur5e_sophie"]

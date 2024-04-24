@@ -1,7 +1,5 @@
 # Arm poses
 from pathlib import Path
-import sys
-import time
 from typing import Optional, Tuple
 import numpy as np
 import rospkg
@@ -129,7 +127,8 @@ class PickUpTowelProcedure:
         self.sophie.move_to_joint_configuration(SOPHIE_REST)
         self.wilson.move_to_joint_configuration(WILSON_REST)
 
-        return STATE_PICKUP
+        # return STATE_PICKUP
+        return STATE_DONE
 
     def __compute_pickup(self):
         cloud = self.zed.pod.point_cloud

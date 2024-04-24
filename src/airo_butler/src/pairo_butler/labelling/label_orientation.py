@@ -28,7 +28,7 @@ class OrientationLabeler:
             Path(rospkg.RosPack().get_path("airo_butler"))
             / "res"
             / "camera_tcps"
-            / "T_rs2_sophie.npy"
+            / "T_rs2_tcp_sophie.npy"
         )
         self.T_sophie_cam: np.ndarray = np.load(matrix_path)
 
@@ -39,7 +39,10 @@ class OrientationLabeler:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self) -> None:
-        for trial in listdir(self.config["folder"]):
+        for ii, trial in enumerate(listdir(self.config["folder"])):
+            if ii < 500:
+                continue
+
             if ros.is_shutdown():
                 break
 
