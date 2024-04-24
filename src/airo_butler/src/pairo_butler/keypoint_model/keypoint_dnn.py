@@ -15,7 +15,7 @@ class KeypointNeuralNetwork(nn.Module):
         self.backbone = load_timm_model(backbone)
         self.head = nn.Conv2d(
             in_channels=self.backbone.get_n_channels_out(),
-            out_channels=config.max_nr_of_keypoints,
+            out_channels=1,
             kernel_size=(3, 3),
             padding="same",
         )
