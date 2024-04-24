@@ -39,7 +39,10 @@ class OrientationLabeler:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self) -> None:
-        for trial in listdir(self.config["folder"]):
+        for ii, trial in enumerate(listdir(self.config["folder"])):
+            if ii < 500:
+                continue
+
             if ros.is_shutdown():
                 break
 

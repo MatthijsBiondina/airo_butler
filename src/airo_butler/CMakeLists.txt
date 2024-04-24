@@ -174,6 +174,7 @@ catkin_install_python(PROGRAMS
   nodes/keypoint_heatmap_stream
   nodes/keypoint_model
   nodes/label_keypoints
+  nodes/label_orientation
   nodes/ompl_server
   nodes/path_check
   nodes/point_cloud_stream

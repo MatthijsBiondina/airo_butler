@@ -9,21 +9,21 @@
 #   > DilatedCnn
 #   > MobileNetV3 * (7)
 
-backbone: "MobileNetV3"
+backbone: "MaxVitUnet"
 
-device: "cuda:1"
-learning_rate: 0.00004
+device: "cuda:3"
+learning_rate: 0.0001
 dropout: 0.
-weight_decay: 0.001
+weight_decay: 0.0000
 
 project: "towel_corners"
-root_folder: "/home/matt/Datasets/towels_coco"
-checkpoint_dir: "/home/matt/Models/keypoints"
+root_folder: "/media/matt/Expansion/Datasets/towels_coco_large"
+checkpoint_dir: "/media/matt/Expansion/Models/keypoints"
 model: "crusher-phaser.pth"
 
 size: 512
 heatmap_sigma: 24
-batch_size: 16
+batch_size: 2
 
 epochs: 1000
 patience: 5

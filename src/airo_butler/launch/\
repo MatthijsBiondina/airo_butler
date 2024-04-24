@@ -9,8 +9,8 @@
 
   <!-- <node pkg="airo_butler" type="label_orientation" name="label_orientation" output="screen"></node> -->
 
-  <!-- <node pkg="airo_butler" type="transform_orientation_world_to_camera_frame" name="transform_orientation_world_to_camera_frame" output="screen"></node> -->
+  <!-- <node pkg="airo_butler" type="orientation_transformer" name="orientation_transformer" output="screen"></node>-->
 
-  <node pkg="airo_butler" type="coco_builder" name="coco_builder" output="screen"></node>
+  <!--  <node pkg="airo_butler" type="coco_builder" name="coco_builder" output="screen"></node> -->
 </launch>
 

@@ -172,8 +172,10 @@ class KeypointModelTrainer:
         X, t = X.to(self.device), t.to(self.device)
         y = self.model(X)
         loss = self.criterion_train(y, t)
-        loss.backward()
-        self.optim.step()
+
+        if not torch.isnan(loss) and not torch.isinf(loss):
+            loss.backward()
+            self.optim.step()
 
         ema = loss if ema is None else alpha * loss.item() + (1 - alpha) * ema
         step += X.shape[0]
@@ -183,6 +185,7 @@ class KeypointModelTrainer:
     def __log_image(
         self, X: torch.Tensor, y: torch.Tensor, t: torch.Tensor, title: str
     ):
+        # y, t = torch.sigmoid(y), torch.sigmoid(t)
         y, t = y.sum(dim=1, keepdim=True), t.sum(dim=1, keepdim=True)
         y, t = torch.clamp(y, 0, 1), torch.clamp(t, 0, 1)
 
@@ -264,9 +267,12 @@ class KeypointModelTrainer:
         torch.save(checkpoint, checkpoint_dir / (wandb.run.name + ".pth"))
 
     def criterion_train(self, y: torch.Tensor, t: torch.Tensor):
+        # return nn.functional.binary_cross_entropy_with_logits(y, t, reduce="mean")
+
         return nn.functional.mse_loss(y, t, reduction="mean")
 
     def criterion_eval(self, y: torch.Tensor, t: torch.Tensor):
+        # return nn.functional.binary_cross_entropy_with_logits(y, t, reduce="mean")
         return nn.functional.mse_loss(y, t, reduction="mean")
 
 
@@ -285,3 +291,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+3

@@ -22,7 +22,7 @@ import cv2
 
 
 class KeypointDataset(Dataset):
-    VALIDATION_SET_SIZE = 1000
+    VALIDATION_SET_SIZE = 100
 
     def __init__(
         self, root: Path, config: Munch, augment: bool = False, validation: bool = False

@@ -100,8 +100,8 @@ class VisibilityChecker:
         trials with the required data are processed.
         """
         # Iterate through each trial in the specified folder, with a progress bar for feedback
-        for ii, trial in pbar(
-            enumerate(listdir(self.config["folder"])), desc="Determining Visibility"
+        for trial in pbar(
+            listdir(self.config["folder"]), desc="Determining Visibility"
         ):
             ros.loginfo(trial)
 
@@ -122,7 +122,8 @@ class VisibilityChecker:
             data = self.determine_keypoints_visibility(data)
 
             # Determine and plot visibility status for keypoints in the trial
-            VisibilityChecker.plot_visible_and_obscured_keypoints(data)
+            if self.config["render"]:
+                VisibilityChecker.plot_visible_and_obscured_keypoints(data)
 
             # Save the updated trial data with visibility information
             VisibilityChecker.save_data_with_visibility_labels(trial, data)
@@ -163,6 +164,9 @@ class VisibilityChecker:
             )  # Provide a default as False in case 'valid' key is missing
         except json.decoder.JSONDecodeError:
             ros.logwarn(f"Could not decode {path}.")
+            return None, False
+        except Exception as e:
+            ros.logwarn(f"Unexpected exception: {e}")
             return None, False
 
     def __project_keypoints_onto_camera_frames(
@@ -390,7 +394,7 @@ class VisibilityChecker:
                 "Visibility", np.array(frame)[..., ::-1]
             )  # Convert frame for correct color display if needed
             # Break and exit if 'q' key is pressed
-            if cv2.waitKey(100) & 0xFF == ord("q"):
+            if cv2.waitKey(10) & 0xFF == ord("q"):
                 ros.loginfo("Process interrupted by user.")
                 ros.signal_shutdown("Interrupted by user")
                 sys.exit(0)

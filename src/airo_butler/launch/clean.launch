@@ -1,4 +1,0 @@
-<launch>
-  <node pkg="airo_butler" type="clean_keypoints_with_kalman_filter" name="clean_keypoints_with_kalman_filter" output="screen"></node>
-</launch>
-

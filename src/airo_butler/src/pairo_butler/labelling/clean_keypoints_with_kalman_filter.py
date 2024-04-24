@@ -48,45 +48,59 @@ class KeypointCleaner:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-
-        for ii, trial in pbar(
-            enumerate(listdir(self.config["folder"])),
-            desc="Cleaning",
+        trials = listdir(self.config["folder"])
+        for ii, trial in enumerate(
+            pbar(
+                trials,
+                desc="Cleaning",
+            )
         ):
-            raw_data, valid = self.__load_data_trial(trial)
-            if not valid:
+            if ii < 700:
                 continue
-            self.__signal_kalman_reset()
-            for measurement, state, frame in pbar(
-                zip(
-                    raw_data["keypoints"],
-                    raw_data["state_sophie"],
-                    raw_data["frames"],
-                ),
-                desc="Filtering",
-                total=len(raw_data["keypoints"]),
-            ):
-                self.__disp_frame(frame, measurement)
-
-                if measurement is None or len(measurement) == 0:
+            try:
+                raw_data, valid = self.__load_data_trial(trial)
+                if not valid:
                     continue
-                tcp = np.array(state["tcp_pose"]) @ self.T_sophie_cam
 
-                pyout(np.array(raw_data["rs2_intrinsics"]))
+                if self.config["only_unlabeled_trials"]:
+                    try:
+                        raw_data["keypoints_world"]
+                        continue
+                    except KeyError:
+                        pass
 
-                measurement_pod = KeypointMeasurementPOD(
-                    timestamp=ros.Time.now(),
-                    keypoints=np.array(measurement),
-                    camera_tcp=tcp,
-                    orientations=np.zeros(len(measurement)),
-                    camera_intrinsics=raw_data["rs2_intrinsics"],
-                )
-                publish_pod(self.measurement_publisher, measurement_pod)
+                self.__signal_kalman_reset()
+                for measurement, state, frame in pbar(
+                    zip(
+                        raw_data["keypoints"],
+                        raw_data["state_sophie"],
+                        raw_data["frames"],
+                    ),
+                    desc="Filtering",
+                    total=len(raw_data["keypoints"]),
+                ):
+                    if self.config["render"]:
+                        self.__disp_frame(frame, measurement)
 
-                self.rate.sleep()
+                    if measurement is None or len(measurement) == 0:
+                        continue
+                    tcp = np.array(state["tcp_pose"]) @ self.T_sophie_cam
 
-            means, covariances = self.__get_kalman_state()
-            self.__save(trial, raw_data, means, covariances)
+                    measurement_pod = KeypointMeasurementPOD(
+                        timestamp=ros.Time.now(),
+                        keypoints=np.array(measurement),
+                        camera_tcp=tcp,
+                        orientations=np.zeros(len(measurement)),
+                        camera_intrinsics=raw_data["rs2_intrinsics"],
+                    )
+                    publish_pod(self.measurement_publisher, measurement_pod)
+
+                    self.rate.sleep()
+
+                means, covariances = self.__get_kalman_state()
+                self.__save(trial, raw_data, means, covariances)
+            except Exception as e:
+                pyout(f"Failed to clean trial: {trial}")
 
     def __load_config_files(self):
         with open(Path(__file__).parent / "labelling_config.yaml", "r") as f:
@@ -100,7 +114,17 @@ class KeypointCleaner:
     def __load_data_trial(self, path: Path):
         with open(path / "state.json", "r") as f:
             state = json.load(f)
-        state["frames"] = load_mp4_video(path / "video.mp4")
+
+        if not self.config:
+            try:
+                state["frames"] = [
+                    None,
+                ] * len(state["keypoints"])
+            except KeyError:
+                state["frames"] = load_mp4_video(path / "video.mp4")
+        else:
+            state["frames"] = load_mp4_video(path / "video.mp4")
+
         return state, state["valid"]
 
     def __signal_kalman_reset(self, timeout=10):
@@ -185,10 +209,6 @@ def main():
     node = KeypointCleaner()
     node.start_ros()
     node.run()
-
-    node2 = VisibilityChecker()
-    # node2.start_ros()
-    node2.run()
 
 
 if __name__ == "__main__":
