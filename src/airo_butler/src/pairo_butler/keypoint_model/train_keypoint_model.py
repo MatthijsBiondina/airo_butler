@@ -167,6 +167,7 @@ class KeypointModelTrainer:
         ema: Optional[float],
         step: int,
         alpha: float = 0.01,
+        max_norm: float = 10,
     ) -> Tuple[int, float]:
         self.optim.zero_grad()
         X, t = X.to(self.device), t.to(self.device)
@@ -175,6 +176,7 @@ class KeypointModelTrainer:
 
         if not torch.isnan(loss) and not torch.isinf(loss):
             loss.backward()
+            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm)
             self.optim.step()
 
         ema = loss if ema is None else alpha * loss.item() + (1 - alpha) * ema

@@ -122,6 +122,8 @@ class KeypointDataset(Dataset):
         # Normalize the heatmap to [0, 1]
         heatmap = np.clip(heatmap, 0, 1)
 
+        heatmap = np.max(heatmap, axis=0, keepdims=True)
+
         return heatmap
 
     def __init_transform(self, augment: bool = False) -> Compose:
