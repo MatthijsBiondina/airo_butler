@@ -65,7 +65,7 @@ class OrientationLabeler:
             kp_theta = keypoint_world["mean"][3]
 
             while True:
-                origin, x_axis, y_axis, z_axis = self.__compute_axes(
+                origin, x_axis, y_axis, z_axis = self.compute_axes(
                     kp_theta=kp_theta,
                     kp_coord=kp_coord,
                     sophie_tcp=np.array(data["state_sophie"][frame_idx]["tcp_pose"]),
@@ -100,7 +100,7 @@ class OrientationLabeler:
 
         return data
 
-    def __compute_axes(
+    def compute_axes(
         self,
         kp_theta: float,
         kp_coord: np.ndarray,

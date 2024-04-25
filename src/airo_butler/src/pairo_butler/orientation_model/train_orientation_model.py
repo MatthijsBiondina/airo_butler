@@ -49,13 +49,14 @@ class OrientationModelTrainer:
             heatmap_sigma=self.config["heatmap_sigma"],
             heatmap_size=self.config["heatmap_size"],
             augment=False,
+            validation=True,        
         )
 
         train_loader = DataLoader(
             train_set, batch_size=self.config["batch_size"], shuffle=True
         )
         valid_loader = DataLoader(
-            valid_set, batch_size=self.config["batch_size"], shuffle=False
+            valid_set, batch_size=self.config["batch_size"], shuffle=True
         )
 
         return train_loader, valid_loader

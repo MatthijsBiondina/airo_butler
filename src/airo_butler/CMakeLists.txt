@@ -168,7 +168,9 @@ catkin_install_python(PROGRAMS
   nodes/coco_builder
   nodes/collect_data
   nodes/data_collector
+  nodes/data_sample_generator
   nodes/determine_visibility
+  nodes/gaussian_filter
   nodes/kalman_filter
   nodes/kalman_state_stream
   nodes/keypoint_heatmap_stream
@@ -176,9 +178,11 @@ catkin_install_python(PROGRAMS
   nodes/label_keypoints
   nodes/label_orientation
   nodes/ompl_server
+  nodes/orientation_model
   nodes/path_check
   nodes/point_cloud_stream
   nodes/rs2_camera
+  nodes/run_synthetic_trials
   nodes/towel_extremes_finder
   nodes/transform_orientation_world_to_camera_frame
   nodes/unfold

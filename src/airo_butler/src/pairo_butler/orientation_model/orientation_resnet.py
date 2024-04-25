@@ -5,7 +5,7 @@ from torchvision.models import ResNet50_Weights
 
 
 class OrientationNeuralNetwork(nn.Module):
-    def __init__(self, num_classes: int, dropout_rate: float = 0.5):
+    def __init__(self, num_classes: int, dropout_rate: float = 0.0):
         super(OrientationNeuralNetwork, self).__init__()
 
         self.resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)

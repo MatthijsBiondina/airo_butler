@@ -1,0 +1,6 @@
+checkpoint_dir: "/media/matt/Expansion/Models/orientation"
+model: "valiant-deluge.pth"
+
+device: "cuda:0"
+size: 64
+heatmap_size: 100

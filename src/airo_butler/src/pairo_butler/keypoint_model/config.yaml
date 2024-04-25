@@ -12,7 +12,7 @@
 backbone: "MaxVitUnet"
 
 machine: "gorilla"
-device: "cuda:3"
+device: "cuda:0"
 learning_rate: 0.0004
 dropout: 0.
 weight_decay: 0.0000
@@ -20,10 +20,11 @@ weight_decay: 0.0000
 project: "towel_corners"
 root_folder: "/media/matt/Expansion/Datasets/towels_coco_large"
 checkpoint_dir: "/media/matt/Expansion/Models/keypoints"
-model: "crusher-phaser.pth"
+model: "ancient-salad.pth"
 
 size: 512
-heatmap_sigma: 24
+heatmap_sigma: 18
+heatmap_threshold: 80
 batch_size: 2
 
 epochs: 1000

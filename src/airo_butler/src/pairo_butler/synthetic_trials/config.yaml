@@ -1,0 +1,3 @@
+data_root: "/media/matt/Expansion/Datasets/towels_large"
+rate: 10
+samples_per_trial: 200  

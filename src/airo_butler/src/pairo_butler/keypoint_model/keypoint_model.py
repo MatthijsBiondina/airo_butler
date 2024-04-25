@@ -35,7 +35,7 @@ class KeypointDNN:
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
 
-        self.rs2 = RS2Client()
+        self.rs2 = RS2Client(timeout=None)
         self.timestamp = ros.Time.now()
         self.rate = ros.Rate(self.RATE)
 
@@ -81,6 +81,7 @@ class KeypointDNN:
         model.load_state_dict(state_dict)
         model = model.to(self.device)
 
+        model.eval()
         return model
 
 
