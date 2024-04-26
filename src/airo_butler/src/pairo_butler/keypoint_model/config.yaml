@@ -9,12 +9,10 @@
 #   > DilatedCnn
 #   > MobileNetV3 * (7)
 
-backbone: "MobileNetV3"
+backbone: "MaxVitUnet"
 
-machine: "gorilla"
-device: "cuda:3"
-learning_rate: 0.0004
-
+device: "cuda:0"
+learning_rate: 0.00001
 dropout: 0.
 weight_decay: 0.0000
 
@@ -25,7 +23,7 @@ model: "crusher-phaser.pth"
 
 size: 512
 heatmap_sigma: 18
-batch_size: 50
+batch_size: 12
 
 epochs: 1000
 patience: 5

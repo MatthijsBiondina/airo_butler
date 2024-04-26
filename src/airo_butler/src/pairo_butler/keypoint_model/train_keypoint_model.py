@@ -118,7 +118,7 @@ class KeypointModelTrainer:
             train_set, batch_size=self.batch_size, shuffle=True, num_workers=2
         )
         valid_loader = DataLoader(
-            validation_set, batch_size=self.batch_size, shuffle=False, num_workers=2
+            validation_set, batch_size=self.batch_size, shuffle=True, num_workers=2
         )
 
         return train_loader, valid_loader
