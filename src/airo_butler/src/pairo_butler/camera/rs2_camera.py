@@ -46,7 +46,10 @@ class RS2Client:
             timeout (int): The maximum time in seconds to wait for the RS2 service to be
             available. Default is 5 seconds.
         """
-        self.timeout = ros.Duration(timeout)
+        try:
+            self.timeout = ros.Duration(timeout)
+        except TypeError:
+            self.timeout = False
 
         self.__signal_rs2_reset()
         self.subscriber: ros.Subscriber = ros.Subscriber(
@@ -70,7 +73,9 @@ class RS2Client:
             The latest ImagePOD object received from the RS2 camera.
         """
         t0 = ros.Time.now()
-        while self.__rs2_pod is None and ros.Time.now() < t0 + self.timeout:
+        while self.__rs2_pod is None and (
+            not self.timeout or ros.Time.now() < t0 + self.timeout
+        ):
             ros.sleep(1 / self.RATE)
         if self.__rs2_pod is None:
             ros.logerr("Did not recieve pod from RS2. Is it running?")
@@ -139,6 +144,8 @@ class RS2Client:
             ros.logerr(f"Cannot connect to RS2 server. Is it running?")
             ros.signal_shutdown("Cannot connect to RS2 server.")
             sys.exit(0)
+        except ValueError:
+            return
 
         # Connect to and call reset service.
         service = ros.ServiceProxy("reset_realsense_service", Reset)

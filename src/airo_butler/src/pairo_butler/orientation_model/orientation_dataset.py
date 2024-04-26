@@ -23,6 +23,7 @@ class OrientationDataset(Dataset):
         heatmap_sigma: float,
         heatmap_size: int,
         augment: bool = False,
+        validation: bool = False,
     ):
         self.root: Path = root
         self.width: int = size
@@ -33,6 +34,8 @@ class OrientationDataset(Dataset):
         self.transform: Compose = self.__init_transform(augment)
 
         self.samples: List[SampleMetaDataPOD] = self.__init_data()
+        if validation:
+            self.samples = self.samples[:100]
 
     def __len__(self):
         return len(self.samples)

@@ -86,7 +86,7 @@ class KalmanFilter:
                 except IndexError:
                     continue
                 for measurement in measurements:
-                    self.__kalman_measurement_update(
+                    self.kalman_measurement_update(
                         measurement, camera_tcp, camera_intrinsics
                     )
 
@@ -128,16 +128,17 @@ class KalmanFilter:
         )[..., None]
         return camera_tcp, measurements, np.array(pod.camera_intrinsics), pod.timestamp
 
-    def __kalman_measurement_update(
+    def kalman_measurement_update(
         self,
         measurement: np.ndarray,
         camera_tcp: np.ndarray,
         camera_intrinsics: np.ndarray,
         n_iterations: int = 2,
+        sensor_fusion: bool = True,
     ):
 
-        measurement_noise_covariance = self.__make_Q_matrix()
-        new_mean, prior_covariance = self.__init_new_mu_and_Sigma()
+        measurement_noise_covariance = self.make_Q_matrix()
+        new_mean, prior_covariance = self.init_new_mu_and_Sigma()
 
         for _ in range(n_iterations):
             predicted_measurement = KalmanFilter.calculate_expected_measurements(
@@ -156,9 +157,11 @@ class KalmanFilter:
                 measurement_noise_covariance,
             )
 
-        self.__sensor_fusion(new_mean, new_covariance)
+        if sensor_fusion:
+            self.__sensor_fusion(new_mean, new_covariance)
+        return new_mean, new_covariance
 
-    def __make_Q_matrix(self):
+    def make_Q_matrix(self):
         Q = np.array(
             [
                 self.config["variance_camera_plane"],
@@ -169,7 +172,7 @@ class KalmanFilter:
         Q = np.diag(Q)
         return Q
 
-    def __init_new_mu_and_Sigma(self, eps=1e-3):
+    def init_new_mu_and_Sigma(self, eps=1e-3):
         # It is important that we do not initialize at (0,0,0) for numerical stability
         new_mean = np.array([0.0, 0.0, 0.5, 0.0])[:, None]
         new_covariance = np.array(

@@ -103,7 +103,8 @@ def overlay_heatmap_on_image(image: PIL.Image.Image, heatmap: np.ndarray):
     # Normalize heatmap to [0, 1] range based on its min and max values
     heatmap_min = np.min(heatmap)
     heatmap_max = np.max(heatmap)
-    heatmap_normalized = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-6)
+    # heatmap_normalized = (heatmap - heatmap_min) / (heatmap_max - heatmap_min + 1e-6)
+    heatmap_normalized = heatmap / 255
 
     colormap = plt.get_cmap("viridis")
     heatmap_colored = colormap(heatmap_normalized)

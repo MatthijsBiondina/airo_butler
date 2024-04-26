@@ -316,6 +316,34 @@ class TowelPOD:
         self.towel: Optional[TowelObstacle] = towel
 
 
+class KeypointUVPOD:
+    __slots__ = ["x", "y", "valid", "timestamp"]
+
+    def __init__(
+        self, timestamp: ros.Time, valid: bool, x: Optional[int], y: Optional[int]
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.valid: bool = valid
+        self.x: Optional[int] = x
+        self.y: Optional[int] = y
+
+
+class KeypointThetaPOD:
+    __slots__ = ["mean", "stdev", "valid", "timestamp"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        valid: bool,
+        mean: Optional[float] = None,
+        stdev: Optional[float] = None,
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.valid: bool = valid
+        self.mean: Optional[float] = mean
+        self.stdev: Optional[float] = stdev
+
+
 def make_pod_request(
     service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
 ) -> POD:

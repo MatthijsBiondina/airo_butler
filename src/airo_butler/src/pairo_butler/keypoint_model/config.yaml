@@ -11,6 +11,7 @@
 
 backbone: "MaxVitUnet"
 
+machine: "gorilla"
 device: "cuda:0"
 learning_rate: 0.00001
 dropout: 0.
@@ -19,11 +20,13 @@ weight_decay: 0.0000
 project: "gorilla"
 root_folder: "/media/matt/Expansion/Datasets/towels_coco_large"
 checkpoint_dir: "/media/matt/Expansion/Models/keypoints"
-model: "crusher-phaser.pth"
+model: "ancient-salad.pth"
 
 size: 512
 heatmap_sigma: 18
-batch_size: 12
+
+heatmap_threshold: 80
+batch_size: 2
 
 epochs: 1000
 patience: 5

@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="airo_butler" type="data_sample_generator" name="data_sample_generator" output="screen"></node>
+    <node pkg="airo_butler" type="run_synthetic_trials" name="run_synthetic_trials" output="screen"></node>
+</launch>
