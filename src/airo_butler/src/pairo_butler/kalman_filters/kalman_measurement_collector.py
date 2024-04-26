@@ -10,6 +10,7 @@ from pairo_butler.utils.tools import load_config, pyout
 
 class KalmanMeasurementCollector:
     RATE = 60
+    QUEUE_SIZE = 2
 
     def __init__(self, name: str = "kalman_measurement_collector"):
         self.node_name: str = name
@@ -51,7 +52,7 @@ class KalmanMeasurementCollector:
                 timestamp=timestamp,
                 keypoints=np.array([keypoint_uv.x, keypoint_uv.y])[None, :],
                 camera_tcp=packages["/ur5e_sophie"]["pod"].tcp_pose @ self.T_sophie_rs2,
-                orientations=[keypoint_theta.mean],
+                orientations=np.array([keypoint_theta.mean]),
                 camera_intrinsics=packages["/rs2_topic"]["pod"].intrinsics_matrix,
             )
 

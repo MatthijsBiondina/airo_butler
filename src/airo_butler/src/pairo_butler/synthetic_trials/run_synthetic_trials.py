@@ -1,3 +1,4 @@
+from pairo_butler.kalman_filters.kalman_filter import KalmanFilter
 from pairo_butler.synthetic_trials.data_samples_generator import SyntheticDataGenerator
 import rospy as ros
 
@@ -17,6 +18,7 @@ class SyntheticTrials:
     def run(self):
         while not ros.is_shutdown():
             SyntheticDataGenerator.reset()
+            KalmanFilter.reset()
 
             ros.sleep(1 / self.config.rate * self.config.samples_per_trial)
 

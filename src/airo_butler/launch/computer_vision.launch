@@ -2,6 +2,9 @@
   <node pkg="airo_butler" type="keypoint_model" name="keypoint_model" output="screen"></node>
   <node pkg="airo_butler" type="gaussian_filter" name="gaussian_filter" output="screen"></node>
   <node pkg="airo_butler" type="orientation_model" name="orientation_model" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_measurement_collector" name="kalman_measurement_collector" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_filter" name="kalman_filter" output="screen"></node>
   <node pkg="airo_butler" type="keypoint_heatmap_stream" name="keypoint_heatmap_stream" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_stream" name="kalman_stream" output="screen"></node>
 </launch>
 

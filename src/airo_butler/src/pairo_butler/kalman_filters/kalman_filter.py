@@ -105,6 +105,12 @@ class KalmanFilter:
             self.mean = np.empty((0, 1))
             self.covariance = np.empty((0, 0))
             self.all_camera_tcps = np.empty((0, 4, 4))
+
+            pod = self.__build_state_pod_message(
+                timestamp=ros.Time.now(), camera_tcp=None
+            )
+            publish_pod(self.publisher, pod)
+
         return True
 
     def __getter_service_callback(self, req):
@@ -123,6 +129,9 @@ class KalmanFilter:
             (self.all_camera_tcps, pod.camera_tcp[None, ...]), axis=0
         )
         camera_tcp = pod.camera_tcp
+
+        A = np.concatenate((pod.keypoints, pod.orientations[:, None]), axis=1)
+
         measurements = np.concatenate(
             (pod.keypoints, pod.orientations[:, None]), axis=1
         )[..., None]
@@ -133,7 +142,7 @@ class KalmanFilter:
         measurement: np.ndarray,
         camera_tcp: np.ndarray,
         camera_intrinsics: np.ndarray,
-        n_iterations: int = 2,
+        n_iterations: int = 3,
         sensor_fusion: bool = True,
     ):
 
@@ -279,20 +288,41 @@ class KalmanFilter:
         measurement_matrix,
         measurement_noise_covariance,
     ):
-
-        kalman_gain = (
-            prior_covariance
-            @ measurement_matrix.T
-            @ np.linalg.inv(
-                measurement_matrix @ prior_covariance @ measurement_matrix.T
-                + measurement_noise_covariance
+        try:
+            kalman_gain = (
+                prior_covariance
+                @ measurement_matrix.T
+                @ np.linalg.inv(
+                    measurement_matrix @ prior_covariance @ measurement_matrix.T
+                    + measurement_noise_covariance
+                )
             )
-        )
-        updated_mean = prior_mean + kalman_gain @ (measurement - predicted_measurement)
-        updated_covariance = (
-            np.eye(prior_mean.size) - kalman_gain @ measurement_matrix
-        ) @ prior_covariance
+            updated_mean = prior_mean + kalman_gain @ (
+                measurement - predicted_measurement
+            )
+            updated_covariance = (
+                np.eye(prior_mean.size) - kalman_gain @ measurement_matrix
+            ) @ prior_covariance
+        except Exception as e:
+            ros.logwarn(f"Unexpected exception: {e}")
+            pyout(measurement)
+            pyout(predicted_measurement)
         return updated_mean, updated_covariance
+
+    @staticmethod
+    def reset(service_name: str = "reset_kalman_filter"):
+        try:
+            # Create a service proxy
+            reset_service = ros.ServiceProxy(service_name, Reset)
+            # Call the service
+            response = reset_service()
+            # Log success if the service was called successfully
+            ros.loginfo(
+                f"Reset service '{service_name}' invoked successfully. Response: {response}"
+            )
+        except ros.ServiceException as e:
+            # Log error if the service call failed
+            ros.logerr(f"Service call failed: {e}")
 
     def __sensor_fusion(self, new_mean, new_covariance):
         self.mean, self.covariance = self.__add_new_keypoint_to_state(

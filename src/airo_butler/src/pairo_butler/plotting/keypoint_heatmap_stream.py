@@ -79,7 +79,7 @@ class KeypointHeatmapStream:
         camera_intrinsics: np.ndarray,
         color=UGENT.BLUE,
     ):
-        if uv.valid:
+        if uv.valid and theta.valid:
             kf = self.kalman_filter
             camera_tcp = sophie_tcp @ self.T_sophie_rs2
             measurement = np.array([uv.x, uv.y, theta.mean])[:, None]

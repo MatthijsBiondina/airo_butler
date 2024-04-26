@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import rospkg
 import yaml
+from pairo_butler.utils.transformation_matrices import TransformationMatrixRS2Sophie
 from pairo_butler.labelling.labelling_utils import LabellingUtils
 from pairo_butler.labelling.determine_visibility import VisibilityChecker
 from pairo_butler.kalman_filters.kalman_filter import KalmanFilter
@@ -24,13 +25,6 @@ class OrientationLabeler:
         config_path: Path = Path(__file__).parent / "labelling_config.yaml"
         with open(config_path, "r") as f:
             self.config: Dict[str, Any] = yaml.safe_load(f)
-        matrix_path: Path = (
-            Path(rospkg.RosPack().get_path("airo_butler"))
-            / "res"
-            / "camera_tcps"
-            / "T_rs2_tcp_sophie.npy"
-        )
-        self.T_sophie_cam: np.ndarray = np.load(matrix_path)
 
     def start_ros(self) -> None:
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -72,7 +66,7 @@ class OrientationLabeler:
                     intrinsics_matrix=np.array(data["rs2_intrinsics"]),
                 )
                 frame = data["frames"][frame_idx].copy()
-                frame = self.__draw_axes_on_image(frame, origin, x_axis, y_axis, z_axis)
+                frame = self.draw_axes_on_image(frame, origin, x_axis, y_axis, z_axis)
                 user_input = self.__show_frame_for_labelling(frame)
 
                 if user_input == ord("a"):
@@ -100,14 +94,14 @@ class OrientationLabeler:
 
         return data
 
+    @staticmethod
     def compute_axes(
-        self,
         kp_theta: float,
         kp_coord: np.ndarray,
         sophie_tcp: np.ndarray,
         intrinsics_matrix: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        camera_tcp = sophie_tcp @ self.T_sophie_cam
+        camera_tcp = sophie_tcp @ TransformationMatrixRS2Sophie().M
 
         # Construct transformation matrix
         T = np.array(
@@ -119,7 +113,7 @@ class OrientationLabeler:
             ]
         )
 
-        axs = self.config["axis_length"]  # axis length
+        axs = 0.1  # self.config["axis_length"]  # axis length
 
         origin_world = T @ np.array([0.0, 0.0, 0.0, 1.0])[:, None]
         x_axis_world = T @ np.array([0.0, -axs, 0.0, 1.0])[:, None]
@@ -158,8 +152,8 @@ class OrientationLabeler:
 
         return origin, x_axis, y_axis, z_axis
 
-    def __draw_axes_on_image(
-        self,
+    @staticmethod
+    def draw_axes_on_image(
         image: Image,
         origin: np.ndarray,
         x_axis: np.ndarray,

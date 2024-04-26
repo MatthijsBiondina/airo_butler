@@ -172,7 +172,9 @@ catkin_install_python(PROGRAMS
   nodes/determine_visibility
   nodes/gaussian_filter
   nodes/kalman_filter
+  nodes/kalman_measurement_collector
   nodes/kalman_state_stream
+  nodes/kalman_stream
   nodes/keypoint_heatmap_stream
   nodes/keypoint_model
   nodes/label_keypoints
