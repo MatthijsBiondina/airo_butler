@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import numpy as np
 from airo_butler.msg import PODMessage
+from pairo_butler.camera.towel_extremes_finder import TowelExtremesFinder
 from pairo_butler.utils.pods import ZEDPOD, publish_pod
 from pairo_butler.utils.tools import pyout
 import rospy as ros
@@ -167,12 +168,14 @@ class ZED:
         self.rate: Optional[ros.Rate] = None
         # Initialize the ZED 2i camera with specified resolution, depth mode, and FPS
         self.zed = Zed2i(
-            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.QUALITY_DEPTH_MODE, fps=30
+            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.PERFORMANCE_DEPTH_MODE, fps=30
         )
         # Placeholder for ROS publishers
         self.rgb_publisher: Optional[ros.Publisher] = None
         self.cloud_publisher: Optional[ros.Publisher] = None
         self.publisher: Optional[ros.Publisher] = None
+
+        self.towel_extremes_finder = TowelExtremesFinder()
 
     def start_ros(self):
         """
@@ -207,9 +210,12 @@ class ZED:
         while not ros.is_shutdown():
             # Capture data from ZED camera and form a PODMessage
 
+            point_cloud = self.__preprocess_point_cloud()[:, :3]
+            self.towel_extremes_finder.process_point_cloud(point_cloud)
+
             msg = ZEDPOD(
                 rgb_image=self.zed.get_rgb_image(),
-                point_cloud=self.__preprocess_point_cloud(),
+                # point_cloud=self.__preprocess_point_cloud(),
                 intrinsics_matrix=self.zed.intrinsics_matrix(),
                 timestamp=ros.Time.now(),
             )

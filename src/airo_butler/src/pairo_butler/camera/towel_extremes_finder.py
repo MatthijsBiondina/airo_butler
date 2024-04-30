@@ -3,7 +3,8 @@ from matplotlib.figure import Figure
 import numpy as np
 from pairo_butler.utils.pods import CoordinatePOD, publish_pod
 from pairo_butler.utils.point_cloud_utils import transform_points_to_different_frame
-from pairo_butler.camera.zed_camera import ZEDClient
+
+# from pairo_butler.camera.zed_camera import ZEDClient
 from pairo_butler.utils.tools import UGENT, load_camera_transformation_matrix, pyout
 import rospy as ros
 from airo_butler.msg import PODMessage
@@ -21,7 +22,7 @@ class TowelExtremesFinder:
     def __init__(self, name: str = "zed_points_selector"):
         self.node_name = name
         self.transformation_matrix = load_camera_transformation_matrix("T_zed_sophie")
-        self.zed: ZEDClient
+        # self.zed: ZEDClient
 
         self.publisher_max: ros.Publisher
         self.publisher_min: ros.Publisher
@@ -33,10 +34,10 @@ class TowelExtremesFinder:
             np.zeros(3) for _ in range(self.BUFFER_SIZE)
         ]
 
-    def start_ros(self):
-        ros.init_node(self.node_name, log_level=ros.INFO)
+        # def start_ros(self):
+        #     # ros.init_node(self.node_name, log_level=ros.INFO)
 
-        self.zed = ZEDClient()
+        #     # self.zed = ZEDClient()
 
         self.publisher_max = ros.Publisher(
             "/towel_top", PODMessage, queue_size=self.QUEUE_SIZE
@@ -45,7 +46,7 @@ class TowelExtremesFinder:
             "/towel_bot", PODMessage, queue_size=self.QUEUE_SIZE
         )
 
-        ros.loginfo(f"{self.node_name}: OK!")
+        # ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         while not ros.is_shutdown():
@@ -69,6 +70,22 @@ class TowelExtremesFinder:
 
             if self.PLOTTING:
                 self.plot()
+
+    def process_point_cloud(self, cloud_in_zed_frame):
+        cloud = transform_points_to_different_frame(
+            cloud_in_zed_frame, self.transformation_matrix
+        )
+
+        highest_point = self.compute_highest_point(cloud)
+        lowest_point = self.compute_lowest_point(cloud)
+
+        self.high_point_history.append(highest_point)
+        self.high_point_history.pop(0)
+        self.low_point_history.append(lowest_point)
+        self.low_point_history.pop(0)
+
+        publish_pod(self.publisher_max, CoordinatePOD(*highest_point.tolist()))
+        publish_pod(self.publisher_min, CoordinatePOD(*lowest_point.tolist()))
 
     def compute_highest_point(self, cloud: np.ndarray):
         mask = (

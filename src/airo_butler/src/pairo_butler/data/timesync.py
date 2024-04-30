@@ -11,7 +11,7 @@ from airo_butler.msg import PODMessage
 
 class TimeSync:
     QUEUE_SIZE: int = 2
-    BUFFER_SIZE: int = 64
+    BUFFER_SIZE: int = 128
     RATE: int = 30
 
     def __init__(self, ankor_topic: str, unsynced_topics: List[str]):

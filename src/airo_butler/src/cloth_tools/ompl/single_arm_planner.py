@@ -1,8 +1,14 @@
+import sys
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 from airo_typing import HomogeneousMatrixType, JointConfigurationType
-from cloth_tools.ompl.state_space import function_numpy_to_ompl, numpy_to_ompl_state, ompl_path_to_numpy
+from pairo_butler.utils.tools import pyout
+from cloth_tools.ompl.state_space import (
+    function_numpy_to_ompl,
+    numpy_to_ompl_state,
+    ompl_path_to_numpy,
+)
 from cloth_tools.planning.interfaces import SingleArmMotionPlanner
 from loguru import logger
 from ompl import base as ob
@@ -59,7 +65,9 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
         self._simple_setup = self._create_simple_setup()
 
         self._path_length: float | None = None
-        self._ik_solutions: List[JointConfigurationType] | None = None  # Saved for debugging
+        self._ik_solutions: List[JointConfigurationType] | None = (
+            None  # Saved for debugging
+        )
 
     def _create_simple_setup(self):
         # Create state space and convert to OMPL compatible data types
@@ -73,18 +81,26 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
             bounds.setHigh(i, joint_bounds_upper[i])
         space.setBounds(bounds)
 
-        is_state_valid_ompl = function_numpy_to_ompl(self.is_state_valid_fn, self.degrees_of_freedom)
+        is_state_valid_ompl = function_numpy_to_ompl(
+            self.is_state_valid_fn, self.degrees_of_freedom
+        )
 
         # Configure the SimpleSetup object
         simple_setup = og.SimpleSetup(space)
-        simple_setup.setStateValidityChecker(ob.StateValidityCheckerFn(is_state_valid_ompl))
+        simple_setup.setStateValidityChecker(
+            ob.StateValidityCheckerFn(is_state_valid_ompl)
+        )
 
-        simple_setup.setOptimizationObjective(ob.PathLengthOptimizationObjective(simple_setup.getSpaceInformation()))
+        simple_setup.setOptimizationObjective(
+            ob.PathLengthOptimizationObjective(simple_setup.getSpaceInformation())
+        )
 
         # TODO: Should investigate effect of this further
         step = float(np.deg2rad(5))
         resolution = step / space.getMaximumExtent()
-        simple_setup.getSpaceInformation().setStateValidityCheckingResolution(resolution)
+        simple_setup.getSpaceInformation().setStateValidityCheckingResolution(
+            resolution
+        )
 
         planner = og.RRTConnect(simple_setup.getSpaceInformation())
         simple_setup.setPlanner(planner)
@@ -92,7 +108,9 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
         return simple_setup
 
     def _set_start_and_goal_configurations(
-        self, start_configuration: JointConfigurationType, goal_configuration: JointConfigurationType
+        self,
+        start_configuration: JointConfigurationType,
+        goal_configuration: JointConfigurationType,
     ) -> None:
         space = self._simple_setup.getStateSpace()
         start_state = numpy_to_ompl_state(start_configuration, space)
@@ -100,7 +118,9 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
         self._simple_setup.setStartAndGoalStates(start_state, goal_state)
 
     def plan_to_joint_configuration(
-        self, start_configuration: JointConfigurationType, goal_configuration: JointConfigurationType
+        self,
+        start_configuration: JointConfigurationType,
+        goal_configuration: JointConfigurationType,
     ) -> List[JointConfigurationType] | None:
         self._simple_setup.clear()  # Needed to support multiple calls with different start/goal configurations
 
@@ -123,7 +143,7 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
         path = simple_setup.getSolutionPath()
         path_simplifier.smoothBSpline(path)
         # Don't simplify again, seems to make joint velocity jumps worse
-        # simple_setup.simplifySolution()
+        # simple_setup.simplifySholution()
         # if self.num_interpolated_states is not None:
         #     path.interpolate(self.num_interpolated_states)
 
@@ -143,7 +163,9 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
         # Without this we plan to all joint configs and pick the shortest path
         # With it, we try the closest IK solution first and if it fails we try the next closest etc.
         if self.inverse_kinematics_fn is None:
-            logger.warning("Planning to TCP pose attempted but inverse_kinematics_fn was provided, returing None.")
+            logger.warning(
+                "Planning to TCP pose attempted but inverse_kinematics_fn was provided, returing None."
+            )
             return None
 
         ik_solutions = self.inverse_kinematics_fn(tcp_pose_in_base)
@@ -157,21 +179,40 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
 
         ik_solutions_within_bounds = []
         for ik_solution in ik_solutions:
-            if np.all(ik_solution >= self.joint_bounds[0]) and np.all(ik_solution <= self.joint_bounds[1]):
+            if np.all(ik_solution >= self.joint_bounds[0]) and np.all(
+                ik_solution <= self.joint_bounds[1]
+            ):
                 ik_solutions_within_bounds.append(ik_solution)
 
         if len(ik_solutions_within_bounds) == 0:
             logger.info("No IK solutions are within the joint bounds, returning None.")
             return None
         else:
-            logger.info(f"Found {len(ik_solutions_within_bounds)}/{len(ik_solutions)} solutions within joint bounds.")
+            logger.info(
+                f"Found {len(ik_solutions_within_bounds)}/{len(ik_solutions)} solutions within joint bounds."
+            )
 
-        ik_solutions_valid = [s for s in ik_solutions_within_bounds if self.is_state_valid_fn(s)]
+        ik_solutions_valid = [
+            s for s in ik_solutions_within_bounds if self.is_state_valid_fn(s)
+        ]
         if len(ik_solutions_valid) == 0:
             logger.info("All IK solutions within bounds are invalid, returning None.")
             return None
         else:
-            logger.info(f"Found {len(ik_solutions_valid)}/{len(ik_solutions_within_bounds)} valid solutions.")
+            logger.info(
+                f"Found {len(ik_solutions_valid)}/{len(ik_solutions_within_bounds)} valid solutions."
+            )
+
+        if desirable_goal_configurations:
+            d = [
+                min(
+                    np.linalg.norm(desirable_goal_configurations - ik_solution_valid)
+                    for desirable_goal_configuration in desirable_goal_configurations
+                )
+                for ik_solution_valid in ik_solutions_valid
+            ]
+            indexes = sorted(list(range(len(ik_solutions_valid))), key=lambda i: d[i])
+            ik_solutions_valid = [ik_solutions_valid[ii] for ii in indexes]
 
         # Try solving to each IK solution in joint space.
         paths = []
@@ -181,12 +222,15 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
             if path is not None:
                 paths.append(path)
                 path_lengths.append(self._path_length)
+                break
 
         if len(paths) == 0:
             logger.info("No paths founds towards any IK solutions, returning None.")
             return None
 
-        path_distances = [np.linalg.norm(path[-1] - start_configuration) for path in paths]
+        path_distances = [
+            np.linalg.norm(path[-1] - start_configuration) for path in paths
+        ]
 
         path_desirablities = None
         if desirable_goal_configurations is not None:
@@ -217,7 +261,9 @@ class SingleArmOmplPlanner(SingleArmMotionPlanner):
             )
         else:
             idx = np.argmin(path_lengths)
-            logger.info(f"Length of chosen solution (= shortest path): {path_lengths[idx]:.3f}")
+            logger.info(
+                f"Length of chosen solution (= shortest path): {path_lengths[idx]:.3f}"
+            )
 
         solution_path = paths[idx]
         return solution_path

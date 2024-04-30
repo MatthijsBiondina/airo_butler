@@ -1,8 +1,8 @@
 <launch>
   <node pkg="airo_butler" type="rs2_camera" name="rs2_camera" output="screen"></node>
-  <node pkg="airo_butler" type="camera_stream" name="camera_stream" output="screen"></node>
+  <!-- <node pkg="airo_butler" type="camera_stream" name="camera_stream" output="screen"></node> -->
   <node pkg="airo_butler" type="zed_camera" name="zed_camera" output="screen"></node>
-  <node pkg="airo_butler" type="zed_stream" name="zed_stream" output="screen"></node>
-  <node pkg="airo_butler" type="towel_extremes_finder" name="towel_extremes_finder" output="screen"></node>
+  <!-- <node pkg="airo_butler" type="zed_stream" name="zed_stream" output="screen"></node> -->
+  <!-- <node pkg="airo_butler" type="towel_extremes_finder" name="towel_extremes_finder" output="screen"></node> -->
 </launch>
 

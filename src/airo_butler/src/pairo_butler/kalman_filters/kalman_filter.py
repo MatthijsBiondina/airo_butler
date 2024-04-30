@@ -99,6 +99,7 @@ class KalmanFilter:
             self.rate.sleep()
 
     def __reset_service_callback(self, req):
+
         with self.lock:
             while len(self.pending) > 0:
                 self.pending.pop(0)

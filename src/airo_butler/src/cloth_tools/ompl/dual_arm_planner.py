@@ -1,9 +1,18 @@
+import sys
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 from airo_typing import HomogeneousMatrixType, JointConfigurationType
-from cloth_tools.ompl.single_arm_planner import InverseKinematicsType, SingleArmOmplPlanner
-from cloth_tools.ompl.state_space import function_numpy_to_ompl, numpy_to_ompl_state, ompl_path_to_numpy
+from pairo_butler.utils.tools import pyout
+from cloth_tools.ompl.single_arm_planner import (
+    InverseKinematicsType,
+    SingleArmOmplPlanner,
+)
+from cloth_tools.ompl.state_space import (
+    function_numpy_to_ompl,
+    numpy_to_ompl_state,
+    ompl_path_to_numpy,
+)
 from cloth_tools.planning.interfaces import DualArmMotionPlanner
 from loguru import logger
 from ompl import base as ob
@@ -18,8 +27,12 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         is_state_valid_fn: DualJointConfigurationCheckerType,
         inverse_kinematics_left_fn: Optional[InverseKinematicsType] = None,
         inverse_kinematics_right_fn: Optional[InverseKinematicsType] = None,
-        joint_bounds_left: Optional[Tuple[JointConfigurationType, JointConfigurationType]] = None,
-        joint_bounds_right: Optional[Tuple[JointConfigurationType, JointConfigurationType]] = None,
+        joint_bounds_left: Optional[
+            Tuple[JointConfigurationType, JointConfigurationType]
+        ] = None,
+        joint_bounds_right: Optional[
+            Tuple[JointConfigurationType, JointConfigurationType]
+        ] = None,
         max_planning_time: float = 5.0,
         num_interpolated_states: Optional[int] = 500,
     ):
@@ -67,15 +80,21 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
                 bounds.setHigh(i, self.joint_bounds_right[1][i - 6])
         space.setBounds(bounds)
 
-        is_state_valid_ompl = function_numpy_to_ompl(self.is_state_valid_fn, self.degrees_of_freedom)
+        is_state_valid_ompl = function_numpy_to_ompl(
+            self.is_state_valid_fn, self.degrees_of_freedom
+        )
 
         simple_setup = og.SimpleSetup(space)
-        simple_setup.setStateValidityChecker(ob.StateValidityCheckerFn(is_state_valid_ompl))
+        simple_setup.setStateValidityChecker(
+            ob.StateValidityCheckerFn(is_state_valid_ompl)
+        )
 
         # TODO: investigate whether a different reolsution is needed for dual arm planning as opposed to single arm planning
         step = float(np.deg2rad(5))
         resolution = step / space.getMaximumExtent()
-        simple_setup.getSpaceInformation().setStateValidityCheckingResolution(resolution)
+        simple_setup.getSpaceInformation().setStateValidityCheckingResolution(
+            resolution
+        )
 
         planner = og.RRTConnect(simple_setup.getSpaceInformation())
         simple_setup.setPlanner(planner)
@@ -91,18 +110,26 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ):
         # Set the starts and goals for dual arm planning
         space = self._simple_setup.getStateSpace()
-        start_configuration = np.concatenate([start_configuration_left, start_configuration_right])
-        goal_configuration = np.concatenate([goal_configuration_left, goal_configuration_right])
+        start_configuration = np.concatenate(
+            [start_configuration_left, start_configuration_right]
+        )
+        goal_configuration = np.concatenate(
+            [goal_configuration_left, goal_configuration_right]
+        )
         start_state = numpy_to_ompl_state(start_configuration, space)
         goal_state = numpy_to_ompl_state(goal_configuration, space)
         self._simple_setup.setStartAndGoalStates(start_state, goal_state)
 
         # Replace single arm planners for the left and right arm
         def is_left_state_valid_fn(left_state):
-            return self.is_state_valid_fn(np.concatenate((left_state, start_configuration_right)))
+            return self.is_state_valid_fn(
+                np.concatenate((left_state, start_configuration_right))
+            )
 
         def is_right_state_valid_fn(right_state):
-            return self.is_state_valid_fn(np.concatenate((start_configuration_left, right_state)))
+            return self.is_state_valid_fn(
+                np.concatenate((start_configuration_left, right_state))
+            )
 
         self._single_arm_planner_left = SingleArmOmplPlanner(
             is_left_state_valid_fn,
@@ -137,7 +164,10 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         self._simple_setup.clear()
         self._set_start_and_goal_configurations(
-            start_configuration_left, start_configuration_right, goal_configuration_left, goal_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            goal_configuration_left,
+            goal_configuration_right,
         )
 
         simple_setup = self._simple_setup
@@ -172,7 +202,10 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         # Set right goal to right start configuration
         self._set_start_and_goal_configurations(
-            start_configuration_left, start_configuration_right, goal_configuration_left, start_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            goal_configuration_left,
+            start_configuration_right,
         )
 
         left_path = self._single_arm_planner_left.plan_to_joint_configuration(
@@ -193,7 +226,10 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         # Set left goal to left start configuration
         self._set_start_and_goal_configurations(
-            start_configuration_left, start_configuration_right, start_configuration_left, goal_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            start_configuration_left,
+            goal_configuration_right,
         )
 
         right_path = self._single_arm_planner_right.plan_to_joint_configuration(
@@ -214,24 +250,33 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         goal_configuration_right: JointConfigurationType | None,
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         if goal_configuration_left is None and goal_configuration_right is None:
-            raise ValueError("A goal configurations must be specified for at least one of the arms.")
+            raise ValueError(
+                "A goal configurations must be specified for at least one of the arms."
+            )
 
         if goal_configuration_right is None:
             path = self._plan_to_joint_configuration_left_arm_only(
-                start_configuration_left, start_configuration_right, goal_configuration_left
+                start_configuration_left,
+                start_configuration_right,
+                goal_configuration_left,
             )
             return path
 
         if goal_configuration_left is None:
             # Plan for the right arm only
             path = self._plan_to_joint_configuration_right_arm_only(
-                start_configuration_left, start_configuration_right, goal_configuration_right
+                start_configuration_left,
+                start_configuration_right,
+                goal_configuration_right,
             )
             return path
 
         # Do 12 DoF dual arm planning
         path = self._plan_to_joint_configuration_dual_arm(
-            start_configuration_left, start_configuration_right, goal_configuration_left, goal_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            goal_configuration_left,
+            goal_configuration_right,
         )
         return path
 
@@ -244,11 +289,16 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         # Set right goal to right start configuration
         self._set_start_and_goal_configurations(
-            start_configuration_left, start_configuration_right, start_configuration_left, start_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            start_configuration_left,
+            start_configuration_right,
         )
 
         left_path = self._single_arm_planner_left.plan_to_tcp_pose(
-            start_configuration_left, tcp_pose_left_in_base, desirable_goal_configurations_left
+            start_configuration_left,
+            tcp_pose_left_in_base,
+            desirable_goal_configurations_left,
         )
 
         if left_path is None:
@@ -266,11 +316,16 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         # Set left goal to left start configuration
         self._set_start_and_goal_configurations(
-            start_configuration_left, start_configuration_right, start_configuration_left, start_configuration_right
+            start_configuration_left,
+            start_configuration_right,
+            start_configuration_left,
+            start_configuration_right,
         )
 
         right_path = self._single_arm_planner_right.plan_to_tcp_pose(
-            start_configuration_right, tcp_pose_right_in_base, desirable_goal_configurations_right
+            start_configuration_right,
+            tcp_pose_right_in_base,
+            desirable_goal_configurations_right,
         )
 
         if right_path is None:
@@ -286,7 +341,10 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         tcp_pose_left_in_base: HomogeneousMatrixType,
         tcp_pose_right_in_base: HomogeneousMatrixType,
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
-        if self.inverse_kinematics_left_fn is None or self.inverse_kinematics_right_fn is None:
+        if (
+            self.inverse_kinematics_left_fn is None
+            or self.inverse_kinematics_right_fn is None
+        ):
             logger.info(
                 "Planning to left and right TCP poses attempted but inverse_kinematics_fn was not provided for both arms, returing None."
             )
@@ -310,16 +368,22 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         # 2. filter out IK solutions that are outside the joint bounds
         ik_solutions_in_bounds_left = []
         for ik_solution in ik_solutions_left:
-            if np.all(ik_solution >= self.joint_bounds_left[0]) and np.all(ik_solution <= self.joint_bounds_left[1]):
+            if np.all(ik_solution >= self.joint_bounds_left[0]) and np.all(
+                ik_solution <= self.joint_bounds_left[1]
+            ):
                 ik_solutions_in_bounds_left.append(ik_solution)
 
         ik_solutions_in_bounds_right = []
         for ik_solution in ik_solutions_right:
-            if np.all(ik_solution >= self.joint_bounds_right[0]) and np.all(ik_solution <= self.joint_bounds_right[1]):
+            if np.all(ik_solution >= self.joint_bounds_right[0]) and np.all(
+                ik_solution <= self.joint_bounds_right[1]
+            ):
                 ik_solutions_in_bounds_right.append(ik_solution)
 
         if len(ik_solutions_in_bounds_left) == 0:
-            logger.info("No IK solutions for left arm are within the joint bounds, returning None.")
+            logger.info(
+                "No IK solutions for left arm are within the joint bounds, returning None."
+            )
             return None
         else:
             logger.info(
@@ -327,7 +391,9 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
             )
 
         if len(ik_solutions_in_bounds_right) == 0:
-            logger.info("No IK solutions for right arm are within the joint bounds, returning None.")
+            logger.info(
+                "No IK solutions for right arm are within the joint bounds, returning None."
+            )
             return None
         else:
             logger.info(
@@ -338,26 +404,37 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         goal_configurations = []
         for ik_solution_left in ik_solutions_in_bounds_left:
             for ik_solution_right in ik_solutions_in_bounds_right:
-                goal_configurations.append(np.concatenate((ik_solution_left, ik_solution_right)))
+                goal_configurations.append(
+                    np.concatenate((ik_solution_left, ik_solution_right))
+                )
 
         n_goal_configurations = len(goal_configurations)
 
         # 3. filter out invalid goal pairs
-        goal_configurations_valid = [s for s in goal_configurations if self.is_state_valid_fn(s)]
+        goal_configurations_valid = [
+            s for s in goal_configurations if self.is_state_valid_fn(s)
+        ]
         n_valid_goal_configurations = len(goal_configurations_valid)
 
         if n_valid_goal_configurations == 0:
-            logger.info(f"All {n_goal_configurations} goal pairs are invalid, returning None.")
+            logger.info(
+                f"All {n_goal_configurations} goal pairs are invalid, returning None."
+            )
             return None
         else:
-            logger.info(f"Found {n_valid_goal_configurations}/{n_goal_configurations} valid goal pairs.")
+            logger.info(
+                f"Found {n_valid_goal_configurations}/{n_goal_configurations} valid goal pairs."
+            )
 
         # 4. for each pair, plan to the goal pair
         paths = []
         path_lengths = []
         for goal_configuration in goal_configurations_valid:
             path = self.plan_to_joint_configuration(
-                start_configuration_left, start_configuration_right, goal_configuration[:6], goal_configuration[6:]
+                start_configuration_left,
+                start_configuration_right,
+                goal_configuration[:6],
+                goal_configuration[6:],
             )
             if path is not None:
                 paths.append(path)
@@ -384,7 +461,9 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         desirable_goal_configurations_right: List[JointConfigurationType] | None = None,
     ) -> List[JointConfigurationType]:
         if tcp_pose_left_in_base is None and tcp_pose_right_in_base is None:
-            raise ValueError("A goal TCP pose must be specified for at least one of the arms.")
+            raise ValueError(
+                "A goal TCP pose must be specified for at least one of the arms."
+            )
 
         if tcp_pose_right_in_base is None:
             path = self._plan_to_tcp_pose_left_arm_only(
@@ -405,13 +484,19 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
             return path
 
         # TODO use desirable_goal_configurations for dual arm planning
-        if desirable_goal_configurations_left is not None or desirable_goal_configurations_right is not None:
+        if (
+            desirable_goal_configurations_left is not None
+            or desirable_goal_configurations_right is not None
+        ):
             logger.warning(
                 "Desirable goal configurations are not implemented yet for dual arm planning, ignoring them."
             )
 
         path = self._plan_to_tcp_pose_dual_arm(
-            start_configuration_left, start_configuration_right, tcp_pose_left_in_base, tcp_pose_right_in_base
+            start_configuration_left,
+            start_configuration_right,
+            tcp_pose_left_in_base,
+            tcp_pose_right_in_base,
         )
 
         return path

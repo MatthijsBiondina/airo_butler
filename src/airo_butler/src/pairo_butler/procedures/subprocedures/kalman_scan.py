@@ -1,4 +1,5 @@
 import numpy as np
+from pairo_butler.kalman_filters.kalman_filter import KalmanFilter
 from pairo_butler.procedures.subprocedures.drop_towel import DropTowel
 from pairo_butler.utils.tools import pyout
 from pairo_butler.procedures.subprocedure import Subprocedure
@@ -24,9 +25,11 @@ class KalmanScan(Subprocedure):
             self.sophie.execute_plan(plan)
             ros.sleep(0.5)
 
+        KalmanFilter.reset()
+
         self.sophie.move_to_joint_configuration(
-            np.deg2rad(self.config.joints_scan2_sophie)
+            np.deg2rad(self.config.joints_scan2_sophie), joint_speed=0.1
         )
         self.sophie.move_to_joint_configuration(
-            np.deg2rad(self.config.joints_scan3_sophie)
+            np.deg2rad(self.config.joints_scan3_sophie), joint_speed=0.1
         )

@@ -1,7 +1,9 @@
 import sys
+import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.grasp_corner import GraspCorner
 from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.procedures.subprocedures.fling import Fling
 from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
@@ -46,30 +48,38 @@ class UnfoldMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        # plan = self.ompl.plan_to_joint_configuration(
-        #     wilson=np.deg2rad(self.config.joints_hold_wilson),
-        #     sophie=np.deg2rad(self.config.joints_scan3_sophie),
-        # )
-        # self.wilson.execute_plan(plan)
-        # ros.sleep(1)
-        # pyout(self.sophie.get_tcp_pose())
-        # sys.exit(0)
-
-        while not ros.is_shutdown():
-            ros.loginfo("Startup")
-            Startup(**self.kwargs).run()
-            ros.loginfo("Pickup")
-            while not Pickup(**self.kwargs).run():
-                pyout(f"Could not pick up towel. Try again.")
-
-            ros.loginfo("Grasp Corner")
-            if Holdup(**self.kwargs).run():
+        t_start = time.time()
+        trial_nr = 0
+        while time.time() < t_start + 60 * 60:
+            trial_nr += 1
+            if trial_nr > 25:
                 break
 
-        KalmanScan(**self.kwargs).run()
+            ros.loginfo(f"TRIAL: {trial_nr}")
 
-        Startup(**self.kwargs).run()
-        Goodnight(**self.kwargs).run()
+            while not ros.is_shutdown():
+                ros.loginfo("Startup")
+                Startup(**self.kwargs).run()
+                ros.loginfo("Pickup")
+                while not Pickup(**self.kwargs).run():
+                    pyout(f"Could not pick up towel. Try again.")
+
+                ros.loginfo("Grasp Corner")
+                if Holdup(**self.kwargs).run():
+                    break
+
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                scene="hanging_towel",
+            )
+            self.sophie.execute_plan(plan)
+            ros.sleep(10)
+
+            KalmanScan(**self.kwargs).run()
+            GraspCorner(**self.kwargs).run()
+
+            Startup(**self.kwargs).run()
+            Goodnight(**self.kwargs).run()
 
 
 def main():
