@@ -163,6 +163,7 @@ class RS2_camera:
     RESOLUTIONS = ((640, 480), (1280, 720))
     # Queue size for ROS publisher
     QUEUE_SIZE = 2
+    RATE = 5
 
     def __init__(
         self,
@@ -225,7 +226,7 @@ class RS2_camera:
         # Start the camera pipeline.
         self.pipeline.start(config)
         # Set the rate at which frames will be published.
-        self.publish_rate = fps
+        self.publish_rate = self.RATE
         # Set the output image resolution.
         self.resolution = out_resolution
 

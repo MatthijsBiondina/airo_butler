@@ -23,6 +23,18 @@ np.set_printoptions(precision=3, suppress=True)
 STATE_SIZE = 4
 
 
+class KalmanFilterClient:
+    def __init__(self):
+        self.subscriber: ros.Subscriber = ros.Subscriber(
+            "/kalman_filter_state", PODMessage, self.__sub_callback, queue_size=2
+        )
+
+        self.state = None
+
+    def __sub_callback(self, msg):
+        self.state = pickle.loads(msg.data)
+
+
 class KalmanFilter:
     QUEUE_SIZE = 2
     RATE = 120
@@ -99,7 +111,7 @@ class KalmanFilter:
             self.rate.sleep()
 
     def __reset_service_callback(self, req):
-
+        ros.loginfo("Reset Kalman Filter")
         with self.lock:
             while len(self.pending) > 0:
                 self.pending.pop(0)
@@ -111,7 +123,7 @@ class KalmanFilter:
                 timestamp=ros.Time.now(), camera_tcp=None
             )
             publish_pod(self.publisher, pod)
-
+        ros.loginfo("Reset Done!")
         return True
 
     def __getter_service_callback(self, req):
@@ -123,7 +135,8 @@ class KalmanFilter:
         return pickle.dumps(pod)
 
     def __sub_callback(self, msg):
-        self.pending.append(pickle.loads(msg.data))
+        with self.lock:
+            self.pending.append(pickle.loads(msg.data))
 
     def __unpack_measurement_pod(self, pod):
         self.all_camera_tcps = np.concatenate(

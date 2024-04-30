@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="airo_butler" type="zed_camera" name="zed_camera" output="screen"></node>
+  <!-- <node pkg="airo_butler" type="camera_stream" name="camera_stream" output="screen"></node> -->
   <node pkg="airo_butler" type="zed_stream" name="zed_stream" output="screen"></node>
   <node pkg="airo_butler" type="keypoint_heatmap_stream" name="keypoint_heatmap_stream" output="screen"></node>
   <node pkg="airo_butler" type="kalman_stream" name="kalman_stream" output="screen"></node>

@@ -28,8 +28,8 @@ class KalmanScan(Subprocedure):
         KalmanFilter.reset()
 
         self.sophie.move_to_joint_configuration(
-            np.deg2rad(self.config.joints_scan2_sophie), joint_speed=0.1
+            np.deg2rad(self.config.joints_scan2_sophie), joint_speed=0.15
         )
         self.sophie.move_to_joint_configuration(
-            np.deg2rad(self.config.joints_scan3_sophie), joint_speed=0.1
+            np.deg2rad(self.config.joints_scan3_sophie), joint_speed=0.15
         )

@@ -3,6 +3,8 @@ import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.display import DisplayTowel
+from pairo_butler.kalman_filters.kalman_filter import KalmanFilterClient
 from pairo_butler.procedures.subprocedures.grasp_corner import GraspCorner
 from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.procedures.subprocedures.fling import Fling
@@ -29,6 +31,8 @@ class UnfoldMachine:
         self.wilson: UR5eClient
 
         self.kwargs: Dict[str, Any]
+
+        self.state_listener = KalmanFilterClient()
 
     def start_ros(self):
 
@@ -57,26 +61,30 @@ class UnfoldMachine:
 
             ros.loginfo(f"TRIAL: {trial_nr}")
 
-            while not ros.is_shutdown():
-                ros.loginfo("Startup")
-                Startup(**self.kwargs).run()
-                ros.loginfo("Pickup")
-                while not Pickup(**self.kwargs).run():
-                    pyout(f"Could not pick up towel. Try again.")
+            grasped = False
+            while not grasped:
+                while not ros.is_shutdown():
+                    ros.loginfo("Startup")
+                    Startup(**self.kwargs).run()
+                    ros.loginfo("Pickup")
+                    while not Pickup(**self.kwargs).run():
+                        pyout(f"Could not pick up towel. Try again.")
 
-                ros.loginfo("Grasp Corner")
-                if Holdup(**self.kwargs).run():
-                    break
+                    ros.loginfo("Grasp Corner")
+                    if Holdup(**self.kwargs).run():
+                        break
 
-            plan = self.ompl.plan_to_joint_configuration(
-                sophie=np.deg2rad(self.config.joints_scan1_sophie),
-                scene="hanging_towel",
-            )
-            self.sophie.execute_plan(plan)
-            ros.sleep(10)
+                plan = self.ompl.plan_to_joint_configuration(
+                    sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                    scene="hanging_towel",
+                )
+                self.sophie.execute_plan(plan)
+                ros.sleep(10)
 
-            KalmanScan(**self.kwargs).run()
-            GraspCorner(**self.kwargs).run()
+                KalmanScan(**self.kwargs).run()
+                grasped = GraspCorner(self.state_listener.state, **self.kwargs).run()
+
+            DisplayTowel(**self.kwargs).run()
 
             Startup(**self.kwargs).run()
             Goodnight(**self.kwargs).run()

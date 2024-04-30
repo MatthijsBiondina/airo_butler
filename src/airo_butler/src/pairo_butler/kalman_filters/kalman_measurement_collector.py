@@ -9,7 +9,7 @@ from pairo_butler.utils.tools import load_config, pyout
 
 
 class KalmanMeasurementCollector:
-    RATE = 60
+    RATE = 30
     QUEUE_SIZE = 2
 
     def __init__(self, name: str = "kalman_measurement_collector"):
