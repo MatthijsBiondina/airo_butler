@@ -25,4 +25,5 @@ class Startup(Subprocedure):
                 wilson=np.deg2rad(self.config.joints_rest_wilson),
                 scene=scene,
             )
+            
             self.sophie.execute_plan(plan)

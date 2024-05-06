@@ -26,9 +26,9 @@ class CharucoBoard:
 class HangingTowel:
 
     def __init__(self):
-        self.radius = 0.1
+        self.radius = 0.12
         self.bottom = 0.01
-        self.top = 0.60
+        self.top = 1.0
 
         self.length = self.top - self.bottom
         self.urdf = airo_models.box_urdf_path(

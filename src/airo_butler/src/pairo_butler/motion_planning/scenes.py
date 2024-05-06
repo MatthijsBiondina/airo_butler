@@ -23,7 +23,7 @@ from cloth_tools.urdf.robotiq import create_static_robotiq_2f_85_urdf
 from pydrake.trajectories import Trajectory
 from pydrake.multibody.tree import ModelInstanceIndex
 
-np.set_printoptions(precision=0, suppress=True)
+np.set_printoptions(precision=2, suppress=True)
 
 # Some fixed transforms and default poses (e.g. for when you don't have access to the real robot)
 

@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import yaml
+from pairo_butler.utils.ros_helper_functions import invoke_service
 from pairo_butler.utils.custom_exceptions import BreakException
 from pairo_butler.utils.tools import pyout
 from pairo_butler.utils.pods import (
@@ -43,6 +44,7 @@ class KalmanFilter:
         self.name = name
         self.rate: Optional[ros.Rate] = None
         self.lock: Lock = Lock()
+        self.paused: bool = True
 
         # Subscribers and Publishers
         self.subscriber: Optional[ros.Subscriber] = None
@@ -82,6 +84,12 @@ class KalmanFilter:
         self.getter_service = ros.Service(
             f"get_kalman_state", PODService, self.__getter_service_callback
         )
+        self.pause_service = ros.Service(
+            f"pause_{self.name}", Reset, self.__pause_service_callback
+        )
+        self.unpause_service = ros.Service(
+            f"unpause_{self.name}", Reset, self.__unpause_service_callback
+        )
 
         ros.loginfo(f"{self.name}: OK!")
 
@@ -90,53 +98,94 @@ class KalmanFilter:
             while len(self.pending) == 0:
                 self.rate.sleep()
 
-            with self.lock:
-                try:
-                    camera_tcp, measurements, camera_intrinsics, timestamp = (
-                        self.__unpack_measurement_pod(self.pending[0])
-                    )
-                except IndexError:
-                    continue
+            try:
+                with self.lock:
+                    try:
+                        camera_tcp, measurements, camera_intrinsics, timestamp = (
+                            self.__unpack_measurement_pod(self.pending[0])
+                        )
+                    except IndexError:
+                        continue
                 for measurement in measurements:
                     self.kalman_measurement_update(
                         measurement, camera_tcp, camera_intrinsics
                     )
-
-                self.pending.pop(0)
+                with self.lock:
+                    try:
+                        self.pending.pop(0)
+                    except IndexError:
+                        continue
                 pod = self.__build_state_pod_message(
                     timestamp=timestamp, camera_tcp=camera_tcp
                 )
                 publish_pod(self.publisher, pod)
+            except Exception as e:
+                ros.logwarn(f"Kalman filter: an exception occurred: {e}")
 
             self.rate.sleep()
 
     def __reset_service_callback(self, req):
-        ros.loginfo("Reset Kalman Filter")
+        start_time = ros.Time.now()
+        ros.loginfo("Starting Reset Kalman Filter")
+
         with self.lock:
-            while len(self.pending) > 0:
-                self.pending.pop(0)
+            ros.loginfo(
+                f"Lock acquired after: {(ros.Time.now() - start_time).to_sec()} seconds"
+            )
+            self.pending = []
+            ros.loginfo(
+                f"Cleared pending after: {(ros.Time.now() - start_time).to_sec()} seconds"
+            )
+
+            ros.loginfo(
+                f"mean: {self.mean.size}, "
+                f"cov: {self.covariance.size}, "
+                f"cams: {self.all_camera_tcps.size}"
+            )
+
             self.mean = np.empty((0, 1))
             self.covariance = np.empty((0, 0))
             self.all_camera_tcps = np.empty((0, 4, 4))
+            ros.loginfo(
+                f"Cleared data after: {(ros.Time.now() - start_time).to_sec()} seconds"
+            )
 
             pod = self.__build_state_pod_message(
                 timestamp=ros.Time.now(), camera_tcp=None
             )
+            ros.loginfo(
+                f"Initialized data structures after: {(ros.Time.now() - start_time).to_sec()} seconds"
+            )
+
             publish_pod(self.publisher, pod)
-        ros.loginfo("Reset Done!")
+            ros.loginfo(
+                f"Published new state after: {(ros.Time.now() - start_time).to_sec()} seconds"
+            )
+
+        ros.loginfo(
+            f"Reset completed in total: {(ros.Time.now() - start_time).to_sec()} seconds"
+        )
         return True
 
     def __getter_service_callback(self, req):
-        while len(self.pending) > 0:
-            self.rate.sleep()
-        ros.sleep(ros.Duration(secs=1))
         pod = self.__build_state_pod_message(timestamp=ros.Time.now(), camera_tcp=None)
 
         return pickle.dumps(pod)
 
+    def __pause_service_callback(self, req):
+        self.paused = True
+        return True
+
+    def __unpause_service_callback(self, req):
+        self.paused = False
+        return True
+
     def __sub_callback(self, msg):
-        with self.lock:
-            self.pending.append(pickle.loads(msg.data))
+        try:
+            if not self.paused:
+                self.pending.append(pickle.loads(msg.data))
+        except Exception as e:
+            ros.logwarn(f"An exception occurred while adding new measurement: {e}")
 
     def __unpack_measurement_pod(self, pod):
         self.all_camera_tcps = np.concatenate(
@@ -336,6 +385,23 @@ class KalmanFilter:
             )
         except ros.ServiceException as e:
             # Log error if the service call failed
+            ros.logerr(f"Service call failed: {e}")
+
+    @staticmethod
+    def pause():
+        invoke_service("pause_kalman_filter")
+
+    @staticmethod
+    def unpause():
+        invoke_service("unpause_kalman_filter")
+
+    @staticmethod
+    def get_state():
+        try:
+            service = ros.ServiceProxy("get_kalman_state", PODService)
+            response = service()
+            return pickle.loads(response.pod)
+        except ros.ServiceException as e:
             ros.logerr(f"Service call failed: {e}")
 
     def __sensor_fusion(self, new_mean, new_covariance):

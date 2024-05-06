@@ -1,0 +1,16 @@
+<launch>
+  <arg name="node_name" default="rs2_d435" />
+
+  <param name="topic" value="recorder_rs2" />
+  <param name="fps" value="30" />
+
+  <node pkg="airo_butler" type="rs2_camera" name="$(arg node_name)" output="screen">
+    <param name="serial_number" value="SN943222073454" />
+    <param name="hd" value="true" />
+  </node>
+
+  <node pkg="airo_butler" type="rs2_recorder" name="rs2_recorder" output="screen"></node>
+
+    
+
+</launch>

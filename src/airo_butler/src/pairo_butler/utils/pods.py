@@ -102,7 +102,7 @@ class URStatePOD(POD):
 
 
 class DualTCPPOD(POD):
-    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene", "max_distance"]
 
     def __init__(
         self,
@@ -110,6 +110,7 @@ class DualTCPPOD(POD):
         tcp_sophie: Optional[np.ndarray] = None,
         tcp_wilson: Optional[np.ndarray] = None,
         scene: str = "default",
+        max_distance: float | None = None,
     ):
         self.timestamp: ros.Time = timestamp
 
@@ -117,10 +118,35 @@ class DualTCPPOD(POD):
         self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
         self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
         self.scene: str = scene
+        self.max_distance: float = max_distance
+
+
+class GraspTCPPOD(POD):
+    __slots__ = [
+        "timestamp",
+        "tcp_sophie_grasp",
+        "tcp_sophie_approach",
+        "tcp_wilson_grasp",
+        "tcp_wilson_approach",
+    ]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        tcp_sophie_grasp: Optional[np.ndarray] = None,
+        tcp_sophie_approach: Optional[np.ndarray] = None,
+        tcp_wilson_grasp: Optional[np.ndarray] = None,
+        tcp_wilson_approach: Optional[np.ndarray] = None,
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.tcp_sophie_grasp: Optional[np.ndarray] = tcp_sophie_grasp
+        self.tcp_sophie_approach: Optional[np.ndarray] = tcp_sophie_approach
+        self.tcp_wilson_grasp: Optional[np.ndarray] = tcp_wilson_grasp
+        self.tcp_wilson_approach: Optional[np.ndarray] = tcp_wilson_approach
 
 
 class DualJointsPOD(POD):
-    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene"]
+    __slots__ = ["timestamp", "tcp_sophie", "tcp_wilson", "scene", "max_distance"]
 
     def __init__(
         self,
@@ -128,12 +154,14 @@ class DualJointsPOD(POD):
         joints_sophie: Optional[np.ndarray] = None,
         joints_wilson: Optional[np.ndarray] = None,
         scene: str = "default",
+        max_distance: float | None = None,
     ):
         self.timestamp: ros.Time = timestamp
         assert not (joints_sophie is None and joints_wilson is None)
         self.joints_sophie: Optional[np.ndarray] = joints_sophie
         self.joints_wilson: Optional[np.ndarray] = joints_wilson
         self.scene: str = scene
+        self.max_distance: float | None = max_distance
 
 
 class DualTrajectoryPOD(POD):

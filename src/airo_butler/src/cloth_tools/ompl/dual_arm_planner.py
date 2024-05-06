@@ -340,6 +340,8 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
         start_configuration_right: JointConfigurationType,
         tcp_pose_left_in_base: HomogeneousMatrixType,
         tcp_pose_right_in_base: HomogeneousMatrixType,
+        desirable_goal_configurations_left: List[JointConfigurationType] | None = None,
+        desirable_goal_configurations_right: List[JointConfigurationType] | None = None,
     ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
         if (
             self.inverse_kinematics_left_fn is None
@@ -426,6 +428,22 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
                 f"Found {n_valid_goal_configurations}/{n_goal_configurations} valid goal pairs."
             )
 
+        # 3.5 Sort goal pairs on desirability
+        goal_configurations_valid = np.stack(goal_configurations_valid, axis=0)
+        desirable_goal_configuration = np.concatenate(
+            (
+                desirable_goal_configurations_left[0],
+                desirable_goal_configurations_right[0],
+            ),
+            axis=0,
+        )[None, :]
+        undesirability = np.linalg.norm(
+            goal_configurations_valid - desirable_goal_configuration, axis=1
+        )
+        goal_configurations_valid = goal_configurations_valid[
+            np.argsort(undesirability)
+        ]
+
         # 4. for each pair, plan to the goal pair
         paths = []
         path_lengths = []
@@ -439,6 +457,7 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
             if path is not None:
                 paths.append(path)
                 path_lengths.append(self._path_length_dual)
+                break
 
         if len(paths) == 0:
             logger.info("No paths founds towards any goal pairs, returning None.")
@@ -483,6 +502,131 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
             )
             return path
 
+        path = self._plan_to_tcp_pose_dual_arm(
+            start_configuration_left,
+            start_configuration_right,
+            tcp_pose_left_in_base,
+            tcp_pose_right_in_base,
+            desirable_goal_configurations_left,
+            desirable_goal_configurations_right,
+        )
+
+        return path
+
+    def _get_ik_solutions_left_arm_only(
+        self,
+        start_configuration_left: JointConfigurationType,
+        start_configuration_right: JointConfigurationType,
+        tcp_pose_left_in_base: HomogeneousMatrixType,
+        desirable_goal_configurations_left: List[JointConfigurationType] | None = None,
+    ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
+        raise NotImplemented
+
+    def _get_ik_solutions_right_arm_only(
+        self,
+        start_configuration_left: JointConfigurationType,
+        start_configuration_right: JointConfigurationType,
+        tcp_pose_right_in_base: HomogeneousMatrixType,
+        desirable_goal_configurations_right: List[JointConfigurationType] | None = None,
+    ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
+
+        # 1. do IK for right arm
+        ik_solutions_right = self.inverse_kinematics_right_fn(tcp_pose_right_in_base)
+        if ik_solutions_right is None or len(ik_solutions_right) == 0:
+            logger.info("IK for right arm returned no solutions, returning None.")
+            return None
+        else:
+            logger.info(f"Found {len(ik_solutions_right)} IK solutions for right arm.")
+
+        # 2. filter out IK solutions that are outside the joint bounds
+        ik_solutions_in_bounds_right = []
+        for ik_solution in ik_solutions_right:
+            if np.all(ik_solution >= self.joint_bounds_right[0]) and np.all(
+                ik_solution <= self.joint_bounds_right[1]
+            ):
+                ik_solutions_in_bounds_right.append(ik_solution)
+
+        if len(ik_solutions_in_bounds_right) == 0:
+            logger.info(
+                "No IK solutions for right arm are within the joint bounds, returning None."
+            )
+            return None
+        else:
+            logger.info(
+                f"Found {len(ik_solutions_in_bounds_right)}/{len(ik_solutions_right)} IK solutions within the joint bounds for right arm."
+            )
+
+        # 3. create all goal pairs
+        goal_configurations = []
+        for ik_solution_right in ik_solutions_in_bounds_right:
+            goal_configurations.append(
+                np.concatenate((start_configuration_left, ik_solution_right))
+            )
+
+        n_goal_configurations = len(goal_configurations)
+
+        # 4. filter out invalid goal pairs
+        goal_configurations_valid = [
+            s for s in goal_configurations if self.is_state_valid_fn(s)
+        ]
+        n_valid_goal_configurations = len(goal_configurations_valid)
+
+        if n_valid_goal_configurations == 0:
+            logger.info(
+                f"All {n_goal_configurations} goal pairs are invalid, returning None."
+            )
+            return None
+        else:
+            logger.info(
+                f"Found {n_valid_goal_configurations}/{n_goal_configurations} valid goal pairs."
+            )
+
+        if desirable_goal_configurations_right is not None:
+            raise NotImplementedError
+
+        return goal_configurations_valid
+
+    def _get_ik_solutions_dual_arm(  # noqa: C901
+        self,
+        start_configuration_left: JointConfigurationType,
+        start_configuration_right: JointConfigurationType,
+        tcp_pose_left_in_base: HomogeneousMatrixType,
+        tcp_pose_right_in_base: HomogeneousMatrixType,
+    ) -> List[Tuple[JointConfigurationType, JointConfigurationType]] | None:
+        raise NotImplemented
+
+    def get_ik_solutions(
+        self,
+        start_configuration_left: JointConfigurationType,
+        start_configuration_right: JointConfigurationType,
+        tcp_pose_left_in_base: HomogeneousMatrixType | None,
+        tcp_pose_right_in_base: HomogeneousMatrixType | None,
+        desirable_goal_configurations_left: List[JointConfigurationType] | None = None,
+        desirable_goal_configurations_right: List[JointConfigurationType] | None = None,
+    ) -> List[JointConfigurationType]:
+        if tcp_pose_left_in_base is None and tcp_pose_right_in_base is None:
+            raise ValueError(
+                "A goal TCP pose must be specified for at least one of the arms."
+            )
+
+        if tcp_pose_right_in_base is None:
+            solutions = self._get_ik_solutions_left_arm_only(
+                start_configuration_left,
+                start_configuration_right,
+                tcp_pose_left_in_base,
+                desirable_goal_configurations_left,
+            )
+            return solutions
+
+        if tcp_pose_left_in_base is None:
+            solutions = self._get_ik_solutions_right_arm_only(
+                start_configuration_left,
+                start_configuration_right,
+                tcp_pose_right_in_base,
+                desirable_goal_configurations_right,
+            )
+            return solutions
+
         # TODO use desirable_goal_configurations for dual arm planning
         if (
             desirable_goal_configurations_left is not None
@@ -492,11 +636,10 @@ class DualArmOmplPlanner(DualArmMotionPlanner):
                 "Desirable goal configurations are not implemented yet for dual arm planning, ignoring them."
             )
 
-        path = self._plan_to_tcp_pose_dual_arm(
+        solutions = self._get_ik_solutions_dual_arm(
             start_configuration_left,
             start_configuration_right,
             tcp_pose_left_in_base,
             tcp_pose_right_in_base,
         )
-
-        return path
+        return solutions

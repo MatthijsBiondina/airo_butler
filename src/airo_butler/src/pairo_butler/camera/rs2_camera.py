@@ -190,47 +190,20 @@ class RS2_camera:
         """
         self.rs2_resolution = rs2_resolution
         self.fps = fps
+        self.out_resolution = out_resolution
         # ROS HOUSEKEEPING
         # Set the node name as provided or default.
-        self.node_name: str = f"{name}_{serial_number}"
-        # Define the publication topic for camera frames.
-        self.pub_name: str = "/rs2_topic"
-        # Initialize a ROS rate object, to be set in 'start_ros' method.
-        self.rate: Optional[ros.Rate] = None
-        # Initialize a ROS publisher, to be set in 'start_ros' method.
-        self.publisher: Optional[ros.Publisher] = None
+        self.node_name = sys.argv[1].split(":=")[1] if len(sys.argv) > 1 else name
 
-        # START REALSENSE2 CAMERA
+        self.rate: ros.Rate
+        self.publisher: ros.Publisher
+
         # Check if the resolution is valid as per predefined list.
         assert rs2_resolution in self.RESOLUTIONS
         # Create a pipeline for RealSense2 camera data.
         self.pipeline = pyrealsense2.pipeline()
 
-        context = pyrealsense2.context()
-        for device in context.devices:
-            pyout(device.get_info(pyrealsense2.camera_info.serial_number))
-
-        # Configure the pipeline to stream color data with given resolution and frame rate.
-        config = pyrealsense2.config()
-        config.enable_device(str(serial_number))
-        # self.profile = config.resolve(self.pipeline)
-        config.enable_stream(
-            pyrealsense2.stream.color,
-            *rs2_resolution,
-            pyrealsense2.format.rgb8,
-            fps,
-        )
-        config.enable_stream(
-            pyrealsense2.stream.depth, *rs2_resolution, pyrealsense2.format.z16, fps
-        )
-        # Start the camera pipeline.
-        self.pipeline.start(config)
-        # Set the rate at which frames will be published.
-        self.publish_rate = self.RATE
-        # Set the output image resolution.
-        self.resolution = out_resolution
-
-        self.intrinsics_matrix = self.__compute_intrinsics_matrix()
+        self.serial_number = serial_number
 
         # Placeholders
         self.__last_reset: Optional[ros.Time] = None
@@ -248,11 +221,53 @@ class RS2_camera:
         """
         # Initialize the ROS node with the specified node name and log level.
         ros.init_node(self.node_name, log_level=ros.INFO)
+
+        serial_number = ros.get_param("~serial_number").replace("SN", "")
+        context = pyrealsense2.context()
+        device_str = "CONNECTED DEVICES:"
+        for device in context.devices:
+            device_sn = device.get_info(pyrealsense2.camera_info.serial_number)
+            device_str += (
+                f"\n{'[X]' if device_sn == serial_number else '[ ]'}  {device}"
+            )
+
+        pyout(device_str)
+        self.fps = int(ros.get_param("fps", self.fps))
+        if ros.get_param("~hd", False):
+            self.rs2_resolution = self.RESOLUTIONS[-1]
+
+        # Configure the pipeline to stream color data with given resolution and frame rate.
+        config = pyrealsense2.config()
+        config.enable_device(str(serial_number))
+        # self.profile = config.resolve(self.pipeline)
+        config.enable_stream(
+            pyrealsense2.stream.color,
+            *self.rs2_resolution,
+            pyrealsense2.format.rgb8,
+            self.fps,
+        )
+        config.enable_stream(
+            pyrealsense2.stream.depth,
+            *self.rs2_resolution,
+            pyrealsense2.format.z16,
+            self.fps,
+        )
+        # Start the camera pipeline.
+        self.pipeline.start(config)
+        # Set the rate at which frames will be published.
+        self.publish_rate = self.fps
+        # Set the output image resolution.
+        self.resolution = self.out_resolution
+
+        self.intrinsics_matrix = self.__compute_intrinsics_matrix()
+
         # Set reset time
         self.__last_reset = ros.Time.now()
         # Set the publish rate for the node.
         self.rate = ros.Rate(self.publish_rate)
         # Initialize the ROS publisher with the specified topic, message type, and queue size.
+        self.pub_name = f'/{ros.get_param("topic", "rs2_topic")}'
+
         self.publisher = ros.Publisher(
             self.pub_name, PODMessage, queue_size=self.QUEUE_SIZE
         )
@@ -262,7 +277,7 @@ class RS2_camera:
         )
 
         # Log an information message indicating successful initialization.
-        ros.loginfo("RS2_camera: OK!")
+        ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         """
@@ -462,9 +477,7 @@ class RS2_camera:
 
 
 def main():
-
     node = RS2_camera()
-    ros.loginfo(f"Executable: {sys.executable}")
     node.start_ros()
     node.run()
 

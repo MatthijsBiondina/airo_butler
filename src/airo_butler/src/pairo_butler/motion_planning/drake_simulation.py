@@ -3,6 +3,9 @@ import time
 import airo_models
 from airo_typing import HomogeneousMatrixType, JointConfigurationType
 from munch import Munch
+from pairo_butler.motion_planning.custom_constraints import (
+    DistanceBetweenToolsConstraint,
+)
 from pairo_butler.motion_planning.obstacles import CharucoBoard, HangingTowel
 from pairo_butler.motion_planning.towel_obstacle import TowelObstacle
 from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
@@ -27,12 +30,13 @@ from pydrake.trajectories import Trajectory
 from pydrake.multibody.plant import MultibodyPlant
 
 
-np.set_printoptions(precision=0, suppress=True)
+np.set_printoptions(precision=2, suppress=True)
 
 
 class DrakeSimulation:
-    def __init__(self, scene_name: str = "default"):
+    def __init__(self, scene_name: str = "default", max_distance: float | None = None):
         self.config = load_config()
+        self.max_distance = max_distance
 
         # Init subscribers
         self.sophie: UR5eClient = UR5eClient("sophie")
@@ -49,7 +53,8 @@ class DrakeSimulation:
         self.plant: MultibodyPlant
         self.plant_context: Any
         self.meshcat: Any
-        self.__create_scene(scene_name)
+
+        self.__create_scene(scene_name, max_distance)
 
         self.planner: DualArmOmplPlanner
         self.__create_planner()
@@ -91,7 +96,9 @@ class DrakeSimulation:
         tcp_transform[2, 3] = self.config.gripper_length
         return tcp_transform
 
-    def __create_scene(self, scenario: str = "default"):
+    def __create_scene(
+        self, scenario: str = "default", max_distance: float | None = None
+    ):
         self.robot_diagram_builder = RobotDiagramBuilder()
         self.meshcat = add_meshcat_to_builder(self.robot_diagram_builder)
 
@@ -174,20 +181,25 @@ class DrakeSimulation:
             self_collision_padding=0.005,
         )
 
-        self.is_state_valid_fn = self.collision_checker.CheckConfigCollisionFree
+        if max_distance is None:
+            self.is_state_valid_fn = self.collision_checker.CheckConfigCollisionFree
+        else:
+            self.is_state_valid_fn = DistanceBetweenToolsConstraint(
+                self.collision_checker.CheckConfigCollisionFree,
+                max_distance,
+                tcp_transform=self.config.tcp_transform,
+            )
 
         self.plant = self.diagram.plant()
         self.plant_context = self.plant.GetMyContextFromRoot(self.context)
 
         transform_0 = RigidTransform(p=[0, 0, 0.35], rpy=RollPitchYaw([np.pi, 0, 0]))
-        tcp_pose_0 = np.ascontiguousarray(transform_0.GetAsMatrix4())
 
         add_meshcat_triad(self.meshcat, "TCP Frame left", X_W_Triad=transform_0)
 
         transform_1 = RigidTransform(
             p=[0.15, 0, 0.3], rpy=RollPitchYaw([np.pi / 2, 0, np.pi / 2])
         )
-        tcp_pose_1 = np.ascontiguousarray(transform_1.GetAsMatrix4())
 
         add_meshcat_triad(self.meshcat, "TCP Frame right", X_W_Triad=transform_1)
 
@@ -195,8 +207,8 @@ class DrakeSimulation:
         def inverse_kinematics_in_world_fn(
             tcp_pose: HomogeneousMatrixType, X_W_CB: HomogeneousMatrixType
         ) -> List[JointConfigurationType]:
-            X_W_TCP = tcp_pose
-            X_CB_W = np.linalg.inv(X_W_CB)
+            X_W_TCP = tcp_pose  # pose_tcp_in_worldframe
+            X_CB_W = np.linalg.inv(X_W_CB)  # pose world in controlbox
             solutions_1x6 = ur5e.inverse_kinematics_with_tcp(
                 X_CB_W @ X_W_TCP, np.array(self.config.tcp_transform)
             )
@@ -223,31 +235,48 @@ class DrakeSimulation:
             inverse_kinematics_sophie,
             joint_bounds_left=joint_bounds,
             joint_bounds_right=joint_bounds,
+            max_planning_time=5.0 if self.max_distance is None else 10.0,
             num_interpolated_states=self.config.num_interpolated_states,
         )
 
     def plan_to_tcp_pose(
-        self, sophie_tgt: Optional[np.ndarray], wilson_tgt: Optional[np.ndarray]
+        self,
+        sophie_tgt: Optional[np.ndarray],
+        wilson_tgt: Optional[np.ndarray],
+        sophie_start: np.ndarray | None = None,
+        wilson_start: np.ndarray | None = None,
+        desirable_goal_configurations_sophie: List[np.ndarray] | None = None,
+        desirable_goal_configurations_wilson: List[np.ndarray] | None = None,
     ):
+        if wilson_start is None:
+            wilson_start = np.clip(
+                self.wilson.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
+        if sophie_start is None:
+            sophie_start = np.clip(
+                self.sophie.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
 
-        wilson_start = np.clip(
-            self.wilson.get_joint_configuration(),
-            a_min=self.config.joint_bounds_lower,
-            a_max=self.config.joint_bounds_upper,
-        )
-        sophie_start = np.clip(
-            self.sophie.get_joint_configuration(),
-            a_min=self.config.joint_bounds_lower,
-            a_max=self.config.joint_bounds_upper,
-        )
+        if desirable_goal_configurations_sophie is None:
+            desirable_goal_configurations_sophie = [
+                self.sophie.get_joint_configuration()
+            ]
+        if desirable_goal_configurations_wilson is None:
+            desirable_goal_configurations_wilson = [
+                self.wilson.get_joint_configuration()
+            ]
 
         path = self.planner.plan_to_tcp_pose(
             wilson_start,
             sophie_start,
             wilson_tgt,
             sophie_tgt,
-            desirable_goal_configurations_left=[self.wilson.get_joint_configuration()],
-            desirable_goal_configurations_right=[self.sophie.get_joint_configuration()],
+            desirable_goal_configurations_left=desirable_goal_configurations_wilson,
+            desirable_goal_configurations_right=desirable_goal_configurations_sophie,
         )
 
         joint_trajectory, time_trajectory = time_parametrize_toppra(path, self.plant)
@@ -270,18 +299,25 @@ class DrakeSimulation:
         return path_sophie, path_wilson, period_adjusted
 
     def plan_to_joint_configuration(
-        self, sophie_tgt: Optional[np.ndarray], wilson_tgt: Optional[np.ndarray]
+        self,
+        sophie_tgt: Optional[np.ndarray],
+        wilson_tgt: Optional[np.ndarray],
+        sophie_start: np.ndarray | None = None,
+        wilson_start: np.ndarray | None = None,
+        max_distance: float | None = None,
     ):
-        wilson_start = np.clip(
-            self.wilson.get_joint_configuration(),
-            a_min=self.config.joint_bounds_lower,
-            a_max=self.config.joint_bounds_upper,
-        )
-        sophie_start = np.clip(
-            self.sophie.get_joint_configuration(),
-            a_min=self.config.joint_bounds_lower,
-            a_max=self.config.joint_bounds_upper,
-        )
+        if wilson_start is None:
+            wilson_start = np.clip(
+                self.wilson.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
+        if sophie_start is None:
+            sophie_start = np.clip(
+                self.sophie.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
 
         path = self.planner.plan_to_joint_configuration(
             wilson_start, sophie_start, wilson_tgt, sophie_tgt
@@ -305,3 +341,96 @@ class DrakeSimulation:
         path_wilson = np.stack(path_wilson, axis=0)
 
         return path_sophie, path_wilson, period_adjusted
+
+    def toppra(
+        self,
+        sophie_path: np.ndarray | None = None,
+        wilson_path: np.ndarray | None = None,
+    ):
+        if sophie_path is None and wilson_path is None:
+            raise RuntimeError(
+                f"At least one of sophie_path and wilson_path must be not None"
+            )
+
+        if wilson_path is None:
+            wilson_path = np.stack(
+                [
+                    np.clip(
+                        self.wilson.get_joint_configuration(),
+                        a_min=self.config.joint_bounds_lower,
+                        a_max=self.config.joint_bounds_upper,
+                    )
+                ]
+                * sophie_path.shape[0],
+                axis=0,
+            )
+        if sophie_path is None:
+            sophie_path = np.stack(
+                [
+                    np.clip(
+                        self.sophie.get_joint_configuration(),
+                        a_min=self.config.joint_bounds_lower,
+                        a_max=self.config.joint_bounds_upper,
+                    )
+                ]
+                * wilson_path.shape[0],
+                axis=0,
+            )
+
+        path = np.concatenate((wilson_path, sophie_path), axis=1)
+        joint_trajectory, time_trajectory = time_parametrize_toppra(path, self.plant)
+
+        period = 0.005
+        duration = time_trajectory.end_time()
+        n_servos = int(np.ceil(duration / period))
+        period_adjusted = duration / n_servos
+
+        path_sophie = []
+        path_wilson = []
+        for t in np.linspace(0, duration, n_servos):
+            joints = joint_trajectory.value(time_trajectory.value(t).item()).squeeze()
+            path_wilson.append(joints[0:6])
+            path_sophie.append(joints[6:12])
+
+        path_sophie = np.stack(path_sophie, axis=0)
+        path_wilson = np.stack(path_wilson, axis=0)
+
+        return path_sophie, path_wilson, period_adjusted
+
+    def get_ik_solutions(
+        self,
+        sophie_tgt: Optional[np.ndarray],
+        wilson_tgt: Optional[np.ndarray],
+        sophie_start: np.ndarray | None = None,
+        wilson_start: np.ndarray | None = None,
+    ):
+        if wilson_start is None:
+            wilson_start = np.clip(
+                self.wilson.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
+        if sophie_start is None:
+            sophie_start = np.clip(
+                self.sophie.get_joint_configuration(),
+                a_min=self.config.joint_bounds_lower,
+                a_max=self.config.joint_bounds_upper,
+            )
+
+        solutions = self.planner.get_ik_solutions(
+            wilson_start,
+            sophie_start,
+            wilson_tgt,
+            sophie_tgt,
+        )
+
+        poses_sophie = []
+        poses_wilson = []
+        for solution in solutions:
+            poses_wilson.append(solution[0:6])
+            poses_sophie.append(solution[6:12])
+
+        poses_sophie = np.stack(poses_sophie, axis=0)
+        poses_wilson = np.stack(poses_wilson, axis=0)
+
+        return poses_sophie, poses_wilson

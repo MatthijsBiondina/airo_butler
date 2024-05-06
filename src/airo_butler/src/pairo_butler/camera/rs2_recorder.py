@@ -1,200 +1,161 @@
+from datetime import datetime
+from multiprocessing import Process
+from os import listdir, makedirs
+import os
 import pickle
+import shutil
 import sys
-from typing import List, Optional
-
+import time
+from typing import List
+import cv2
+import PIL
 import numpy as np
-from pairo_butler.utils.pods import ImagePOD, publish_pod
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.ros_helper_functions import invoke_service
+from pairo_butler.utils.pods import ImagePOD
+from pairo_butler.utils.tools import load_config, pbar, pyout
 import rospy as ros
-import pyrealsense2
 from airo_butler.msg import PODMessage
 from airo_butler.srv import Reset
-from PIL import Image
 
 
-class RecorderClient:
-    QUEUE_SIZE = 2
-    RATE = 30
-
-    def __init__(self, timeout: int = 5):
-        self.timeout = ros.Duration(timeout)
-
-        self.signal_reset()
-        self.subscriber: ros.Subscriber = ros.Subscriber(
-            "/recorder_topic",
-            PODMessage,
-            self.__sub_callback,
-            queue_size=self.QUEUE_SIZE,
-        )
-
-        # Placeholders
-        self.__rs2_pod: Optional[ImagePOD] = None
-        self.__timestamps: List[ros.Time] = []
-
-    @property
-    def pod(self) -> ImagePOD:
-        t0 = ros.Time.now()
-        while self.__rs2_pod is None and ros.Time.now() < t0 + self.timeout:
-            ros.sleep(1 / self.RATE)
-        if self.__rs2_pod is None:
-            ros.logerr("Did not recieve pod from recorder. Is it running?")
-            ros.signal_shutdown("Did not receive pod from recorder.")
-            sys.exit(0)
-        return self.__rs2_pod
-
-    @property
-    def fps(self) -> int:
-        """
-        Computes the frame-rate at which frames are recieved.
-
-        Returns:
-            int: Frames per second of the RealSense2
-        """
-        return len(self.__timestamps)
-
-    @property
-    def latency(self) -> int:
-        """
-        Computes the latency of incoming frames.
-
-        Returns:
-            int: latency in milliseconds
-        """
-        try:
-            latency = ros.Time.now() - self.__timestamps[-1]
-            return int(latency.to_sec() * 1000)
-        except IndexError:
-            return -1  # -1 indicates no frames recieved in the last second.
-
-    def signal_reset(self):
-        RS2_Recorder.signal_reset()
-
-    def __sub_callback(self, msg: PODMessage):
-        """
-        Callback function for the ROS subscriber.
-
-        This function is automatically called when a new message is received on the
-        '/rs2_topic' topic. It deserializes the message and updates the internal
-        ImagePOD object.
-
-        Args:
-            msg: The message received from the topic.
-        """
-        pod = pickle.loads(msg.data)
-
-        self.__rs2_pod = pod
-        self.__timestamps.append(pod.timestamp)
-        while pod.timestamp - ros.Duration(secs=1) > self.__timestamps[0]:
-            self.__timestamps.pop(0)
+def invoke():
+    time.sleep(1)
+    RS2Recorder.start()
+    time.sleep(5)
+    RS2Recorder.save()
 
 
-class RS2_Recorder:
-    RESOLUTION = (640, 480)
-    QUEUE_SIZE = 2
+class RS2Recorder:
+    RATE = 120
+    FPS = 30
 
-    def __init__(
-        self,
-        name: str = "rs2_recording",
-        fps: int = 15,
-        serial_number: str = "944122073290",
-    ):
-        self.serial_number = serial_number
-        self.fps = fps
-        self.node_name: str = name
-        self.pub_name: str = "/recorder_topic"
-        self.rate: Optional[ros.Rate] = None
-        self.publisher: Optional[ros.Publisher] = None
+    def __init__(self, name: str = "rs2_recorder"):
+        self.node_name = name
+        self.rate: ros.Rate
+        self.config = load_config()
 
-        self.pipeline = pyrealsense2.pipeline()
-        config = pyrealsense2.config()
-        config.enable_device(serial_number)
-        config.enable_stream(
-            pyrealsense2.stream.color, *self.RESOLUTION, pyrealsense2.format.rgb8, fps
-        )
-        self.pipeline.start(config)
-        self.publish_rate = fps
+        self.subscriber: ros.Subscriber
 
-        # Placeholders
-        self.__last_reset: Optional[ros.Time] = None
-        self.__reset: bool = False
-        self.__reset_result: Optional[bool] = None
+        self.frames: List[np.ndarray] = []
+
+        shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
+        makedirs(self.config.tmp_dir)
+        makedirs(self.config.save_dir, exist_ok=True)
+
+        self.paused: bool = True
+        self.t_start: ros.Time
+        self.t_end: ros.Time
+
+        self.video_writer = None
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
-        self.__last_reset = ros.Time.now()
-        self.rate = ros.Rate(self.publish_rate)
-        self.publisher = ros.Publisher(
-            self.pub_name, PODMessage, queue_size=self.QUEUE_SIZE
+        self.rate = ros.Rate(self.RATE)
+
+        self.subscriber = ros.Subscriber(
+            "/recorder_rs2", PODMessage, self.__sub_callback, queue_size=2
         )
-        self.reset_servcie = ros.Service(
-            "reset_recorder_service", Reset, self.toggle_reset
-        )
+
+        self.services = [
+            ros.Service("start_rs2_recorder_service", Reset, self.__start),
+            ros.Service("stop_rs2_recorder_service", Reset, self.__stop),
+            ros.Service("save_rs2_recorder_service", Reset, self.__save),
+        ]
+
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         while not ros.is_shutdown():
-            if self.__reset:
-                self.reset_camera()
+            if len(self.frames) and self.video_writer is not None:
+                try:
+                    img = self.frames.pop(0)
+                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                    self.video_writer.write(img)
+                except Exception as e:
+                    ros.logwarn(f"Unexpected exception: {e}")
+                    pass
 
-            frame = self.pipeline.wait_for_frames().get_color_frame()
-            image = Image.fromarray(np.asanyarray(frame.get_data()).astype(np.uint8))
-
-            pod = ImagePOD(
-                image=image, intrinsics_matrix=None, timestamp=ros.Time.now()
-            )
-
-            publish_pod(self.publisher, pod)
             self.rate.sleep()
 
-    def toggle_reset(self, msg):
-        self.__reset_result = None
-        self.__reset = True
+    @staticmethod
+    def start():
+        return invoke_service("start_rs2_recorder_service")
 
-        while self.__reset_result is None:
-            ros.sleep(1 / self.publish_rate)
-
-        return self.__reset_result
-
-    def reset_camera(self):
+    def __start(self, req):
         try:
-            if ros.Time.now() < self.__last_reset + ros.Duration(10):
-                self.__reset = False
-                self.__reset_result = True
-            else:
-                self.pipeline.stop()
-                ros.sleep(1)
-                self.pipeline.start()
-                ros.sleep(1)
-                self.__reset = False
-                self.__reset_result = True
-                self.__last_reset = ros.Time.now()
+            self.video_writer.release()
+        except AttributeError:
+            pass
 
-        except Exception as e:
-            ros.logerr(f"Failed to reset rs2 ({self.serial_number}): {e}")
-            self.__reset = False
-            self.__reset_result = False
+        shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
+        makedirs(self.config.tmp_dir)
+
+        height, width = 720, 1280
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        now = datetime.fromtimestamp(ros.Time.now().to_sec())
+        fname = f"{now.strftime('%Y%m%d_%H%M%S')}.mp4"
+        self.filename = fname
+
+        fps = 24
+        self.video_writer = cv2.VideoWriter(
+            f"{self.config.tmp_dir}/{fname}", fourcc, fps, (width, height)
+        )
+
+        self.frames = []
+        self.paused = False
+        self.t_start = ros.Time.now()
+        self.t_end = ros.Time.now()
+
+        return True
 
     @staticmethod
-    def signal_reset():
+    def stop():
+        return invoke_service("stop_rs2_recorder_service")
+
+    def __stop(self, req):
+        self.paused = True
+
+        return True
+
+    @staticmethod
+    def save():
+        return invoke_service("save_rs2_recorder_service")
+
+    def __save(self, req):
         try:
-            ros.wait_for_service("reset_recorder_service", timeout=5)
-        except ros.exceptions.ROSException:
-            ros.logerr(f"Cannot connect to Recorder server. Is it running?")
-            ros.signal_shutdown("Cannot connect to Recorder server.")
-            sys.exit(0)
+            self.paused = True
 
-        service = ros.ServiceProxy("reset_recorder_service", Reset)
-        resp = service()
+            while len(self.frames):
+                ros.loginfo(f"{len(self.frames)} remaining...")
+                ros.sleep(1)
 
-        if not resp.success:
-            ros.logerr(f"Failed to reset recorder.")
-            ros.signal_shutdown("Failed to reset recorder")
-            sys.exit(0)
+            self.video_writer.release()
+            self.video_writer = None
+
+            shutil.move(
+                f"{self.config.tmp_dir}/{self.filename}",
+                f"{self.config.save_dir}/{self.filename}",
+            )
+
+            shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
+            makedirs(self.config.tmp_dir)
+
+            return True
+        except Exception as e:
+            ros.logerr(f"Unexpected exception: {e}")
+            return False
+
+    def __sub_callback(self, msg):
+        if not self.paused:
+            pod: ImagePOD = pickle.loads(msg.data)
+            self.frames.append(pod.color_frame)
+            self.t_end = ros.Time.now()
 
 
 def main():
-    node = RS2_Recorder()
+    node = RS2Recorder()
     node.start_ros()
+    # Process(target=invoke, daemon=True).start()
     node.run()
 
 

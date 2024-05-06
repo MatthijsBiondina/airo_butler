@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.utils.pods import KalmanFilterStatePOD
 from pairo_butler.camera.rs2_recorder import RS2Recorder
 from pairo_butler.procedures.subprocedures.display import DisplayTowel
 from pairo_butler.kalman_filters.kalman_filter import KalmanFilterClient
@@ -22,8 +23,8 @@ from pairo_butler.utils.tools import load_config, pyout
 np.set_printoptions(precision=3, suppress=True)
 
 
-class UnfoldMachine:
-    def __init__(self, name: str = "unfold_machine"):
+class GraspMachine:
+    def __init__(self, name: str = "grasp_machine"):
         self.node_name = name
         self.config = load_config()
 
@@ -38,7 +39,9 @@ class UnfoldMachine:
     def start_ros(self):
 
         ros.init_node(self.node_name, log_level=ros.INFO)
+        ros.loginfo(f"{self.node_name}: OK!")
 
+    def run(self):
         self.ompl = OMPLClient()
         self.sophie = UR5eClient("sophie")
         self.wilson = UR5eClient("wilson")
@@ -50,42 +53,47 @@ class UnfoldMachine:
             "config": self.config,
         }
 
-        ros.loginfo(f"{self.node_name}: OK!")
-
-    def run(self):
-        t_start = time.time()
-        trial_nr = 0
-        while time.time() < t_start + 60 * 60:
-            trial_nr += 1
-            if trial_nr > 25:
-                break
-
-            ros.loginfo(f"TRIAL: {trial_nr}")
-            Startup(**self.kwargs).run()
-            # RS2Recorder.start()
-
-            pickup_success = False
-            while not pickup_success:
+        while not ros.is_shutdown():
+            while not ros.is_shutdown():
                 Startup(**self.kwargs).run()
                 while not Pickup(**self.kwargs).run():
                     pass
-                pickup_success = Holdup(**self.kwargs).run()
+                if Holdup(**self.kwargs).run():
+                    break
+            state = KalmanScan(**self.kwargs).run()
+            np.save(f"{self.config.res_dir}/mean.npy", state.means)
+            np.save(f"{self.config.res_dir}/cov.npy", state.covariances)
 
-            grasp_success = False
-            while not grasp_success:
-                KalmanScan(**self.kwargs).run()
-                grasp_success = GraspCorner(**self.kwargs).run()
+            state = KalmanFilterStatePOD(
+                means=np.load(f"{self.config.res_dir}/mean.npy"),
+                covariances=np.load(f"{self.config.res_dir}/cov.npy"),
+                timestamp=ros.Time.now(),
+                camera_tcp=None,
+            )
+            if GraspCorner(state, **self.kwargs).run():
+                pyout("Grasped!")
+                # DisplayTowel(**self.kwargs).run()
+                # ros.sleep(5)
+                break
 
-            DisplayTowel(**self.kwargs).run()
-            ros.sleep(5)
-            # RS2Recorder.stop()
-            # RS2Recorder.save()
+        #     plan = self.ompl.plan_to_joint_configuration(
+        #         sophie=np.deg2rad(self.config.joints_scan1_sophie),
+        #         scene="hanging_towel",
+        #     )
+        #     self.sophie.execute_plan(plan)
+        #     ros.sleep(10)
+
+        #     KalmanScan(**self.kwargs).run()
+        #     grasped = GraspCorner(self.state_listener.state, **self.kwargs).run()
+
+        # RS2Recorder.stop()
+        # RS2Recorder.save()
 
         Goodnight(**self.kwargs).run()
 
 
 def main():
-    node = UnfoldMachine()
+    node = GraspMachine()
     node.start_ros()
     node.run()
 

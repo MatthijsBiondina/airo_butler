@@ -17,51 +17,36 @@ class DisplayTowel(Subprocedure):
         edge_length = np.linalg.norm(
             self.wilson.get_tcp_pose()[:3, 3] - self.sophie.get_tcp_pose()[:3, 3]
         )
-        edge_length = 0.48
-
-        pyout(f"edge_length = {edge_length:.2f}")
+        edge_length = max(0.4, edge_length)
 
         tcp_sophie = self.wilson.get_tcp_pose() @ homogenous_transformation(pitch=180)
         tcp_sophie[:3, 3] -= 0.05 * tcp_sophie[:3, 2]
 
-        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_sophie)
-        self.sophie.execute_plan(plan)
-
-        pyout(self.sophie.get_tcp_pose())
-
-        tcp_sophie = np.array(
-            [
-                [1.0, 0.0, 0.0, -0.35],
-                [0.0, 0.0, 1.0, 0],
-                [0.0, -1.0, 0.0, 0.75],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
+        plan = self.ompl.plan_to_tcp_pose(
+            sophie=tcp_sophie, max_distance=edge_length + 0.05
         )
-
-        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_sophie)
         self.sophie.execute_plan(plan)
 
         tcp_wilson = np.array(
             [
-                [-1.0, 0.0, 0.0, -0.35],
+                [-1.0, 0.0, 0.0, -0.20],
                 [0.0, 0.0, -1.0, edge_length / 2],
                 [0.0, -1.0, 0.0, 0.75],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )
 
-        plan = self.ompl.plan_to_tcp_pose(wilson=tcp_wilson)
-        self.wilson.execute_plan(plan)
-
         tcp_sophie = np.array(
             [
-                [1.0, 0.0, 0.0, -0.35],
+                [1.0, 0.0, 0.0, -0.20],
                 [0.0, 0.0, 1.0, -edge_length / 2],
                 [0.0, -1.0, 0.0, 0.75],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )
-        plan = self.ompl.plan_to_tcp_pose(sophie=tcp_sophie)
+        plan = self.ompl.plan_to_tcp_pose(
+            sophie=tcp_sophie, wilson=tcp_wilson, max_distance=edge_length + 0.05
+        )
         self.sophie.execute_plan(plan)
 
         # try:

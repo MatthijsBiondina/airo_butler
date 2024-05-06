@@ -89,6 +89,11 @@ class UR5eClient:
         response = make_pod_request(self.__service_execute_trajectory, plan, BooleanPOD)
         return response.value
 
+    def set_gripper_width(self, width, blocking: bool = True) -> bool:
+        pod = URGripperPOD(float(width), self.arm_name, blocking)
+        response = make_pod_request(self.__service_move_gripper, pod, BooleanPOD)
+        return response.value
+
     def close_gripper(self, blocking: bool = True) -> bool:
         pod = URGripperPOD("close", self.arm_name, blocking)
         response = make_pod_request(self.__service_move_gripper, pod, BooleanPOD)

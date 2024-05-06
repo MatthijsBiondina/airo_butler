@@ -184,6 +184,7 @@ catkin_install_python(PROGRAMS
   nodes/path_check
   nodes/point_cloud_stream
   nodes/rs2_camera
+  nodes/rs2_recorder
   nodes/run_synthetic_trials
   nodes/towel_extremes_finder
   nodes/transform_orientation_world_to_camera_frame

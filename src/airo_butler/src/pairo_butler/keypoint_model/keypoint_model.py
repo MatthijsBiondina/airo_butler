@@ -1,5 +1,6 @@
 import time
 import torch
+from pairo_butler.utils.ros_helper_functions import invoke_service
 from pairo_butler.utils.pods import ArrayPOD, ImagePOD, publish_pod
 from pairo_butler.camera.rs2_camera import RS2Client
 from pairo_butler.keypoint_model.keypoint_dnn import KeypointNeuralNetwork
@@ -10,6 +11,7 @@ from torchvision import transforms
 from PIL import Image
 import cv2
 import numpy as np
+from airo_butler.srv import Reset
 
 
 class KeypointDNN:
@@ -31,6 +33,7 @@ class KeypointDNN:
         self.rate: ros.Rate
 
         self.publisher: ros.Publisher
+        self.paused = True
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -43,13 +46,20 @@ class KeypointDNN:
             "/keypoints_heatmap", PODMessage, queue_size=self.QUEUE_SIZE
         )
 
+        self.pause_service = ros.Service(
+            f"pause_keypoint_dnn", Reset, self.__pause_service_callback
+        )
+        self.unpause_service = ros.Service(
+            f"unpause_keypoint_dnn", Reset, self.__unpause_service_callback
+        )
+
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         with torch.no_grad():
             while not ros.is_shutdown():
                 img_pod: ImagePOD = self.rs2.pod
-                if img_pod.timestamp == self.timestamp:
+                if img_pod.timestamp == self.timestamp or self.paused:
                     self.rate.sleep()
                     continue
                 else:
@@ -83,6 +93,22 @@ class KeypointDNN:
 
         model.eval()
         return model
+
+    def __pause_service_callback(self, req):
+        self.paused = True
+        return True
+
+    def __unpause_service_callback(self, req):
+        self.paused = False
+        return True
+
+    @staticmethod
+    def pause():
+        invoke_service("pause_keypoint_dnn")
+
+    @staticmethod
+    def unpause():
+        invoke_service("unpause_keypoint_dnn")
 
 
 def main():

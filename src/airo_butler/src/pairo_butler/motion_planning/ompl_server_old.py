@@ -24,7 +24,7 @@ import rospy as ros
 from pydrake.math import RigidTransform, RollPitchYaw
 
 
-np.set_printoptions(precision=0, suppress=True)
+np.set_printoptions(precision=2, suppress=True)
 
 
 def request_process():
