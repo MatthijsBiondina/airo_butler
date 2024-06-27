@@ -1,4 +1,5 @@
 res_dir: "/home/matt/catkin_ws/src/airo_butler/res"
+surface_images_folder: "/media/matt/Expansion/Surfaces"
 state_start: "starting up."
 
 joints_sleep_sophie: [   0, -135,  90, -90, -90,   0]

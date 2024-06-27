@@ -43,6 +43,7 @@ class DisplayTowel(Subprocedure):
                 min_distance=edge_length - 0.20,
                 max_distance=edge_length + 0.07,
             )
+
             self.sophie.execute_plan(plan)
 
             return True

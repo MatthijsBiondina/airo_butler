@@ -113,9 +113,13 @@ class RS2Recorder:
 
     def __sub_callback(self, msg):
         if not self.paused:
-            pod: ImagePOD = pickle.loads(msg.data)
-            img_nr = len(listdir(self.folder))
-            np.save(self.folder / f"{str(img_nr).zfill(4)}.npy", pod.color_frame)
+            if ros.Time.now() > self.last_frame_timestamp + ros.Duration(
+                secs=1.0 / self.FPS
+            ):
+                pod: ImagePOD = pickle.loads(msg.data)
+                self.last_frame_timestamp = ros.Time.now()
+                img_nr = len(listdir(self.folder))
+                np.save(self.folder / f"{str(img_nr).zfill(4)}.npy", pod.color_frame)
 
     def __convert_np_to_img(self, folder: Path):
 

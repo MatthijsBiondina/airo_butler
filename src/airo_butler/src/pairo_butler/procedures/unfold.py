@@ -3,6 +3,9 @@ import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.procedures.subprocedures.record_towel_surface import (
+    RecordTowelSurface,
+)
 from pairo_butler.camera.rs2_recorder import RS2Recorder
 from pairo_butler.procedures.subprocedures.display import DisplayTowel
 from pairo_butler.kalman_filters.kalman_filter import KalmanFilterClient
@@ -59,7 +62,7 @@ class UnfoldMachine:
             trial_nr += 1
             if trial_nr > 1:
                 break
-            # Startup(**self.kwargs).run()
+
             RS2Recorder.start()
 
             ros.loginfo(f"TRIAL: {trial_nr}")
@@ -92,9 +95,10 @@ class UnfoldMachine:
                     grasp_success = GraspCorner(**self.kwargs).run()
 
             DisplayTowel(**self.kwargs).run()
-            ros.sleep(5)
-            self.sophie.open_gripper()
+            ros.sleep(10)
             RS2Recorder.finish()
+            RecordTowelSurface(**self.kwargs).run()
+            self.sophie.open_gripper()
             Startup(**self.kwargs).run()
 
         Goodnight(**self.kwargs).run()
