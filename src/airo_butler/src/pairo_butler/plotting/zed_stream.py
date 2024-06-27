@@ -24,13 +24,16 @@ class ZEDStreamRGB:
     QUEUE_SIZE = 2
     PUBLISH_RATE = 30
     SIZE = (405, 720)
+    LANDSCAPE = True
 
     def __init__(self, name: str = "zed_stream") -> None:
         self.node_name: str = name
         self.rate: Optional[ros.Rate] = None
         self.zed: Optional[ZEDClient] = None
 
-        self.window = PygameWindow("Zed2i", size=self.SIZE)
+        self.window = PygameWindow(
+            "Zed2i", size=self.SIZE[::-1] if self.LANDSCAPE else self.SIZE
+        )
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -61,8 +64,14 @@ class ZEDStreamRGB:
                     aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
                     charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
                 )
-            frame = Image.fromarray(frame)
-            frame = frame.resize(self.SIZE)
+
+            if self.LANDSCAPE:
+                frame = Image.fromarray(frame.transpose(1, 0, 2)[:, ::-1])
+                frame = frame.resize(self.SIZE[::-1])
+            else:
+                frame = Image.fromarray(frame)
+                frame = frame.resize(self.SIZE)
+
             frame = add_info_to_image(
                 frame,
                 title="Zed2i (RGB)",

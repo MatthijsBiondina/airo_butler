@@ -1,7 +1,7 @@
 # kalman_config.yaml
 
 variance_camera_plane:           2500.0  # pixels^2
-variance_position_prior:            1.0  # meters^2
+variance_position_prior:          100.0  # meters^2
 variance_orientation_measurement:  40.0  # radians^2
 variance_orientation_prior:       400.0  # radians^2
 

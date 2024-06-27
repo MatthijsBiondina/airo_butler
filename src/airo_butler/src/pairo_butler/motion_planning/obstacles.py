@@ -26,7 +26,7 @@ class CharucoBoard:
 class HangingTowel:
 
     def __init__(self):
-        self.radius = 0.12
+        self.radius = 0.10
         self.bottom = 0.01
         self.top = 1.0
 

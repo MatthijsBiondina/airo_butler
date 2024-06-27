@@ -52,29 +52,31 @@ class GraspMachine:
             "ompl": self.ompl,
             "config": self.config,
         }
+        
 
-        while not ros.is_shutdown():
-            while not ros.is_shutdown():
-                Startup(**self.kwargs).run()
-                while not Pickup(**self.kwargs).run():
-                    pass
-                if Holdup(**self.kwargs).run():
-                    break
-            state = KalmanScan(**self.kwargs).run()
-            np.save(f"{self.config.res_dir}/mean.npy", state.means)
-            np.save(f"{self.config.res_dir}/cov.npy", state.covariances)
+        DisplayTowel(**self.kwargs).run()
+        # while not ros.is_shutdown():
+        # while not ros.is_shutdown():
+        #     Startup(**self.kwargs).run()
+        #     while not Pickup(**self.kwargs).run():
+        #         pass
+        #     if Holdup(**self.kwargs).run():
+        #         break
+        # state = KalmanScan(**self.kwargs).run()
+        # np.save(f"{self.config.res_dir}/mean.npy", state.means)
+        # np.save(f"{self.config.res_dir}/cov.npy", state.covariances)
 
-            state = KalmanFilterStatePOD(
-                means=np.load(f"{self.config.res_dir}/mean.npy"),
-                covariances=np.load(f"{self.config.res_dir}/cov.npy"),
-                timestamp=ros.Time.now(),
-                camera_tcp=None,
-            )
-            if GraspCorner(state, **self.kwargs).run():
-                pyout("Grasped!")
-                # DisplayTowel(**self.kwargs).run()
-                # ros.sleep(5)
-                break
+        # state = KalmanFilterStatePOD(
+        #     means=np.load(f"{self.config.res_dir}/mean.npy"),
+        #     covariances=np.load(f"{self.config.res_dir}/cov.npy"),
+        #     timestamp=ros.Time.now(),
+        #     camera_tcp=None,
+        # )
+        # if GraspCorner(state, **self.kwargs).run():
+        #     pyout("Grasped!")
+        #     # DisplayTowel(**self.kwargs).run()
+        #     # ros.sleep(5)
+        #     break
 
         #     plan = self.ompl.plan_to_joint_configuration(
         #         sophie=np.deg2rad(self.config.joints_scan1_sophie),
@@ -89,7 +91,7 @@ class GraspMachine:
         # RS2Recorder.stop()
         # RS2Recorder.save()
 
-        Goodnight(**self.kwargs).run()
+        # Goodnight(**self.kwargs).run()
 
 
 def main():

@@ -19,6 +19,7 @@ class GraspCorner(Subprocedure):
 
     def run(self):
         try:
+            self.sophie.set_gripper_width(0.05)
             for keypoint in self.keypoint_tcps:
                 for grasp_tcp, pregrasp_tcp in self.__compute_grasps_and_pregrasps(
                     keypoint
@@ -32,14 +33,15 @@ class GraspCorner(Subprocedure):
                             raise BreakException
                         else:
                             continue
-                    except RuntimeError:
+                    except RuntimeError as e:
+                        ros.logwarn(f"grasp_corner.py | {e}")
                         continue
         except BreakException:
             return True
 
         return False
 
-    def __choose_corner(self, state, threshold=1e-8):
+    def __choose_corner(self, state, threshold=1e-11):
         covariances = state.covariances
         uncertainty = np.linalg.det(covariances)
 
@@ -58,7 +60,10 @@ class GraspCorner(Subprocedure):
         # Determine whether the x-axis of the keypoint tcp points inwards or outwards
         # relative to the rest of the towel
         kp_relative_to_wilson = kp[:3, 3] - self.wilson.get_tcp_pose()[:3, 3]
-        if np.dot(kp[:3, 0], kp_relative_to_wilson) > 0:  # x points outwards
+
+        x_outwards = np.dot(kp[:3, 0], kp_relative_to_wilson) > 0
+
+        if x_outwards:  # x points outwards
             tcp_scoop = np.eye(4)
             tcp_scoop[:3, 0] = (kp[:3, 0] - kp[:3, 1]) / np.linalg.norm(
                 kp[:3, 0] - kp[:3, 1]
@@ -93,29 +98,32 @@ class GraspCorner(Subprocedure):
         if not (grasp_scoop_flipped is None or pregrasp_scoop_flipped is None):
             yield (grasp_scoop_flipped, pregrasp_scoop_flipped)
 
-        # Make poses when approaching from front (kp z-axis)
-        tcp_front = kp @ homogenous_transformation(pitch=180)
-        grasp_front = self.__compute_grasp(tcp_front)
-        pregrasp_front = self.__compute_pregrasp(tcp_front)
-        if not (grasp_front is None or pregrasp_front is None):
-            yield (grasp_front, pregrasp_front)
-
         # If those don't work, try some random perturbations
         for ii in range(10):
-            if ii % 2:
-                tcp_modified = tcp_scoop.copy()
-            else:
-                tcp_modified = tcp_front.copy()
-
+            tcp_modified = tcp_scoop.copy()
             tcp_modified = tcp_modified @ homogenous_transformation(
                 roll=np.random.randint(-20, 20),
-                pitch=np.random.randint(-20, 20),
+                pitch=np.random.randint(-5, 5),
                 yaw=np.random.randint(-20, 20),
             )
             grasp_modified = self.__compute_grasp(tcp_modified)
             pregrasp_modified = self.__compute_pregrasp(tcp_modified)
             if not (grasp_modified is None or pregrasp_modified is None):
                 yield (grasp_modified, pregrasp_modified)
+
+        # Make poses when approaching from front (kp z-axis)
+        tcp_front = kp @ homogenous_transformation(pitch=180)
+
+        for theta in np.linspace(0, 45, num=10)[::-1]:
+            if x_outwards:
+                tcp_mod = tcp_front @ homogenous_transformation(pitch=theta)
+            else:
+                tcp_mod = tcp_front @ homogenous_transformation(pitch=-theta)
+
+            grasp_front = self.__compute_grasp(tcp_mod)
+            pregrasp_front = self.__compute_pregrasp(tcp_mod)
+            if not (grasp_front is None or pregrasp_front is None):
+                yield (grasp_front, pregrasp_front)
 
     def __compute_grasp(
         self, kp_tcp: np.ndarray, overshoot_distance=0.03
@@ -173,6 +181,7 @@ class GraspCorner(Subprocedure):
         return path
 
     def __perform_shortest_grasp(self, tcps: np.ndarray) -> np.ndarray:
+
         joints = []
         for tcp in tcps:
             ik_solutions = self.ompl.get_ik_solutions(sophie=tcp)

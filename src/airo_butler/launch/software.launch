@@ -1,0 +1,25 @@
+<launch>
+  <node pkg="airo_butler" type="keypoint_model" name="keypoint_model" output="screen"></node>
+  <node pkg="airo_butler" type="gaussian_filter" name="gaussian_filter" output="screen"></node>
+  <node pkg="airo_butler" type="orientation_model" name="orientation_model" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_measurement_collector" name="kalman_measurement_collector" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_filter" name="kalman_filter" output="screen"></node>
+
+  <!-- <node pkg="airo_butler" type="camera_stream" name="camera_stream" output="screen"></node> -->
+  <node pkg="airo_butler" type="zed_stream" name="zed_stream" output="screen"></node>
+  <node pkg="airo_butler" type="keypoint_heatmap_stream" name="keypoint_heatmap_stream" output="screen"></node>
+  <node pkg="airo_butler" type="kalman_stream" name="kalman_stream" output="screen"></node>
+
+  <arg name="node_name" default="rs2_d435" />
+
+  <param name="topic" value="recorder_rs2" />
+  <param name="fps" value="30" />
+
+  <node pkg="airo_butler" type="rs2_camera" name="$(arg node_name)" output="screen">
+    <param name="serial_number" value="SN943222073454" />
+    <param name="hd" value="true" />
+  </node>
+
+  <node pkg="airo_butler" type="rs2_recorder" name="rs2_recorder" output="screen"></node>
+
+</launch>

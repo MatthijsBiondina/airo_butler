@@ -11,11 +11,14 @@ class DistanceBetweenToolsConstraint:
     def __init__(
         self,
         collision_check: Callable[..., bool],
+        min_distance: float,
         max_distance: float,
         tcp_transform,
+        
     ):
         self.collision_check = collision_check
         self.max_distance: float = max_distance
+        self.min_distance: float = min_distance
         self.tcp_transform = np.array(tcp_transform)
 
         self.X_W_CB_wilson = (X_W_L_DEFAULT @ X_CB_B.inverse()).GetAsMatrix4()
@@ -37,12 +40,13 @@ class DistanceBetweenToolsConstraint:
         )
         X_W_TCP_sophie = self.X_W_CB_sophie @ X_CB_TCP_sophie
 
-        distance_ok = (
-            np.linalg.norm(X_W_TCP_wilson[:3, 3] - X_W_TCP_sophie[:3, 3])
-            < self.max_distance
-        )
+        distance = np.linalg.norm(X_W_TCP_wilson[:3, 3] - X_W_TCP_sophie[:3, 3])
 
-        if collision_ok and distance_ok:
+        if (
+            collision_ok
+            and distance < self.max_distance
+            and distance > self.min_distance
+        ):
             return True
         else:
             return False

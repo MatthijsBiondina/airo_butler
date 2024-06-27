@@ -19,6 +19,7 @@ class Pickup(Subprocedure):
         self.kwargs = kwargs
 
     def run(self):
+        self.sophie.open_gripper()
         if self.__pickup_with_sophie():
             return True
         DropTowel(**self.kwargs).run()

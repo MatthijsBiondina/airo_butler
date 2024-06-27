@@ -74,11 +74,12 @@ class OMPL_server:
     def __plan_to_tcp_pose(self, req: PODServiceRequest):
         input_pod: DualTCPPOD = pickle.loads(req.pod)
 
-        if input_pod.max_distance is None:
+        if input_pod.max_distance is None and input_pod.min_distance is None:
             simulator = self.simulators[input_pod.scene]
         else:
             simulator = DrakeSimulation(
                 scene_name="default" if input_pod.scene is None else input_pod.scene,
+                min_distance=input_pod.min_distance,
                 max_distance=input_pod.max_distance,
             )
 

@@ -110,6 +110,7 @@ class DualTCPPOD(POD):
         tcp_sophie: Optional[np.ndarray] = None,
         tcp_wilson: Optional[np.ndarray] = None,
         scene: str = "default",
+        min_distance: float | None = None,
         max_distance: float | None = None,
     ):
         self.timestamp: ros.Time = timestamp
@@ -118,6 +119,7 @@ class DualTCPPOD(POD):
         self.tcp_sophie: Optional[np.ndarray] = tcp_sophie
         self.tcp_wilson: Optional[np.ndarray] = tcp_wilson
         self.scene: str = scene
+        self.min_distance: float = min_distance
         self.max_distance: float = max_distance
 
 

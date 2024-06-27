@@ -1,3 +1,4 @@
+import sys
 import time
 import numpy as np
 from pairo_butler.utils.transformations_3d import (
@@ -27,6 +28,7 @@ class CalibrateSophieRS2(Subprocedure):
         super().__init__(*args, **kwargs)
 
         self.rs2: RS2Client = RS2Client()
+
         self.data_root = (
             Path(rospkg.RosPack().get_path("airo_butler")) / "res" / "camera_tcps"
         )
@@ -56,9 +58,9 @@ class CalibrateSophieRS2(Subprocedure):
             tcp[:3, 3] = xyz_coords
 
             R = homogenous_transformation(
-                roll=np.random.uniform(-0, 0),
+                roll=np.random.uniform(-3, 3),
                 pitch=np.random.uniform(-0, 0),
-                yaw=np.random.uniform(-179, 179),
+                yaw=np.random.uniform(-0, 0),
             )
             tcp = tcp @ R
 

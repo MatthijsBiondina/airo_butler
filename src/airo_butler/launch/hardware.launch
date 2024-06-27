@@ -4,4 +4,13 @@
         <!--<param name="scenarios" value="['default', 'hanging_towel']" />-->
         <param name="scenarios" value="['default', 'wilson_holds_charuco', 'sophie_holds_charuco', 'hanging_towel']" />
     </node> 
+
+    <arg name="node_name" default="rs2_d415" />
+    <param name="topic" value="rs2_topic" />
+    <node pkg="airo_butler" type="rs2_camera" name="$(arg node_name)" output="screen">
+        <param name="serial_number" value="SN925322060348" />
+    </node>
+
+    <node pkg="airo_butler" type="zed_camera" name="zed_camera" output="screen"></node>
+
 </launch>

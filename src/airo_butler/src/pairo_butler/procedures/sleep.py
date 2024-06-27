@@ -1,3 +1,4 @@
+import numpy as np
 from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.procedures.subprocedures.startup import Startup
 import rospy as ros
@@ -33,8 +34,20 @@ class StartupMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        Startup(**self.kwargs).run()
-        Goodnight(**self.kwargs).run()
+        # Startup(**self.kwargs).run()
+        # self.sophie.close_gripper()
+        # Goodnight(**self.kwargs).run()
+
+        pose = np.array(
+            [
+                [-1.0, 0.0, 0.0, -0.5],
+                [0.0, -1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.5],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+        plan = self.ompl.plan_to_tcp_pose(wilson=pose)
+        self.wilson.execute_plan(plan)
 
 
 def main():

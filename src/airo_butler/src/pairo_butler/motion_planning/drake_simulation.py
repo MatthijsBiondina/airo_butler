@@ -34,8 +34,14 @@ np.set_printoptions(precision=2, suppress=True)
 
 
 class DrakeSimulation:
-    def __init__(self, scene_name: str = "default", max_distance: float | None = None):
+    def __init__(
+        self,
+        scene_name: str = "default",
+        min_distance: float | None = None,
+        max_distance: float | None = None,
+    ):
         self.config = load_config()
+        self.min_distance = min_distance
         self.max_distance = max_distance
 
         # Init subscribers
@@ -54,7 +60,7 @@ class DrakeSimulation:
         self.plant_context: Any
         self.meshcat: Any
 
-        self.__create_scene(scene_name, max_distance)
+        self.__create_scene(scene_name, min_distance, max_distance)
 
         self.planner: DualArmOmplPlanner
         self.__create_planner()
@@ -97,7 +103,10 @@ class DrakeSimulation:
         return tcp_transform
 
     def __create_scene(
-        self, scenario: str = "default", max_distance: float | None = None
+        self,
+        scenario: str = "default",
+        min_distance: float | None = None,
+        max_distance: float | None = None,
     ):
         self.robot_diagram_builder = RobotDiagramBuilder()
         self.meshcat = add_meshcat_to_builder(self.robot_diagram_builder)
@@ -163,7 +172,11 @@ class DrakeSimulation:
             object_frame = plant.GetFrameByName("base_link", self.object_idx)
             world_frame = plant.world_frame()
             p = [0, 0, towel.bottom + towel.length / 2]
-            plant.WeldFrames(world_frame, object_frame, RigidTransform(p=p))
+            plant.WeldFrames(
+                world_frame,
+                object_frame,
+                RigidTransform(rpy=RollPitchYaw(np.deg2rad([0, 0, 45])), p=p),
+            )
 
         self.diagram, self.context = finish_build(
             self.robot_diagram_builder, self.meshcat
@@ -181,11 +194,15 @@ class DrakeSimulation:
             self_collision_padding=0.005,
         )
 
-        if max_distance is None:
+        if max_distance is None and min_distance is None:
             self.is_state_valid_fn = self.collision_checker.CheckConfigCollisionFree
         else:
+            min_distance = 0.05 if min_distance is None else min_distance
+            max_distance = 999.0 if max_distance is None else max_distance
+
             self.is_state_valid_fn = DistanceBetweenToolsConstraint(
                 self.collision_checker.CheckConfigCollisionFree,
+                min_distance,
                 max_distance,
                 tcp_transform=self.config.tcp_transform,
             )

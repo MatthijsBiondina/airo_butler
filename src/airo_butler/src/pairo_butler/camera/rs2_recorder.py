@@ -2,13 +2,14 @@ from datetime import datetime
 from multiprocessing import Process
 from os import listdir, makedirs
 import os
+from pathlib import Path
 import pickle
 import shutil
 import sys
 import time
 from typing import List
 import cv2
-import PIL
+from PIL import Image
 import numpy as np
 from pairo_butler.utils.ros_helper_functions import invoke_service
 from pairo_butler.utils.pods import ImagePOD
@@ -22,12 +23,12 @@ def invoke():
     time.sleep(1)
     RS2Recorder.start()
     time.sleep(5)
-    RS2Recorder.save()
+    RS2Recorder.finish()
 
 
 class RS2Recorder:
     RATE = 120
-    FPS = 30
+    FPS = 10
 
     def __init__(self, name: str = "rs2_recorder"):
         self.node_name = name
@@ -38,19 +39,19 @@ class RS2Recorder:
 
         self.frames: List[np.ndarray] = []
 
-        shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
-        makedirs(self.config.tmp_dir)
+        makedirs(self.config.tmp_dir, exist_ok=True)
         makedirs(self.config.save_dir, exist_ok=True)
+        self.folder = None
 
         self.paused: bool = True
-        self.t_start: ros.Time
-        self.t_end: ros.Time
-
-        self.video_writer = None
+        self.ii = 0
+        self.last_frame_timestamp: ros.Time
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
         self.rate = ros.Rate(self.RATE)
+
+        self.last_frame_timestamp = ros.Time.now()
 
         self.subscriber = ros.Subscriber(
             "/recorder_rs2", PODMessage, self.__sub_callback, queue_size=2
@@ -58,22 +59,33 @@ class RS2Recorder:
 
         self.services = [
             ros.Service("start_rs2_recorder_service", Reset, self.__start),
-            ros.Service("stop_rs2_recorder_service", Reset, self.__stop),
-            ros.Service("save_rs2_recorder_service", Reset, self.__save),
+            ros.Service("finish_rs2_recorder_service", Reset, self.__finish),
         ]
 
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
         while not ros.is_shutdown():
-            if len(self.frames) and self.video_writer is not None:
-                try:
-                    img = self.frames.pop(0)
-                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                    self.video_writer.write(img)
-                except Exception as e:
-                    ros.logwarn(f"Unexpected exception: {e}")
-                    pass
+            for folder in listdir(self.config.tmp_dir):
+                path = Path(self.config.tmp_dir) / folder
+                if not path.is_dir():
+                    continue
+
+                creation_time = path.stat().st_ctime
+                if time.time() - creation_time < 10:
+                    continue
+
+                if len(listdir(path)):
+                    last_modified_time = max(
+                        (path / file).stat().st_ctime for file in listdir(path)
+                    )
+                    if time.time() - last_modified_time < 10:
+                        continue
+
+                    self.__convert_np_to_img(path)
+                    self.__compress_image_directory_into_mp4(folder)
+
+                shutil.rmtree(path)
 
             self.rate.sleep()
 
@@ -82,74 +94,52 @@ class RS2Recorder:
         return invoke_service("start_rs2_recorder_service")
 
     def __start(self, req):
-        try:
-            self.video_writer.release()
-        except AttributeError:
-            pass
-
-        shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
-        makedirs(self.config.tmp_dir)
-
-        height, width = 720, 1280
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         now = datetime.fromtimestamp(ros.Time.now().to_sec())
-        fname = f"{now.strftime('%Y%m%d_%H%M%S')}.mp4"
-        self.filename = fname
 
-        fps = 24
-        self.video_writer = cv2.VideoWriter(
-            f"{self.config.tmp_dir}/{fname}", fourcc, fps, (width, height)
-        )
-
-        self.frames = []
+        self.folder = Path(self.config.tmp_dir) / now.strftime("%Y%m%d_%H%M%S")
+        makedirs(self.folder)
         self.paused = False
-        self.t_start = ros.Time.now()
-        self.t_end = ros.Time.now()
 
         return True
 
     @staticmethod
-    def stop():
-        return invoke_service("stop_rs2_recorder_service")
+    def finish():
+        return invoke_service("finish_rs2_recorder_service")
 
-    def __stop(self, req):
+    def __finish(self, req):
         self.paused = True
 
         return True
 
-    @staticmethod
-    def save():
-        return invoke_service("save_rs2_recorder_service")
-
-    def __save(self, req):
-        try:
-            self.paused = True
-
-            while len(self.frames):
-                ros.loginfo(f"{len(self.frames)} remaining...")
-                ros.sleep(1)
-
-            self.video_writer.release()
-            self.video_writer = None
-
-            shutil.move(
-                f"{self.config.tmp_dir}/{self.filename}",
-                f"{self.config.save_dir}/{self.filename}",
-            )
-
-            shutil.rmtree(self.config.tmp_dir, ignore_errors=True)
-            makedirs(self.config.tmp_dir)
-
-            return True
-        except Exception as e:
-            ros.logerr(f"Unexpected exception: {e}")
-            return False
-
     def __sub_callback(self, msg):
         if not self.paused:
             pod: ImagePOD = pickle.loads(msg.data)
-            self.frames.append(pod.color_frame)
-            self.t_end = ros.Time.now()
+            img_nr = len(listdir(self.folder))
+            np.save(self.folder / f"{str(img_nr).zfill(4)}.npy", pod.color_frame)
+
+    def __convert_np_to_img(self, folder: Path):
+
+        np_files = [file for file in listdir(folder) if file.endswith(".npy")]
+
+        for file in pbar(np_files, desc="Compressing images"):
+            img_array = np.load(folder / file)
+            img = Image.fromarray(img_array)
+
+            img = img.resize((img.width // 2, img.height // 2))
+            img.save(folder / file.replace(".npy", ".jpg"))
+
+    def __compress_image_directory_into_mp4(self, folder: Path):
+        input_folder = Path(self.config.tmp_dir) / folder
+        output_file = Path(self.config.tmp_dir) / f"{folder}.mp4"
+
+        cmd = (
+            f"ffmpeg -framerate 30 -i {input_folder}/%04d.jpg "
+            f"-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p "
+            f"{output_file}"
+        )
+        os.system(cmd)
+
+        shutil.move(output_file, Path(self.config.save_dir) / f"{folder}.mp4")
 
 
 def main():

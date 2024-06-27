@@ -93,18 +93,27 @@ class UR5e_server:
             tcp_wilson_in_world_frame = (
                 self.transform_wilson_to_world @ tcp_wilson_in_wilson_frame
             )
-
+            sophie_gripper_width = (
+                0.08
+                if self.sophie.gripper is None
+                else self.sophie.gripper.get_current_width()
+            )
             pod_sophie = URStatePOD(
                 tcp_pose=tcp_sophie_in_world_frame,
                 joint_configuration=self.sophie.get_joint_configuration(),
-                gripper_width=self.sophie.gripper.get_current_width(),
+                gripper_width=sophie_gripper_width,
                 timestamp=timestamp,
                 arm_name="sophie",
+            )
+            wilson_gripper_width = (
+                0.08
+                if self.wilson.gripper is None
+                else self.wilson.gripper.get_current_width()
             )
             pod_wilson = URStatePOD(
                 tcp_pose=tcp_wilson_in_world_frame,
                 joint_configuration=self.wilson.get_joint_configuration(),
-                gripper_width=self.wilson.gripper.get_current_width(),
+                gripper_width=wilson_gripper_width,
                 timestamp=timestamp,
                 arm_name="wilson",
             )
@@ -214,6 +223,11 @@ class UR5e_server:
             # Determine the arm based on the side
             assert pod.arm_name in ["wilson", "sophie"]
             arm = self.wilson if pod.arm_name == "wilson" else self.sophie
+
+            if arm.gripper is None:
+                response = PODServiceResponse()
+                response.pod = pickle.dumps(BooleanPOD(False))
+                return response
 
             # Determine the width to move the gripper to
             if isinstance(pod.pose, float):

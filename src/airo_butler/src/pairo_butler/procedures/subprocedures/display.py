@@ -17,42 +17,34 @@ class DisplayTowel(Subprocedure):
         edge_length = np.linalg.norm(
             self.wilson.get_tcp_pose()[:3, 3] - self.sophie.get_tcp_pose()[:3, 3]
         )
-        edge_length = max(0.4, edge_length)
 
-        tcp_sophie = self.wilson.get_tcp_pose() @ homogenous_transformation(pitch=180)
-        tcp_sophie[:3, 3] -= 0.05 * tcp_sophie[:3, 2]
+        try:
 
-        plan = self.ompl.plan_to_tcp_pose(
-            sophie=tcp_sophie, max_distance=edge_length + 0.05
-        )
-        self.sophie.execute_plan(plan)
+            tcp_wilson = np.array(
+                [
+                    [-1.0, 0.0, 0.0, -0.15],
+                    [0.0, 0.0, -1.0, edge_length / 2 - 0.01],
+                    [0.0, -1.0, 0.0, 0.75],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            )
 
-        tcp_wilson = np.array(
-            [
-                [-1.0, 0.0, 0.0, -0.20],
-                [0.0, 0.0, -1.0, edge_length / 2],
-                [0.0, -1.0, 0.0, 0.75],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )
+            tcp_sophie = np.array(
+                [
+                    [-1.0, 0.0, 0.0, -0.15],
+                    [0.0, 0.0, 1.0, -edge_length / 2 + 0.01],
+                    [0.0, 1.0, 0.0, 0.75],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            )
+            plan = self.ompl.plan_to_tcp_pose(
+                sophie=tcp_sophie,
+                wilson=tcp_wilson,
+                min_distance=edge_length - 0.20,
+                max_distance=edge_length + 0.07,
+            )
+            self.sophie.execute_plan(plan)
 
-        tcp_sophie = np.array(
-            [
-                [1.0, 0.0, 0.0, -0.20],
-                [0.0, 0.0, 1.0, -edge_length / 2],
-                [0.0, -1.0, 0.0, 0.75],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )
-        plan = self.ompl.plan_to_tcp_pose(
-            sophie=tcp_sophie, wilson=tcp_wilson, max_distance=edge_length + 0.05
-        )
-        self.sophie.execute_plan(plan)
-
-        # try:
-        #     plan = self.ompl.plan_to_tcp_pose(sophie=tcp_sophie, wilson=tcp_wilson)
-        #     self.sophie.execute_plan(plan)
-        # except RuntimeError:
-        #     pyout()
-        # # self.sophie.execute_plan(plan)
-        # pyout()
+            return True
+        except RuntimeError:
+            return False

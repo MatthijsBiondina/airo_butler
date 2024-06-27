@@ -29,7 +29,9 @@ X_W_R_DEFAULT = RigidTransform(
     rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, -ARM_Y_DEFAULT, 0]
 )
 
-X_URTOOL0_ROBOTIQ = RigidTransform(rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, 0, 0])
+X_URTOOL0_ROBOTIQ = RigidTransform(
+    rpy=RollPitchYaw([0, 0, np.pi / 2]), p=[0, 0.0, 0.005]
+)
 
 
 def add_ur5e_and_table_to_builder(

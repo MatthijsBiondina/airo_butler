@@ -167,8 +167,11 @@ class ZED:
         # Initializing ROS rate to None, to be set in start_ros
         self.rate: Optional[ros.Rate] = None
         # Initialize the ZED 2i camera with specified resolution, depth mode, and FPS
+        # self.zed = Zed2i(
+        #     Zed2i.RESOLUTION_1080, depth_mode=Zed2i.QUALITY_DEPTH_MODE, fps=10
+        # )
         self.zed = Zed2i(
-            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.PERFORMANCE_DEPTH_MODE, fps=30
+            Zed2i.RESOLUTION_1080, depth_mode=Zed2i.NEURAL_DEPTH_MODE, fps=10
         )
         # Placeholder for ROS publishers
         self.rgb_publisher: Optional[ros.Publisher] = None
@@ -208,20 +211,26 @@ class ZED:
         """
         # Main loop running until ROS is shutdown
         while not ros.is_shutdown():
-            # Capture data from ZED camera and form a PODMessage
+            try:
+                # Capture data from ZED camera and form a PODMessage
 
-            point_cloud = self.__preprocess_point_cloud()[:, :3]
-            self.towel_extremes_finder.process_point_cloud(point_cloud)
+                point_cloud = self.__preprocess_point_cloud()[:, :3]
+                self.towel_extremes_finder.process_point_cloud(point_cloud)
 
-            msg = ZEDPOD(
-                rgb_image=self.zed.get_rgb_image(),
-                # point_cloud=self.__preprocess_point_cloud(),
-                intrinsics_matrix=self.zed.intrinsics_matrix(),
-                timestamp=ros.Time.now(),
-            )
-            # Publish the formed PODMessage
-            publish_pod(self.publisher, msg)
-            # Sleep to maintain the publish rate
+                msg = ZEDPOD(
+                    rgb_image=self.zed.get_rgb_image(),
+                    # point_cloud=self.__preprocess_point_cloud(),
+                    intrinsics_matrix=self.zed.intrinsics_matrix(),
+                    timestamp=ros.Time.now(),
+                )
+                # Publish the formed PODMessage
+                publish_pod(self.publisher, msg)
+                # Sleep to maintain the publish rate
+            except IndexError as e:
+                ros.logwarn(f"{e}")
+                self.zed = Zed2i(
+                    Zed2i.RESOLUTION_1080, depth_mode=Zed2i.QUALITY_DEPTH_MODE, fps=10
+                )
             self.rate.sleep()
 
     def __preprocess_point_cloud(self):

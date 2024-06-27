@@ -156,8 +156,12 @@ class CameraCalibration:
             self.rate.sleep()
 
     def __startup(self):
-        self.sophie.move_to_joint_configuration(self.poses["sophie_rest"])
-        self.wilson.move_to_joint_configuration(self.poses["wilson_rest"])
+        plan = self.ompl.plan_to_joint_configuration(sophie=self.poses["sophie_rest"])
+        self.sophie.execute_plan(plan)
+        plan = self.ompl.plan_to_joint_configuration(wilson=self.poses["wilson_rest"])
+        self.wilson.execute_plan(plan)
+        # self.sophie.move_to_joint_configuration()
+        # self.wilson.move_to_joint_configuration(self.poses["wilson_rest"])
         self.sophie.open_gripper()
         self.wilson.close_gripper()
 
@@ -166,10 +170,12 @@ class CameraCalibration:
     def __grab(self):
         ros.loginfo(f"Give the Charuco board to Wilson.")
         ros.sleep(1.0)
+        pyout(self.wilson.get_gripper_width())
         while not ros.is_shutdown() and self.wilson.get_gripper_width() < 0.002:
             self.wilson.open_gripper()
             self.wilson.close_gripper()
             ros.sleep(1.0)
+            pyout(self.wilson.get_gripper_width())
 
         # todo: debug gorilla crash
         return STATE_CALIBRATE_ZED_WILSON

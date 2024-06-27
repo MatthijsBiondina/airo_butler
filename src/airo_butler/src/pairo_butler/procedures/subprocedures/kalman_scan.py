@@ -11,7 +11,10 @@ class KalmanScan(Subprocedure):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def run(self):
+    def run(self, flipped=False):
+        if flipped:
+            self.__flip_wilson_pose()
+
         KeypointDNN.unpause()
         if not np.all(
             np.isclose(
@@ -41,3 +44,19 @@ class KalmanScan(Subprocedure):
         KalmanFilter.pause()
         KeypointDNN.pause()
         return KalmanFilter.get_state()
+
+    def __flip_wilson_pose(self):
+        plan = self.ompl.plan_to_joint_configuration(
+            wilson=np.deg2rad(self.config.joints_drop_wilson)
+        )
+        self.wilson.execute_plan(plan)
+
+        plan = self.ompl.plan_to_joint_configuration(
+            wilson=np.deg2rad(self.config.joints_drop_wilson_flipped)
+        )
+        self.wilson.execute_plan(plan)
+
+        plan = self.ompl.plan_to_joint_configuration(
+            wilson=np.deg2rad(self.config.joints_hold_wilson_flipped)
+        )
+        self.wilson.execute_plan(plan)

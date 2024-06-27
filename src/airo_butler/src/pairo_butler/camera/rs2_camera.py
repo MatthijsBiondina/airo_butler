@@ -46,17 +46,20 @@ class RS2Client:
             timeout (int): The maximum time in seconds to wait for the RS2 service to be
             available. Default is 5 seconds.
         """
+
         try:
             self.timeout = ros.Duration(timeout)
         except TypeError:
             self.timeout = False
 
         self.__signal_rs2_reset()
+
         self.subscriber: ros.Subscriber = ros.Subscriber(
             "/rs2_topic", PODMessage, self.__sub_callback, queue_size=self.QUEUE_SIZE
         )
 
         # Placeholders
+        self.config = None
         self.__rs2_pod: Optional[ImagePOD] = None
         self.__timestamps: List[ros.Time] = []
 
@@ -136,6 +139,7 @@ class RS2Client:
         a ROS shutdown, and exits. If the service is available, it calls the service to
         reset the camera.
         """
+
         try:
             # Check whether the service is running
             ros.wait_for_service("reset_realsense_service", timeout=self.timeout)
@@ -240,6 +244,7 @@ class RS2_camera:
         config = pyrealsense2.config()
         config.enable_device(str(serial_number))
         # self.profile = config.resolve(self.pipeline)
+
         config.enable_stream(
             pyrealsense2.stream.color,
             *self.rs2_resolution,
@@ -252,6 +257,8 @@ class RS2_camera:
             pyrealsense2.format.z16,
             self.fps,
         )
+        self.config = config
+
         # Start the camera pipeline.
         self.pipeline.start(config)
         # Set the rate at which frames will be published.
@@ -378,10 +385,10 @@ class RS2_camera:
                 # Stop and restart the camera pipeline to perform the reset
                 self.pipeline.stop()
                 ros.sleep(1)
-                self.pipeline.start()
+                self.pipeline.start(self.config)
 
                 # Wait for a brief moment after restarting the pipeline
-                ros.sleep(1.0)
+                ros.sleep(1)
 
                 # Reset process is complete, update flags
                 self.__reset = False

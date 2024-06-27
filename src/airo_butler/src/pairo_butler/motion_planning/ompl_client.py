@@ -22,7 +22,7 @@ class OMPLClient:
         self.config = load_config()
 
         self.__service_plan_to_tcp_pose: Callable[[Any], Any]
-        self.__service_plan_grasp_trajectory: Callable[[Any], Any]
+        # self.__service_plan_grasp_trajectory: Callable[[Any], Any]
         self.__wait_for_services()
 
     def start_ros(self):
@@ -54,6 +54,7 @@ class OMPLClient:
         sophie: Optional[np.ndarray] = None,
         wilson: Optional[np.ndarray] = None,
         scene: str = "default",
+        min_distance: float | None = None,
         max_distance: float | None = None,
     ) -> Tuple[DualTrajectoryPOD]:
         assert not (sophie is None and wilson is None)
@@ -63,6 +64,7 @@ class OMPLClient:
             tcp_sophie=sophie,
             tcp_wilson=wilson,
             scene=scene,
+            min_distance=min_distance,
             max_distance=max_distance,
         )
         response = make_pod_request(

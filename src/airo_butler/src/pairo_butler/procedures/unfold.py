@@ -57,29 +57,45 @@ class UnfoldMachine:
         trial_nr = 0
         while time.time() < t_start + 60 * 60:
             trial_nr += 1
-            if trial_nr > 25:
+            if trial_nr > 1:
                 break
+            # Startup(**self.kwargs).run()
+            RS2Recorder.start()
 
             ros.loginfo(f"TRIAL: {trial_nr}")
-            Startup(**self.kwargs).run()
-            # RS2Recorder.start()
-
-            pickup_success = False
-            while not pickup_success:
-                Startup(**self.kwargs).run()
-                while not Pickup(**self.kwargs).run():
-                    pass
-                pickup_success = Holdup(**self.kwargs).run()
 
             grasp_success = False
             while not grasp_success:
+                Startup(**self.kwargs).run()
+
+                pickup_success = False
+                while not pickup_success:
+                    Startup(**self.kwargs).run()
+                    while not Pickup(**self.kwargs).run():
+                        pass
+                    pickup_success = Holdup(**self.kwargs).run()
+
+                self.sophie.open_gripper()
+
+                plan = self.ompl.plan_to_joint_configuration(
+                    sophie=np.deg2rad(self.config.joints_rest_sophie),
+                    wilson=np.deg2rad(self.config.joints_hold_wilson),
+                    # wilson=None,
+                )
+                self.wilson.execute_plan(plan)
+
                 KalmanScan(**self.kwargs).run()
                 grasp_success = GraspCorner(**self.kwargs).run()
 
+                if not grasp_success:
+                    KalmanScan(**self.kwargs).run(flipped=True)
+                    grasp_success = GraspCorner(**self.kwargs).run()
+
             DisplayTowel(**self.kwargs).run()
             ros.sleep(5)
-            # RS2Recorder.stop()
-            # RS2Recorder.save()
+            self.sophie.open_gripper()
+            RS2Recorder.finish()
+            Startup(**self.kwargs).run()
 
         Goodnight(**self.kwargs).run()
 
