@@ -472,8 +472,13 @@ class KalmanFilter:
             point_B_idx=point_B_idx,
         )
 
+        msk = np.mod(np.arange(self.covariance.shape[0]) + 1, 4) == 0
+        msk = (msk[None, :] | msk[:, None]) * 1e4
+
         mahalanobis_distance = self.__calculate_mahalanobis_distance(
-            point=fused_mean, mean=self.mean, covariance=self.covariance
+            point=fused_mean,
+            mean=self.mean,
+            covariance=self.covariance + msk,
         )
         if mahalanobis_distance > self.config["mahalanobis_distance_threshold"]:
             return False

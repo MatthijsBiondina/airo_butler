@@ -61,7 +61,7 @@ class UnfoldMachine:
         self.give_back_towel()
         self.recieve_new_towel()
         self.display()
-        RecordTowelSurface(**self.kwargs).run()
+        RecordTowelSurface(**self.kwargs).run(None, None)
         Startup(**self.kwargs).run()
         Goodnight(**self.kwargs).run()
 
@@ -105,10 +105,19 @@ class UnfoldMachine:
         self.sophie.close_gripper()
 
     def display(self):
-        with open("./plan.pkl", "rb") as f:
-            plan = pickle.load(f)
-
-        self.sophie.execute_plan(plan)
+        try:
+            with open("./plan.pkl", "rb") as f:
+                plan = pickle.load(f)
+            self.sophie.execute_plan(plan)
+        except AttributeError:
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(
+                    np.array([-35.649, -148.26, 105.914, -137.656, -54.348, 180])
+                ),
+                wilson=np.array([0.62, -0.932, -1.126, 2.054, -0.944, -3.135]),
+                max_distance=0.41,
+            )
+            self.sophie.execute_plan(plan)
 
         plan = self.ompl.plan_to_joint_configuration(
             sophie=np.deg2rad(
@@ -117,6 +126,18 @@ class UnfoldMachine:
             max_distance=0.45,
         )
         self.sophie.execute_plan(plan)
+
+        # while True:
+        #     try:
+        #         plan = self.ompl.plan_to_joint_configuration(
+        #             sophie=np.array([-0.887, -2.389, 1.428, -2.177, -0.688, 3.127]),
+        #             wilson=np.array([0.837, -0.759, -1.424, -0.958, 0.728, -0.004]),
+        #             max_distance=0.45,
+        #         )
+        #         self.sophie.execute_plan(plan)
+        #         break
+        #     except RuntimeError:
+        #         pass
 
         tcp_sophie = self.sophie.get_tcp_pose()
         tcp_wilson = self.wilson.get_tcp_pose()
@@ -131,7 +152,22 @@ class UnfoldMachine:
             elif cmd == "-":
                 tcp_sophie[1, -1] += 0.025
                 tcp_wilson[1, -1] -= 0.025
+            elif cmd == "8":
+                tcp_sophie[2, -1] += 0.025
+                tcp_wilson[2, -1] += 0.025
+            elif cmd == "2":
+                tcp_sophie[2, -1] -= 0.025
+                tcp_wilson[2, -1] -= 0.025
+            elif cmd == "4":
+                tcp_sophie[0, -1] -= 0.01
+                tcp_wilson[0, -1] -= 0.01
+            elif cmd == "6":
+                tcp_sophie[0, -1] += 0.01
+                tcp_wilson[0, -1] += 0.01
+
             elif cmd == "n":
+                pyout(self.sophie.get_tcp_pose())
+
                 break
             else:
                 continue
@@ -148,6 +184,10 @@ class UnfoldMachine:
                     ),
                 )
                 self.sophie.execute_plan(plan)
+
+                pyout(self.sophie.get_joint_configuration())
+                pyout(self.wilson.get_joint_configuration())
+
             except RuntimeError:
                 ros.logwarn(f"Couldn't find plan.")
 

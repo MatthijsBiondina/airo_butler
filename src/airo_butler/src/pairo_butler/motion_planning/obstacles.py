@@ -19,7 +19,7 @@ class CharucoBoard:
         self.square_size = AIRO_DEFAULT_CHARUCO_BOARD.getSquareLength()
 
         self.urdf = airo_models.box_urdf_path(
-            (self.width, self.height, self.thickness), "charuco_board"
+            (self.width + 0.15, self.height + 0.1, self.thickness), "charuco_board"
         )
 
 

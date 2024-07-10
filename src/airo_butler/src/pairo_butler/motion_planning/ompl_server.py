@@ -20,7 +20,7 @@ from airo_butler.srv import PODService, PODServiceRequest, PODServiceResponse
 
 
 class OMPL_server:
-    PUBLISH_RATE = 30
+    PUBLISH_RATE = 5
 
     def __init__(self, name: str = "ompl_server"):
         self.node_name = name

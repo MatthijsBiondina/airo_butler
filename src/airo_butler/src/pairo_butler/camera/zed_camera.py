@@ -219,6 +219,7 @@ class ZED:
 
                 msg = ZEDPOD(
                     rgb_image=self.zed.get_rgb_image(),
+                    depth_map=self.zed.get_depth_map(),
                     # point_cloud=self.__preprocess_point_cloud(),
                     intrinsics_matrix=self.zed.intrinsics_matrix(),
                     timestamp=ros.Time.now(),
@@ -229,7 +230,7 @@ class ZED:
             except IndexError as e:
                 ros.logwarn(f"{e}")
                 self.zed = Zed2i(
-                    Zed2i.RESOLUTION_1080, depth_mode=Zed2i.QUALITY_DEPTH_MODE, fps=10
+                    Zed2i.RESOLUTION_1080, depth_mode=Zed2i.NEURAL_DEPTH_MODE, fps=10
                 )
             self.rate.sleep()
 

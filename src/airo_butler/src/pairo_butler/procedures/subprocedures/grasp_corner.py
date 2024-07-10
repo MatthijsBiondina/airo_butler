@@ -19,7 +19,8 @@ class GraspCorner(Subprocedure):
 
     def run(self):
         try:
-            self.sophie.set_gripper_width(0.05)
+            # self.sophie.set_gripper_width(0.07)
+            self.sophie.open_gripper()
             for keypoint in self.keypoint_tcps:
                 for grasp_tcp, pregrasp_tcp in self.__compute_grasps_and_pregrasps(
                     keypoint
@@ -114,7 +115,7 @@ class GraspCorner(Subprocedure):
         # Make poses when approaching from front (kp z-axis)
         tcp_front = kp @ homogenous_transformation(pitch=180)
 
-        for theta in np.linspace(0, 45, num=10)[::-1]:
+        for theta in np.linspace(0, 10, num=10)[::-1]:
             if x_outwards:
                 tcp_mod = tcp_front @ homogenous_transformation(pitch=theta)
             else:

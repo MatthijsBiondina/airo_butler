@@ -156,12 +156,18 @@ class DrakeSimulation:
             )
 
             board = CharucoBoard()
-            arm_tool_frame = plant.GetFrameByName("tool0", arm_idx)
+            board.height += 0.1
+            board.width += 0.15
 
+            arm_tool_frame = plant.GetFrameByName("tool0", arm_idx)
             self.object_idx = parser.AddModels(board.urdf)[0]
             object_frame = plant.GetFrameByName("base_link", self.object_idx)
 
-            p = [0, board.height / 2, 0.165 + board.width / 2]
+            p = [
+                0.0,
+                board.height / 2 - 0.025,
+                0.115 + board.width / 2,
+            ]
             rpy = np.deg2rad([0, 90, 0])
 
             object_transform = RigidTransform(rpy=RollPitchYaw(rpy), p=p)

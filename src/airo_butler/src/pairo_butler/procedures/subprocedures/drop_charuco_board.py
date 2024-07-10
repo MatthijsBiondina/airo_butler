@@ -22,15 +22,15 @@ class DropCharucoBoard(Subprocedure):
         self.board = CharucoBoard()
 
     def run(self):
-
         tcp_drop = np.array(
             [
-                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0, 0.05],
                 [0.0, -1.0, 0.0, self.board.height / 2],
-                [0.0, 0.0, -1.0, self.board.width + 0.01],
+                [-1.0, 0.0, 0.0, 0.1],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         )
+
         plan = self.ompl.plan_to_tcp_pose(sophie=tcp_drop, scene="sophie_holds_charuco")
         self.sophie.execute_plan(plan)
 

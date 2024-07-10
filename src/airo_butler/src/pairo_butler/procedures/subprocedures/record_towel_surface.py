@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from pathlib import Path
 import PIL
 import PIL.Image
@@ -16,10 +17,10 @@ class RecordTowelSurface(Subprocedure):
 
         self.zed = ZEDClient()
 
-    def run(self):
+    def run(self, amount_of_time, nr_of_tries):
 
-        folder = Path(self.config.surface_images_folder)
-        makedirs(folder)
+        root = Path(self.config.surface_images_folder)
+        makedirs(root)
 
         # Get current time as a ROS Time object
         ros_time = ros.Time.now()
@@ -31,10 +32,17 @@ class RecordTowelSurface(Subprocedure):
         dt_object = datetime.fromtimestamp(secs_since_epoch)
 
         # Format datetime object into a string
-        formatted_time = dt_object.strftime("%Y-%m-%d_%H-%M-%S.%f")
-        fname = f"{formatted_time}.jpg"
+        folder = root / dt_object.strftime("%Y-%m-%d_%H-%M-%S.%f")
+        makedirs(folder)
 
         rgb: np.ndarray = np.clip(self.zed.pod.rgb_image, 0.0, 1.0) * 255
         img = PIL.Image.fromarray(rgb.astype(np.uint8))
 
-        img.save(folder / fname)
+        img.save(folder / "rgb.jpg")
+
+        depth: np.ndarray = self.zed.pod.depth_map
+        np.save(folder / "depth_map.npy", depth)
+
+        D = {"time": amount_of_time, "tries": nr_of_tries}
+        with open(folder / "stats.json", "w+") as f:
+            json.dump(D, f)

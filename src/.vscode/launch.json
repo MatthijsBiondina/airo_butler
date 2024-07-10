@@ -8,7 +8,7 @@
             "name": "Python: Airo Butler",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/airo_butler/src/pairo_butler/procedures/measure_towel.py",
+            "program": "${workspaceFolder}/airo_butler/src/analyze.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

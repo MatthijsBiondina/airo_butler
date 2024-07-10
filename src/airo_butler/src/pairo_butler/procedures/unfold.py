@@ -59,6 +59,7 @@ class UnfoldMachine:
         t_start = time.time()
         trial_nr = 0
         while time.time() < t_start + 60 * 60:
+            trial_start = time.time()
             trial_nr += 1
             if trial_nr > 1:
                 break
@@ -67,8 +68,11 @@ class UnfoldMachine:
 
             ros.loginfo(f"TRIAL: {trial_nr}")
 
+            nr_of_tries = 0
+
             grasp_success = False
             while not grasp_success:
+                nr_of_tries += 1
                 Startup(**self.kwargs).run()
 
                 pickup_success = False
@@ -97,7 +101,9 @@ class UnfoldMachine:
             DisplayTowel(**self.kwargs).run()
             ros.sleep(10)
             RS2Recorder.finish()
-            RecordTowelSurface(**self.kwargs).run()
+            RecordTowelSurface(**self.kwargs).run(
+                time.time() - trial_start, nr_of_tries
+            )
             self.sophie.open_gripper()
             Startup(**self.kwargs).run()
 

@@ -60,7 +60,7 @@ class CalibrateSophieRS2(Subprocedure):
             R = homogenous_transformation(
                 roll=np.random.uniform(-3, 3),
                 pitch=np.random.uniform(-0, 0),
-                yaw=np.random.uniform(-0, 0),
+                yaw=np.random.uniform(-170, 170),
             )
             tcp = tcp @ R
 
@@ -96,17 +96,22 @@ class CalibrateSophieRS2(Subprocedure):
         np.save(save_path, poses)
 
     def __wilson_display(self):
-        board = CharucoBoard()
-        tcp = np.array(
-            [
-                [0.0, 0.0, 1.0, -board.width / 2],
-                [-1.0, 0.0, 0.0, 0.0],
-                [0.0, -1.0, 0.0, self.BOARD_Z + board.height / 2],
-                [0.0, 0.0, 0.0, 1.0],
-            ]
-        )
-        plan = self.ompl.plan_to_tcp_pose(
-            wilson=tcp,
-            scene=self.SCENE,
-        )
-        self.wilson.execute_plan(plan)
+        while True:
+            board = CharucoBoard()
+            tcp = np.array(
+                [
+                    [0.0, 0.0, 1.0, -board.width / 2],
+                    [-1.0, 0.0, 0.0, 0.0],
+                    [0.0, -1.0, 0.0, self.BOARD_Z + board.height / 2],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            )
+            try:
+                plan = self.ompl.plan_to_tcp_pose(
+                    wilson=tcp,
+                    scene=self.SCENE,
+                )
+                self.wilson.execute_plan(plan)
+                break
+            except:
+                continue

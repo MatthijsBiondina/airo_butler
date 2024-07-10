@@ -14,6 +14,7 @@ class WilsonRecieveCharuco(Subprocedure):
             self.sophie.open_gripper()
 
         self.wilson.close_gripper()
+        ros.sleep(1.0)
         if self.wilson.get_gripper_width() < 0.002:
             ros.loginfo("Give the Charuco board to Wilson.")
         while not ros.is_shutdown() and self.wilson.get_gripper_width() < 0.002:
