@@ -36,7 +36,6 @@ class OMPL_server:
         try:
             scenes: List[str] = eval(ros.get_param("~scenes", ["default"]))
         except TypeError:
-            # todo: debug
             scenes = [
                 "default",
                 "wilson_holds_charuco",

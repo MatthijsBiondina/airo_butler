@@ -1,11 +1,13 @@
 import math
+from pathlib import Path
 import sys
 import time
 from typing import Any, Dict
 
 import numpy as np
-from pairo_butler.procedures.subprocedures.goodnight import Goodnight
 from pairo_butler.data.data_collector import DataCollector
+from pairo_butler.procedures.subprocedures.goodnight import Goodnight
+
 from pairo_butler.procedures.subprocedures.kalman_scan import KalmanScan
 from pairo_butler.procedures.subprocedures.holdup import Holdup
 from pairo_butler.procedures.subprocedures.pickup import Pickup
@@ -13,7 +15,7 @@ from pairo_butler.procedures.subprocedures.startup import Startup
 from pairo_butler.ur5e_arms.ur5e_client import UR5eClient
 from pairo_butler.motion_planning.ompl_client import OMPLClient
 import rospy as ros
-from pairo_butler.utils.tools import load_config, pyout
+from pairo_butler.utils.tools import listdir, load_config, pyout
 
 from pairo_butler.utils.tools import load_config
 
@@ -54,7 +56,7 @@ class CollectDataProcedure:
         trial_nr = 0
         while time.time() < t_start + 60 * 60:
             trial_nr += 1
-            if trial_nr > 25:
+            if trial_nr > 15:
                 break
 
             ros.loginfo(f"TRIAL: {trial_nr}")
@@ -62,13 +64,30 @@ class CollectDataProcedure:
             while not ros.is_shutdown():
                 ros.loginfo("Startup")
                 Startup(**self.kwargs).run()
-                ros.loginfo("Pickup")
-                while not Pickup(**self.kwargs).run():
-                    pyout(f"Could not pick up towel. Try again.")
 
-                ros.loginfo("Grasp Corner")
-                if Holdup(**self.kwargs).run():
-                    break
+                ros.loginfo("Give Towel")
+                ros.sleep(10)
+                self.wilson.close_gripper()
+
+                self.wilson.execute_plan(
+                    self.ompl.plan_to_joint_configuration(
+                        wilson=np.deg2rad(self.config.joints_hold_wilson)
+                    )
+                )
+
+                # Skip:
+                # [    17., -100.,     0.,  -80.,   90.,    0.]
+
+                # pyout()
+
+                # ros.loginfo("Pickup")
+                # while not Pickup(**self.kwargs).run():
+                #     pyout(f"Could not pick up towel. Try again.")
+
+                # ros.loginfo("Grasp Corner")
+                # if Holdup(**self.kwargs).run():
+                #     break
+                break
 
             plan = self.ompl.plan_to_joint_configuration(
                 sophie=np.deg2rad(self.config.joints_scan1_sophie),
@@ -76,11 +95,13 @@ class CollectDataProcedure:
             )
             self.sophie.execute_plan(plan)
 
-            ros.sleep(10)
+            ros.sleep(15)
             DataCollector.start_recording()
             KalmanScan(**self.kwargs).run()
             DataCollector.pause_recording()
-            DataCollector.save_recording()
+            path = Path("/media/matt/Expansion/Datasets/towels_depth")
+            path /= str(len(listdir(path)))
+            DataCollector.save_recording(path)
 
         Startup(**self.kwargs).run()
         Goodnight(**self.kwargs).run()

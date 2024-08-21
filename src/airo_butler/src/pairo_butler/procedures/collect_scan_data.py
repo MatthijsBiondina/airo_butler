@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict
 
 import numpy as np
+from pairo_butler.data.data_collector import DataCollector
 from pairo_butler.procedures.subprocedures.record_towel_surface import (
     RecordTowelSurface,
 )
@@ -25,7 +26,7 @@ from pairo_butler.utils.tools import load_config, pyout
 np.set_printoptions(precision=3, suppress=True)
 
 
-class UnfoldMachine:
+class CollectDataMachine:
     def __init__(self, name: str = "unfold_machine"):
         self.node_name = name
         self.config = load_config()
@@ -56,65 +57,59 @@ class UnfoldMachine:
         ros.loginfo(f"{self.node_name}: OK!")
 
     def run(self):
-        t_start = time.time()
-        trial_nr = 0
-        while time.time() < t_start + 60 * 60:
-            trial_start = time.time()
-            trial_nr += 1
-            if trial_nr > 1:
-                break
+        towel_name = "BIG_WHITE"
+        for trial in range(10):
+            ros.loginfo(f"TRIAL: {towel_name}_{trial}")
 
-            # RS2Recorder.start()
-
-            ros.loginfo(f"TRIAL: {trial_nr}")
-
-            nr_of_tries = 0
-
-            grasp_success = False
-            while not grasp_success:
-                nr_of_tries += 1
-                Startup(**self.kwargs).run()
-
-                pickup_success = False
-                while not pickup_success:
-                    Startup(**self.kwargs).run()
-                    while not Pickup(**self.kwargs).run():
-                        pass
-                    pickup_success = Holdup(**self.kwargs).run()
-
-                self.sophie.open_gripper()
-
-                plan = self.ompl.plan_to_joint_configuration(
-                    sophie=np.deg2rad(self.config.joints_rest_sophie),
-                    wilson=np.deg2rad(self.config.joints_hold_wilson),
-                    # wilson=None,
-                )
-                self.wilson.execute_plan(plan)
-
-                KalmanScan(**self.kwargs).run()
-                grasp_success = GraspCorner(**self.kwargs).run()
-
-                if not grasp_success:
-                    KalmanScan(**self.kwargs).run(flipped=True)
-                    grasp_success = GraspCorner(**self.kwargs).run()
-
-            DisplayTowel(**self.kwargs).run()
-            ros.sleep(10)
-            # RS2Recorder.finish()
-            RecordTowelSurface(**self.kwargs).run(
-                time.time() - trial_start, nr_of_tries
-            )
-            self.sophie.open_gripper()
             Startup(**self.kwargs).run()
+            pickup_success = False
+            while not pickup_success:
+                Startup(**self.kwargs).run()
+                while not Pickup(**self.kwargs).run():
+                    pass
+                pickup_success = Holdup(**self.kwargs).run()
+
+            self.sophie.open_gripper()
+
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_rest_sophie),
+                wilson=np.deg2rad(self.config.joints_hold_wilson),
+                # wilson=None,
+            )
+            self.wilson.execute_plan(plan)
+
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                scene="hanging_towel",
+            )
+            self.sophie.execute_plan(plan)
+            ros.sleep(0.5)
+
+            DataCollector.start_recording()
+            KalmanScan(**self.kwargs).run()
+            DataCollector.pause_recording()
+            DataCollector.save_recording(
+                f"{self.config.data_folder}/{towel_name}_{trial}A"
+            )
+
+            plan = self.ompl.plan_to_joint_configuration(
+                sophie=np.deg2rad(self.config.joints_scan1_sophie),
+                scene="hanging_towel",
+            )
+            self.sophie.execute_plan(plan)
+            ros.sleep(0.5)
+
+            DataCollector.start_recording()
+            KalmanScan(**self.kwargs).run(flipped=True)
+            DataCollector.pause_recording()
+            DataCollector.save_recording(
+                f"{self.config.data_folder}/{towel_name}_{trial}B"
+            )
 
         Goodnight(**self.kwargs).run()
 
 
-def main():
-    node = UnfoldMachine()
+if __name__ == "__main__":
+    node = CollectDataMachine()
     node.start_ros()
     node.run()
-
-
-if __name__ == "__main__":
-    main()

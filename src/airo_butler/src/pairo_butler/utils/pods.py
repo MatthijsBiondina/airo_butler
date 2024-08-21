@@ -374,6 +374,18 @@ class KeypointThetaPOD:
         self.stdev: Optional[float] = stdev
 
 
+class StringPOD:
+    __slots__ = ["string", "timestamp"]
+
+    def __init__(
+        self,
+        timestamp: ros.Time,
+        string: str,
+    ):
+        self.timestamp: ros.Time = timestamp
+        self.string: str = string
+
+
 def make_pod_request(
     service: ros.ServiceProxy, pod: POD, response_type: Type[POD]
 ) -> POD:

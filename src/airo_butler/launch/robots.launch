@@ -1,7 +1,7 @@
 <launch>
     <node pkg="airo_butler" type="ur5e_server" name="ur5e_server" output="screen"></node>
     <node pkg="airo_butler" type="ompl_server" name="ompl_server" output="screen">
-        <param name="scenarios" value="['default', 'hanging_towel']" />
-        <!-- <param name="scenarios" value="['default', 'wilson_holds_charuco', 'sophie_holds_charuco', 'hanging_towel']" /> -->
+        <!-- <param name="scenarios" value="['default', 'hanging_towel']" /> -->
+        <param name="scenarios" value="['default', 'wilson_holds_charuco', 'sophie_holds_charuco', 'hanging_towel']" />
     </node> 
 </launch>

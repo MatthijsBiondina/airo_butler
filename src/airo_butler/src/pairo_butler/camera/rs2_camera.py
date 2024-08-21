@@ -1,5 +1,5 @@
 import sys
-from pairo_butler.utils.tools import pyout
+from pairo_butler.utils.tools import load_config, pyout
 import pickle
 import sys
 from typing import List, Optional, Tuple
@@ -257,7 +257,7 @@ class RS2_camera:
             pyrealsense2.format.z16,
             self.fps,
         )
-        self.config = config
+        self.rs2config = config
 
         # Start the camera pipeline.
         self.pipeline.start(config)
@@ -282,6 +282,8 @@ class RS2_camera:
         self.reset_service = ros.Service(
             "reset_realsense_service", Reset, self.toggle_reset
         )
+
+        self.config = load_config()
 
         # Log an information message indicating successful initialization.
         ros.loginfo(f"{self.node_name}: OK!")
@@ -312,19 +314,19 @@ class RS2_camera:
 
             align = pyrealsense2.align(pyrealsense2.stream.color)
             aligned_frames = align.process(frameset)
-            depth_frame = aligned_frames.get_depth_frame()
-            color_frame = aligned_frames.get_color_frame()
+            color_image = self.__frame2pillow(aligned_frames.get_color_frame())
+            depth_frame = np.asanyarray(aligned_frames.get_depth_frame().get_data())
 
-            if not depth_frame or not color_frame:
-                continue
-
-            depth_image = np.asanyarray(depth_frame.get_data())
-            color_image = np.asanyarray(color_frame.get_data())
+            # depth_frame = (
+            #     1 - np.clip(depth_frame / self.config.max_distance, 0, 1)
+            # ) * 255
+            # depth_frame[depth_frame == 255] = 0
+            # depth_image = self.__frame2pillow(depth_frame)
 
             # Create an ImagePOD object with the image and current timestamp.
             pod = ImagePOD(
                 color_frame=color_image,
-                depth_frame=depth_image,
+                depth_frame=depth_frame,
                 image=image,
                 intrinsics_matrix=self.intrinsics_matrix,
                 timestamp=ros.Time.now(),
@@ -385,7 +387,7 @@ class RS2_camera:
                 # Stop and restart the camera pipeline to perform the reset
                 self.pipeline.stop()
                 ros.sleep(1)
-                self.pipeline.start(self.config)
+                self.pipeline.start(self.rs2config)
 
                 # Wait for a brief moment after restarting the pipeline
                 ros.sleep(1)
@@ -401,7 +403,7 @@ class RS2_camera:
             self.__reset = False
             self.__reset_result = False
 
-    def __frame2pillow(self, frame: pyrealsense2.frame):
+    def __frame2pillow(self, frame: pyrealsense2.frame | np.ndarray):
         """
         Converts a frame captured from the RealSense2 camera to a PIL (Python Imaging
         Library) image.
@@ -418,7 +420,10 @@ class RS2_camera:
             PIL.Image: The processed image in PIL format, cropped and resized to the specified resolution.
         """
         # Convert the RealSense2 frame to a numpy array.
-        img_array = np.asanyarray(frame.get_data()).astype(np.uint8)
+        if isinstance(frame, np.ndarray):
+            img_array = frame.astype(np.uint8)
+        else:
+            img_array = np.asanyarray(frame.get_data()).astype(np.uint8)
         # Create a PIL image from the numpy array.
         image = Image.fromarray(img_array)
 

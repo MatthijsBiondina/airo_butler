@@ -29,7 +29,8 @@ class KalmanScan(Subprocedure):
             )
             self.sophie.execute_plan(plan)
             ros.sleep(0.5)
-        ros.sleep(5)
+        # todo: uncomment for experiment
+        # ros.sleep(5)
 
         KalmanFilter.reset()
         KalmanFilter.unpause()

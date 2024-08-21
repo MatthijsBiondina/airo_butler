@@ -49,5 +49,5 @@ class Subprocedure(ABC):
         condition1 = self.towel_bot[2] > 0.05
         condition2 = self.towel_bot[2] < 1.0
 
-        ros.loginfo(f"{self.towel_bot[2]:.2f} -> not ({condition1} and {condition2})")
+        # ros.loginfo(f"{self.towel_bot[2]:.2f} -> not ({condition1} and {condition2})")
         return not (condition1 and condition2)

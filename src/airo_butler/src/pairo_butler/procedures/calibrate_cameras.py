@@ -28,10 +28,10 @@ class CalibrateMachine(Machine):
     def run(self):
         Startup(drop=False, **self.kwargs).run()
         WilsonRecieveCharuco(**self.kwargs).run()
-        CalibrateWilsonZed(**self.kwargs).run()
+        # CalibrateWilsonZed(**self.kwargs).run()
         CalibrateSophieRS2(**self.kwargs).run()
         TransferCharucoBoard(**self.kwargs).run()
-        CalibrateSophieZed(**self.kwargs).run()
+        # CalibrateSophieZed(**self.kwargs).run()
         DropCharucoBoard(**self.kwargs).run()
 
 

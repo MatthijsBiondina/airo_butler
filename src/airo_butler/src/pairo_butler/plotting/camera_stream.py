@@ -37,7 +37,7 @@ class CameraStream:
         self.timestamps: List[ros.Time] = []
 
         # Pygame initialization
-        self.window = PygameWindow("Realsense2 (RGB)", (512, 512))
+        self.window = PygameWindow("Realsense2 (RGB)", (1024, 512))
 
     def start_ros(self):
         ros.init_node(self.node_name, log_level=ros.INFO)
@@ -48,23 +48,24 @@ class CameraStream:
 
     def run(self):
         while not ros.is_shutdown():
-            frame = np.copy(np.array(self.rs2.pod.image))
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                detect_and_visualize_charuco_pose(
-                    frame,
-                    intrinsics=self.rs2.pod.intrinsics_matrix,
-                    aruco_dict=AIRO_DEFAULT_ARUCO_DICT,
-                    charuco_board=AIRO_DEFAULT_CHARUCO_BOARD,
-                )
-            frame = Image.fromarray(frame)
-            frame = add_info_to_image(
-                frame,
+
+            # image = np.copy(np.array(self.rs2.pod.image))
+
+            color_frame = np.copy(np.array(self.rs2.pod.color_frame))
+            depth_frame = np.copy(np.array(self.rs2.pod.depth_frame))
+
+            image = np.concatenate(
+                (color_frame, np.stack((depth_frame,) * 3, axis=-1)), axis=1
+            )
+
+            image = Image.fromarray(image)
+            image = add_info_to_image(
+                image,
                 title="RealSense2 (RGB)",
                 frame_rate=f"{self.rs2.fps} Hz",
                 latency=f"{self.rs2.latency} ms",
             )
-            self.window.imshow(frame)
+            self.window.imshow(image)
             self.rate.sleep()
 
 

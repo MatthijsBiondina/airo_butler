@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import numpy as np
 import rospkg
 from pairo_butler.ur3_arms.ur3_solver import LENGTH_WRIST3_TO_TOOL
-from pairo_butler.data.data_collector import DataCollector
+from airo_butler.src.pairo_butler.data.data_collector_compressed import DataCollector
 from pairo_butler.camera.rs2_camera import RS2Client
 from pairo_butler.utils.point_cloud_utils import transform_points_to_different_frame
 from pairo_butler.utils.tools import pyout

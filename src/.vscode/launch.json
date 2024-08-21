@@ -8,7 +8,7 @@
             "name": "Python: Airo Butler",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/airo_butler/src/analyze.py",
+            "program": "${workspaceFolder}/airo_butler/src/pointcloud_explore.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

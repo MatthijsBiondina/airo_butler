@@ -19,8 +19,8 @@ class GraspCorner(Subprocedure):
 
     def run(self):
         try:
-            # self.sophie.set_gripper_width(0.07)
-            self.sophie.open_gripper()
+            self.sophie.set_gripper_width(0.05)
+            # self.sophie.open_gripper()
             for keypoint in self.keypoint_tcps:
                 for grasp_tcp, pregrasp_tcp in self.__compute_grasps_and_pregrasps(
                     keypoint

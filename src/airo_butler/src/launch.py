@@ -29,7 +29,7 @@ pyautogui.hotkey("ctrl", "b")
 time.sleep(T)
 pyautogui.hotkey("d")
 
-for session in ("robots", "cameras", "record_trials", "computer_vision", "plots"):
+for session in ("robots", "cameras", "computer_vision", "plots"):
     pyautogui.typewrite(f"tmux new -s {session}")
     pyautogui.hotkey("enter")
     time.sleep(T)
