@@ -367,11 +367,11 @@ class PointCloudExplorer:
                 vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
                 # self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
                 yield {"vox": vox, "tcps": camera_tcps}
-                vox, camera_tcps = None, []
+                vox = None
 
             if vox is None:
                 vox = self.__preprocess_pcd(state_now, voxel_size)
-                camera_tcps = [state_now["tcp"]]
+                camera_tcps.extend(state_now["tcp"])
             else:
                 target = self.__preprocess_pcd(state_now, voxel_size)
                 camera_tcps.append(state_now["tcp"])
@@ -382,7 +382,7 @@ class PointCloudExplorer:
 
         if vox is not None:
             vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
-            self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
+            # self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
             yield {"vox": vox, "tcps": camera_tcps}
 
     def fuse_chunks(self, chunks, voxel_size=0.01, sigma=0.1, threshold=1.0):
