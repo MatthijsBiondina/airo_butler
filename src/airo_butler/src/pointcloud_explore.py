@@ -365,7 +365,7 @@ class PointCloudExplorer:
         for ii, state_now in enumerate(states):
             if ii % n_keyframes == 0 and vox is not None:
                 pyout(len(camera_tcps))
-                vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
+                # vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
                 # self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
                 yield {"vox": vox, "tcps": camera_tcps}
                 vox = None
