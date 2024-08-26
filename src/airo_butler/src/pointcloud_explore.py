@@ -495,25 +495,25 @@ class PointCloudExplorer:
 
 
 if __name__ == "__main__":
-    root_in = Path("/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS_raw/")
-    root_ou = Path("/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/")
+    root_in = Path(
+        "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS_raw/"
+    )
+    root_ou = Path(
+        "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/"
+    )
 
-    for dataset_path in listdir(root_in):
-        pyout()
+    # for dataset_path in listdir(root_in):
+    #     pyout()
 
-
-
-
-
-    # pce = PointCloudExplorer()
-    # # pce.optimize_hyperparameters()
-    # states = pce.depth_images_to_point_clouds(
-    #     Path(
-    #         "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/rgbd_dataset_0"
-    #     ),
-    #     depth_scale_modifier=0.94,
-    # )
-    # chunks = pce.visual_odometry_pyramid(states)
+    pce = PointCloudExplorer()
+    # pce.optimize_hyperparameters()
+    states = pce.depth_images_to_point_clouds(
+        Path(
+            "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS_pre/rgbd_dataset_0"
+        ),
+        depth_scale_modifier=0.94,
+    )
+    chunks = pce.visual_odometry_pyramid(states)
 
     # # chunk1 = next(chunks)
     # # chunk2 = next(chunks)
@@ -522,7 +522,7 @@ if __name__ == "__main__":
 
     # # pce.draw([chunk1['vox'], chunk2['vox']])
 
-    # # for chunk in chunks:
-    # #     pce.draw(chunk['vox'], camera_tcp=np.linalg.inv(chunk['tcps'][0]))
+    for chunk in chunks:
+        pce.draw(chunk["vox"], camera_tcp=np.linalg.inv(chunk["tcps"][0]))
 
     # pce.fuse_chunks(chunks)
