@@ -371,7 +371,7 @@ class PointCloudExplorer:
 
             if vox is None:
                 vox = self.__preprocess_pcd(state_now, voxel_size)
-                camera_tcps.extend(state_now["tcp"])
+                camera_tcps.append(state_now["tcp"])
             else:
                 target = self.__preprocess_pcd(state_now, voxel_size)
                 camera_tcps.append(state_now["tcp"])
