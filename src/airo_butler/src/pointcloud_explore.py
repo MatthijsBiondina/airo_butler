@@ -364,8 +364,7 @@ class PointCloudExplorer:
         vox, camera_tcps = None, []
         for ii, state_now in enumerate(states):
             if ii % n_keyframes == 0 and vox is not None:
-                pyout(len(camera_tcps))
-                # vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
+                vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
                 # self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
                 yield {"vox": vox, "tcps": camera_tcps}
                 vox = None
@@ -396,7 +395,7 @@ class PointCloudExplorer:
             )
             tcps.extend(chunk["tcps"])
             vox = self.__filter_visibility(vox, tcps, min_ratio=0.01, std_ratio=0)
-            # self.draw(vox)
+            self.draw(vox)
 
         vox = self.__filter_visibility(vox, tcps, min_ratio=0.01, std_ratio=2.0)
         self.draw(vox)
@@ -523,7 +522,7 @@ if __name__ == "__main__":
 
     # # pce.draw([chunk1['vox'], chunk2['vox']])
 
-    for chunk in chunks:
-        pce.draw(chunk["vox"], camera_tcp=np.linalg.inv(chunk["tcps"][0]))
+    # for chunk in chunks:
+        # pce.draw(chunk["vox"], camera_tcp=np.linalg.inv(chunk["tcps"][0]))
 
-    # pce.fuse_chunks(chunks)
+    pce.fuse_chunks(chunks)
