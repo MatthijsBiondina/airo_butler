@@ -21,6 +21,8 @@ class PointCloudExplorer:
         self.__apply_masks()
         self.pcd = self.__load_pcd()
 
+        self.rmse_buffer = []
+
     def __load_data(self):
         npz_file = np.load(self.ROOT / "pointcloud.npz")
         return tuple(npz_file[key] for key in npz_file.files)
@@ -178,11 +180,22 @@ class PointCloudExplorer:
         return states
 
     @staticmethod
-    def load_pcd_from_rgbd(path, timestamp, state, camera_intrinsics):
+    def load_pcd_from_rgbd(
+        path, timestamp, state, camera_intrinsics, depth_scale_modifier=1.0
+    ):
         color_raw = o3d.io.read_image(str(path / "rgb" / f"{timestamp}.png"))
         depth_raw = o3d.io.read_image(str(path / "depth" / f"{timestamp}.png"))
+        depth_raw_np = np.asarray(depth_raw)
+        # Multiply the depth image by the scale modifier
+        scaled_depth_np = depth_raw_np * depth_scale_modifier
+
+        # Convert the scaled depth numpy array back to an Open3D image
+        scaled_depth_raw = o3d.geometry.Image(
+            scaled_depth_np.astype(np.uint16)
+        )  # Use uint16 if depth is typically 16-bit
+
         rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            color_raw, depth_raw, convert_rgb_to_intensity=False
+            color_raw, scaled_depth_raw, convert_rgb_to_intensity=True
         )
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd_image, camera_intrinsics
@@ -191,7 +204,13 @@ class PointCloudExplorer:
         return pcd
 
     def depth_images_to_point_clouds(
-        self, path: Path, skip=1, distance_threshold=0.2, voxel_size=0.01
+        self,
+        path: Path,
+        skip=1,
+        distance_threshold=0.2,
+        voxel_size=0.01,
+        display_every=25,
+        depth_scale_modifier=1.0,
     ):
         camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
             width=720, height=720, fx=920.4, fy=917.4, cx=360.0, cy=359.1
@@ -205,7 +224,11 @@ class PointCloudExplorer:
         step = skip
         for timestamp in pbar(list(poses.keys())[::step]):
             pcd = self.load_pcd_from_rgbd(
-                path, timestamp, poses[timestamp], camera_intrinsics
+                path,
+                timestamp,
+                poses[timestamp],
+                camera_intrinsics,
+                depth_scale_modifier,
             )
             # Downsampling
             pcd = pcd.uniform_down_sample(every_k_points=11)
@@ -213,11 +236,10 @@ class PointCloudExplorer:
             # Crop
             pcd = pcd.crop(bounding_box)
 
-            cl, ind = pcd.remove_statistical_outlier(nb_neighbors=25, std_ratio=1.0)
+            cl1, ind = pcd.remove_statistical_outlier(nb_neighbors=25, std_ratio=1.0)
+            cl2, ind = cl1.remove_radius_outlier(nb_points=10, radius=0.01)
 
-            yield {"timestamp": timestamp, "tcp": poses[timestamp]["tcp"], "pcd": cl}
-
-            # self.draw(cl, camera_tcp=np.linalg.inv(states[timestamp]["tcp"]))
+            yield {"timestamp": timestamp, "tcp": poses[timestamp]["tcp"], "pcd": cl2}
 
         return poses
 
@@ -230,12 +252,23 @@ class PointCloudExplorer:
         self.draw([source_temp, target_temp])
 
     def visual_odometry(
-        self, states, voxel_size=0.005, sigma=0.1, threshold=1.0, disp_every=115
+        self,
+        states,
+        voxel_size=0.005,
+        sigma=0.1,
+        threshold=1.0,
+        # disp_every=115,
+        disp_every=0,
+        n_keyframes=3,
     ):
 
         vox = None
-        state_tm1 = None
+        cameras = []
         for ii, state_now in enumerate(states):
+            # if not (ii % 115 == 0):
+            #     continue
+
+            cameras.append(state_now["tcp"][:3, 3])
             if vox is None:
                 vox = state_now["pcd"].voxel_down_sample(voxel_size=voxel_size)
                 vox.estimate_normals(
@@ -256,37 +289,240 @@ class PointCloudExplorer:
                     loss
                 )
                 # FIRST DO HIDDEN POINT CLOUD REMOVAL
+                camera = state_now["tcp"][:3, 3]
+                radius = np.linalg.norm(camera) * 100
+                _, pt_map = vox.hidden_point_removal(camera, radius)
 
                 reg_p2l = o3d.pipelines.registration.registration_icp(
                     vox, target, threshold, trans_init, p2l
                 )
 
-                vox = vox.transform(reg_p2l.transformation)
-
-                vox = vox + target
+                vox = vox.transform(reg_p2l.transformation) + target
                 vox = vox.voxel_down_sample(voxel_size=voxel_size)
-                vox, _ = vox.remove_statistical_outlier(nb_neighbors=100, std_ratio=2.0)
-                # vox, _ = vox.remove_radius_outlier(nb_points=16, radius=0.05)
+                # vox, _ = vox.remove_statistical_outlier(nb_neighbors=20, std_ratio=5.0)
+                vox, _ = vox.remove_radius_outlier(nb_points=4, radius=voxel_size * 2)
 
                 if disp_every > 0 and ii % disp_every == 0:
                     self.draw([vox])
 
-                # self.draw_registration_result(vox, target, reg_p2l.transformation)
+        self.draw([vox])
 
-                # pyout()
+    def __preprocess_pcd(self, state_now, voxel_size):
+        vox = state_now["pcd"].voxel_down_sample(voxel_size=voxel_size)
+        vox.estimate_normals(
+            search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.05, max_nn=30)
+        )
+        return vox
 
-            state_tm1 = state_now
+    def __register_next_frame(
+        self, sigma, vox, target, threshold, voxel_size, std_ratio=2.0
+    ):
+        loss_fn = o3d.pipelines.registration.TukeyLoss(k=sigma)
+        p2l = o3d.pipelines.registration.TransformationEstimationPointToPlane(loss_fn)
+        vox = self.compute_normals(vox)
+        target = self.compute_normals(target)
+
+        fit = o3d.pipelines.registration.registration_icp(
+            vox, target, threshold, np.eye(4), p2l
+        )
+        self.rmse_buffer.append(
+            np.linalg.norm(fit.transformation - np.eye(4), ord="fro")
+        )
+        vox = vox.transform(fit.transformation) + target
+        vox = vox.voxel_down_sample(voxel_size=voxel_size)
+        if std_ratio > 0:
+            vox, _ = vox.remove_statistical_outlier(
+                nb_neighbors=20, std_ratio=std_ratio
+            )
+        return vox
+
+    def __filter_visibility(self, vox, camera_tcps, min_ratio=0.1, std_ratio=1.0):
+        counts = np.zeros((len(vox.points),), dtype=int)
+        for camera_tcp in camera_tcps:
+            camera = camera_tcp[:3, 3]
+            radius = np.linalg.norm(camera) * 100
+            _, indexes = vox.hidden_point_removal(camera, radius)
+            counts[np.array(indexes)] += 1
+        mask = np.flatnonzero(counts >= max(1, min_ratio * len(camera_tcp))).tolist()
+
+        vox = vox.select_by_index(mask)
+        if std_ratio > 0:
+            vox, _ = vox.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.0)
+
+        return vox
+
+    def visual_odometry_pyramid(
+        self,
+        states,
+        voxel_size=0.005,
+        sigma=0.1,
+        threshold=1.0,
+        # disp_every=115,
+        disp_every=0,
+        n_keyframes=25,
+    ):
+        vox, camera_tcps = None, []
+        for ii, state_now in enumerate(states):
+            if ii % n_keyframes == 0 and vox is not None:
+                vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
+                # self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
+                yield {"vox": vox, "tcps": camera_tcps}
+                vox, camera_tcps = None, []
+
+            if vox is None:
+                vox = self.__preprocess_pcd(state_now, voxel_size)
+                camera_tcps = [state_now["tcp"]]
+            else:
+                target = self.__preprocess_pcd(state_now, voxel_size)
+                camera_tcps.append(state_now["tcp"])
+                vox = self.__register_next_frame(
+                    sigma, vox, target, threshold, voxel_size
+                )
+                # self.draw(vox)
+
+        if vox is not None:
+            vox = self.__filter_visibility(vox, camera_tcps=camera_tcps)
+            self.draw(vox, camera_tcp=np.linalg.inv(camera_tcps[-1]))
+            yield {"vox": vox, "tcps": camera_tcps}
+
+    def fuse_chunks(self, chunks, voxel_size=0.01, sigma=0.1, threshold=1.0):
+        chunk = next(chunks)
+        vox = chunk["vox"]
+        tcps = chunk["tcps"]
+        for chunk in chunks:
+            vox = self.__register_next_frame(
+                sigma, vox, chunk["vox"], threshold, voxel_size, std_ratio=0.0
+            )
+            tcps.extend(chunk["tcps"])
+            vox = self.__filter_visibility(vox, tcps, min_ratio=0.01, std_ratio=0)
+            # self.draw(vox)
+
+        vox = self.__filter_visibility(vox, tcps, min_ratio=0.01, std_ratio=2.0)
+        self.draw(vox)
+
+        # vox.estimate_normals(
+        #     search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
+        # )
+        # mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        #     vox, depth=9
+        # )
+        # bbox = vox.get_axis_aligned_bounding_box()
+        # mesh = mesh.crop(bbox)
+        # self.draw(mesh)
+
+    def objective_function(self, depth_scale_modifier):
+        ROOT = Path(
+            "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS"
+        )
+        rmse = []
+        for ii, dataset_path in enumerate(listdir(ROOT)):
+            try:
+                states = self.depth_images_to_point_clouds(
+                    dataset_path, depth_scale_modifier=depth_scale_modifier
+                )
+                chunks = self.visual_odometry_pyramid(states)
+                self.fuse_chunks(chunks)
+
+                rmse.append(np.mean(np.array(self.rmse_buffer) ** 2) ** 0.5)
+                self.rmse_buffer = []
+            except Exception:
+                rmse.append(1.0)
+                self.rmse_buffer = []
+            if (ii + 1) % 10 == 0:
+                break
+
+        return np.median(np.array(rmse))
+
+    @staticmethod
+    def compute_normals(pcd, radius=0.1, max_nn=30):
+        pcd.estimate_normals(
+            search_param=o3d.geometry.KDTreeSearchParamHybrid(
+                radius=radius, max_nn=max_nn
+            )
+        )
+        # pcd.orient_normals_consistent_tangent_plane(
+        #     100
+        # )  # This helps with the orientation of normals if needed
+        return pcd
+
+    def optimize_hyperparameters(
+        self,
+        population_size=10,
+        learning_rate=0.03,
+        sigma_learning_rate=0.01,
+        num_iterations=100,
+    ):
+        mu, sigma = 1.0, 0.1
+
+        for iteration in range(num_iterations):
+            population = np.random.normal(mu, sigma, population_size)
+            population = np.clip(population, a_min=0.5, a_max=1.5)
+
+            fitness = np.array(
+                [self.objective_function(individual) for individual in population]
+            )
+
+            # Normalize the fitness values
+            normalized_fitness = (fitness - np.mean(fitness)) / (np.std(fitness) + 1e-8)
+
+            # Compute the gradient estimate for mu
+            gradient_estimate_mu = np.dot(normalized_fitness, population - mu) / (
+                population_size * sigma
+            )
+
+            # Update the parameter mu
+            mu -= learning_rate * gradient_estimate_mu
+
+            # Compute the gradient estimate for sigma (optional but can help)
+            gradient_estimate_sigma = np.dot(
+                normalized_fitness, (population - mu) ** 2 - sigma**2
+            ) / (population_size * sigma)
+
+            # Update sigma with its learning rate
+            sigma *= np.exp(sigma_learning_rate * gradient_estimate_sigma)
+
+            # Optionally, print the progress
+            pyout(
+                f"Iteration {iteration+1}/{num_iterations}, mu = {mu:.4f}, sigma = {sigma:.4f}, fitness = {self.objective_function(mu):.4f}"
+            )
+
+            # (mu, sigma, population_size)
+
+        # ROOT = "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS"
+        # for dataset_path in listdir(ROOT):
+
+        # states =
 
 
 if __name__ == "__main__":
-    pce = PointCloudExplorer()
-    # downpcd = pce.voxel_downsampling_and_normal_estimation()
-    # pce.basic_point_cloud_processing(downpcd, show=True)
-    # pce.outlier_removal(show=True)
+    root_in = Path("/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS_raw/")
+    root_ou = Path("/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/")
 
-    states = pce.depth_images_to_point_clouds(
-        Path(
-            "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/rgbd_dataset_0"
-        )
-    )
-    pce.visual_odometry(states)
+    for dataset_path in listdir(root_in):
+        pyout()
+
+
+
+
+
+    # pce = PointCloudExplorer()
+    # # pce.optimize_hyperparameters()
+    # states = pce.depth_images_to_point_clouds(
+    #     Path(
+    #         "/home/matt/catkin_ws/src/airo_butler/src/pairo_butler/SplaTAM/data/TOWELS/rgbd_dataset_0"
+    #     ),
+    #     depth_scale_modifier=0.94,
+    # )
+    # chunks = pce.visual_odometry_pyramid(states)
+
+    # # chunk1 = next(chunks)
+    # # chunk2 = next(chunks)
+    # # chunk1['vox'].paint_uniform_color(hex_to_rgb(UGENT.PINK) / 255)
+    # # chunk2['vox'].paint_uniform_color(hex_to_rgb(UGENT.GREEN) / 255)
+
+    # # pce.draw([chunk1['vox'], chunk2['vox']])
+
+    # # for chunk in chunks:
+    # #     pce.draw(chunk['vox'], camera_tcp=np.linalg.inv(chunk['tcps'][0]))
+
+    # pce.fuse_chunks(chunks)

@@ -4,6 +4,7 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.special import softmax
 from torch import Tensor
 import torch.nn.functional as F
 from pairo_butler.SplaTAM.viz_scripts.final_recon import (
@@ -14,7 +15,7 @@ from pairo_butler.SplaTAM.viz_scripts.final_recon import (
 )
 from pairo_butler.SplaTAM.utils.common_utils import seed_everything
 from pairo_butler.SplaTAM.utils.slam_external import build_rotation
-from pairo_butler.utils.tools import UGENT, pyout
+from pairo_butler.utils.tools import UGENT, pbar, pyout
 from scipy.spatial.transform import Rotation as R
 import open3d as o3d
 
@@ -225,22 +226,31 @@ def plot_camera_poses(camera_poses, color):
     return geometries
 
 
-def plot_points(means3D, rgb_color, distance_threshold=0.2, alpha_percentile=75):
+def plot_points(
+    means3D, rgb_color, distance_threshold=0.2, alpha_percentile=75, N=1000000
+):
 
-    distance_mask = np.linalg.norm(means3D[:, :2], axis=1) < distance_threshold
+    mask = np.linalg.norm(means3D[:, :2], axis=1) < distance_threshold
 
-    opacities = params["logit_opacities"]
-    percentile = np.percentile(opacities, alpha_percentile)
-    opacity_mask = (opacities > percentile).squeeze(-1)
+    logits = params["logit_opacities"][mask].squeeze(-1)
+    scales = np.exp(params["log_scales"])[mask].squeeze(-1)
+    means = means3D[mask]
+    colors = params["rgb_colors"][mask]
 
-    mask = distance_mask & opacity_mask
+    samples = np.random.choice(
+        np.arange(means.shape[0]), size=N, replace=True, p=softmax(logits)
+    )
 
-    filtered_points = means3D[mask]
-    filtered_colors = params["rgb_colors"][mask]
+    sample_points = means[samples] + np.random.normal(size=(N, 3)) * scales[samples][:, None]
+    sample_colors = colors[samples]
 
     point_cloud = o3d.geometry.PointCloud()
-    point_cloud.points = o3d.utility.Vector3dVector(filtered_points)
-    point_cloud.colors = o3d.utility.Vector3dVector(filtered_colors)
+    point_cloud.points = o3d.utility.Vector3dVector(sample_points)
+    point_cloud.colors = o3d.utility.Vector3dVector(sample_colors)
+
+    # point_cloud, _ = point_cloud.remove_statistical_outlier(
+    #     nb_neighbors=50, std_ratio=1.5
+    # )
 
     return [point_cloud]
 

@@ -87,12 +87,6 @@ def hex_to_rgb(hex_string):
     return np.array(tuple(int(hex_string[i : i + 2], 16) for i in (0, 2, 4)))
 
 
-# Example usage:
-hex_color = "#4CAF50"
-rgb_color = hex_to_rgb(hex_color)
-print(rgb_color)  # Output will be (76, 175, 80)
-
-
 def bash(cmd):
     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
